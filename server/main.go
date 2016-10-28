@@ -1,83 +1,43 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/websocket"
 )
 
 var upgrader = websocket.Upgrader{}
+var hub = NewHub()
 
+// Информационная страница о статусе сервера
+func status(w http.ResponseWriter, req *http.Request) {
+	fmt.Fprintln(w, "MyRormg v. 0.6")
+	fmt.Fprintln(w, "Коннектов: ", hub.Count())
+}
+
+// Обработчик запросов на соединения по протоколу Websocket
 func ws(w http.ResponseWriter, r *http.Request) {
-	c, err := upgrader.Upgrade(w, r, nil)
+	// Создаем соединение
+	connect, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Print("[upgrade]:", err)
 		return
 	}
-	defer c.Close()
-	log.Print("[upgrade]: ok")
-
-	player := NewPlayer()
-
-	go func() {
-		for {
-			time.Sleep(50 * time.Millisecond)
-
-			player.Tick()
-
-			log.Println(player.Position, player.Angle)
-
-			message, err := json.Marshal(player)
-			if err != nil {
-				log.Println("[json]:", err)
-				break
-			}
-
-			//			log.Printf("recv: %s", message)
-			err = c.WriteMessage(websocket.TextMessage, message)
-			if err != nil {
-				log.Println("[write]:", err)
-				break
-			}
-		}
-	}()
-
-	for {
-		mt, message, err := c.ReadMessage()
-		if err != nil {
-			log.Println("[read]:", err)
-			break
-		}
-		if mt != websocket.TextMessage {
-			log.Println("[read]: неподдерживаемый формат сообщения")
-			break
-		}
-
-		msg, err := ParseMessage(message)
-		if err != nil {
-			log.Println("[json]:", err)
-			break
-		}
-
-		msg.Data.Exec(player)
-	}
+	// Добавляем соединение в хаб коннектов
+	hub.Join(connect)
 }
 
 func main() {
+	// Определяем обработчики
 	http.Handle("/", http.StripPrefix("/", http.FileServer(http.Dir("../public"))))
 	http.HandleFunc("/status", status)
 	http.HandleFunc("/ws", ws)
 
+	// Запускаем http-сервер
 	err := http.ListenAndServe(":80", nil)
 	if err != nil {
-		log.Fatal("Error listening: ", err)
+		log.Fatal("[http]:", err)
 	}
-}
-
-func status(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintln(w, "MyRormg v. 0.1")
 }

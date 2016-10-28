@@ -6,12 +6,12 @@ import (
 	mathgl "github.com/go-gl/mathgl/mgl64"
 )
 
-// Player хранит информацию об игроке
+// Player определяет игрока
 type Player struct {
-	// Speed определяет скорость игрока.
-	// Speed деленное на 10, определяет скорость движения в тайлах в секунду
-	// Speed деленное на 50, определяет скорость поворота в радианах в секунду
-	Speed int
+	// Speed определяет скорость движеия и поворота игрока.
+	// Скорость движения в тайлах в секунду равно этому значение.
+	// Скорость поворота в радианах в секунду получается при деленни на PI*2 - ???
+	Speed float64
 	// Position определяет положение игрока
 	Position mathgl.Vec3
 	// Motion определяет движение игрока
@@ -29,7 +29,7 @@ type Player struct {
 // NewPlayer инициализирует нового игрока
 func NewPlayer() *Player {
 	return &Player{
-		Speed:    100,
+		Speed:    10.0,
 		Position: mathgl.Vec3{0, 0, 0.5},
 		//		Controller: make([]MessageController, 20),
 	}
@@ -49,21 +49,22 @@ func (p *Player) Tick() {
 	//		controller := p.Controller[0]
 	controller := p.Controller
 
+	// Формируем величину поворота
+	if controller.RotateLeft {
+		p.Slew += p.Speed / (math.Pi * 2) / LoopAmplitude
+	}
+
+	if controller.RotateRight {
+		p.Slew -= p.Speed / (math.Pi * 2) / LoopAmplitude
+	}
+
 	// Рассчитываем единичный вектор движения прямо
 	forwardDirection := mathgl.QuatRotate(p.Angle, mathgl.Vec3{0, 0, 1}).Rotate(mathgl.Vec3{0, 1, 0})
 
 	// Расчитываем единичный вектор стрейфа направо
 	rightDirection := mathgl.QuatRotate(math.Pi/2, mathgl.Vec3{0, 0, -1}).Rotate(forwardDirection)
 
-	// Обрабатываем показания контроллера
-	if controller.RotateLeft {
-		p.Slew += float64(p.Speed) / 50.0 / 20.0
-	}
-
-	if controller.RotateRight {
-		p.Slew -= float64(p.Speed) / 50.0 / 20.0
-	}
-
+	// Формируем вектор движения
 	if controller.MoveRight {
 		p.Motion = p.Motion.Add(rightDirection)
 	}
@@ -80,13 +81,12 @@ func (p *Player) Tick() {
 		p.Motion = p.Motion.Sub(forwardDirection)
 	}
 
-	// Формируем вектор движения
 	if p.Motion.Len() > 0 {
 		p.Motion = p.Motion.Normalize()
 	}
+	p.Motion = p.Motion.Mul(p.Speed / LoopAmplitude)
 
-	p.Motion = p.Motion.Mul(float64(p.Speed) / 10.0 / 20.0)
-
+	// Уменьшаем приращения в 4 раза при нажатом шифте
 	if controller.Modifiers.Shift {
 		p.Motion = p.Motion.Mul(0.25)
 		p.Slew *= 0.25

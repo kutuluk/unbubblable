@@ -18,15 +18,58 @@ log = new Log();
 
 Player = function () {
 
-	this.speed = 100;
+	this.speed = 10;
 	this.position = new THREE.Vector3(0, 0, 0.5);
 	this.motion = new THREE.Vector3();
 	this.angle = 0;
 	this.slew = 0;
 
+	this.Go = function (mesh, scalar, isPlayer) {
+		// Рассчитываем позицию игрока в этом фрейме
+		var motion = new THREE.Vector3().copy(this.motion);
+		motion.multiplyScalar(scalar);
+		var position = new THREE.Vector3().copy(this.position).add(motion);
+		// Рассчитываем угол направления в этом фрейме
+		var rotation = this.angle + this.slew * scalar;
+		// Рассчитываем вектор направления в этом фрейме
+		var direction = new THREE.Vector3(0, 1, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), rotation);
+
+		// Перемещаем меш игрока
+		mesh.position.copy(position);
+
+		// Крутим игрока
+		mesh.rotation.setFromVector3(new THREE.Vector3(0, 0, rotation), 'XYZ');
+
+		if (isPlayer) {
+
+			// Рассчитываем высоту камеры в этом фрейме
+			var height = camHeight + camMotion * scalar;
+
+			// Перемещаем камеру
+			var camDistance = height / -2;
+			var camPos = new THREE.Vector3();
+			camPos.addVectors(position, direction.multiplyScalar(camDistance));
+			camera.position.set(camPos.x, camPos.y, height);
+
+			// Крутим камеру
+			camera.rotation.setFromVector3(new THREE.Vector3(0, 0, rotation), 'XYZ');
+			// И опускаем немного вниз
+			camera.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 5);
+
+			// Скрывать игрока, когда камера приближается к нему слишком близко
+			if (height < 5) {
+				mesh.visible = false;
+			} else {
+				mesh.visible = true;
+			}
+
+		}
+	}
 }
 
 player = new Player();
+playerEcho = new Player();
+playerTempEcho = new Player();
 
 Connect = function (ping) {
 
@@ -64,20 +107,21 @@ Connect = function (ping) {
 
 		this.ws.onmessage = function (evt) {
 			var msg = JSON.parse(evt.data);
-//		log.appendText(JSON.stringify(this.rotation));
-//		log.appendText(evt.data);
-			meshEchoChar.position.x = msg.Position[0];
-			meshEchoChar.position.y = msg.Position[1];
-			var echoQuat = new THREE.Quaternion();
-			echoQuat.setFromAxisAngle(new THREE.Vector3(0, 0, 1), msg.Angle);
-			meshEchoChar.rotation.setFromQuaternion(echoQuat, 'XYZ');
 
+			playerTempEcho.position.x = msg.Position[0];
+			playerTempEcho.position.y = msg.Position[1];
+			playerTempEcho.position.z = msg.Position[2];
+			playerTempEcho.motion.x = msg.Motion[0];
+			playerTempEcho.motion.y = msg.Motion[1];
+			playerTempEcho.motion.z = msg.Motion[2];
+			playerTempEcho.angle = msg.Angle;
+			playerTempEcho.slew = msg.Slew;
 		};
 
 		this.send = function (msg) {
 			if (this.connected) {
 				if (this.addPing > 0) {
-//					setTimeout(function () { connect.ws.send(msg); }, Math.floor(Math.random() * connect.addPing));
+					//					setTimeout(function () { connect.ws.send(msg); }, Math.floor(Math.random() * connect.addPing));
 					setTimeout(function () { connect.ws.send(msg); }, connect.addPing);
 				} else {
 					this.ws.send(msg);
@@ -194,6 +238,13 @@ Ticker = function (amplitude) {
 		player.slew = 0;
 		camMotion = 0;
 
+		playerEcho.position.copy(playerTempEcho.position);
+		playerEcho.motion.copy(playerTempEcho.motion);
+		playerEcho.angle = playerTempEcho.angle;
+		playerEcho.slew = playerTempEcho.slew;
+
+		//		playerEcho = playerTempEcho.clone();
+
 		// Рассчитываем единичный вектор движения прямо
 		var forwardDirection = new THREE.Vector3(0, 1, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), player.angle);
 
@@ -203,11 +254,11 @@ Ticker = function (amplitude) {
 
 		// Обрабатываем показания контроллера и задаем приращения текущего тика
 		if (controller.rotateLeft) {
-			player.slew += player.speed / 50 / ticker.amplitude;
+			player.slew += player.speed / (Math.PI * 2) / ticker.amplitude;
 		}
 
 		if (controller.rotateRight) {
-			player.slew -= player.speed / 50 / ticker.amplitude;
+			player.slew -= player.speed / (Math.PI * 2) / ticker.amplitude;
 		}
 
 		if (controller.moveRight) {
@@ -236,10 +287,10 @@ Ticker = function (amplitude) {
 
 		// Формируем вектор движения
 		player.motion.normalize();
-		// скорость = количество тайлов в секунду * 10
-		player.motion.multiplyScalar( player.speed / 10 / ticker.amplitude );
+		player.motion.multiplyScalar(player.speed / ticker.amplitude);
+
 		if (controller.modifiers.shift) {
-			player.motion.multiplyScalar( 0.25 );
+			player.motion.multiplyScalar(0.25);
 			player.slew *= 0.25;
 			camMotion *= 0.25;
 		}
@@ -449,7 +500,7 @@ function init() {
 	//scene.add( meshTex );
 
 	// Player
-	var playerSize = 2/3;
+	var playerSize = 2 / 3;
 	var geometryChar = new THREE.BoxGeometry(playerSize, playerSize, playerSize);
 	meshChar = new THREE.Mesh(geometryChar, atlasMap);
 	geometryChar.faceVertexUvs = [[]];
@@ -542,40 +593,9 @@ function render() {
 	// Чем больше времени прошло, тем больше множитель (0 -> 1)
 	var scalar = delta / ticker.interval;
 
-	// Рассчитываем позицию игрока в этом фрейме
-	var motion = new THREE.Vector3().copy(player.motion);
-	motion.multiplyScalar(scalar);
-	var position = new THREE.Vector3().copy(player.position).add(motion);
-	// Рассчитываем угол направления в этом фрейме
-	var rotation = player.angle + player.slew * scalar;
-	// Рассчитываем вектор направления в этом фрейме
-	var direction = new THREE.Vector3(0, 1, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), rotation);
-	// Рассчитываем высоту камеры в этом фрейме
-	var height = camHeight + camMotion*scalar;
-	
-	// Перемещаем меш игрока
-	meshChar.position.copy(position);
-
-	// Перемещаем камеру
-	var camDistance = height / -2;
-	var camPos = new THREE.Vector3();
-	camPos.addVectors(position, direction.multiplyScalar(camDistance));
-	camera.position.set(camPos.x, camPos.y, height);
-
-	// Крутим игрока
-	meshChar.rotation.setFromVector3(new THREE.Vector3(0, 0, rotation), 'XYZ');
-
-	// Крутим камеру
-	camera.rotation.setFromVector3(new THREE.Vector3(0, 0, rotation), 'XYZ');
-	// И опускаем немного вниз
-	camera.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 5);
-
-	// Скрывать игрока, когда камера приближается к нему слишком близко
-	if ( height < 5) {
-		meshChar.visible = false;
-	} else {
-		meshChar.visible = true;
-	}
+	player.Go(meshChar, scalar, true);
+	playerEcho.Go(meshEchoChar, scalar, false);
+	meshEchoChar.position.z = 0.01;
 
 	//	console.log(camera.position);
 	//	log.appendText(JSON.stringify(this.rotation));

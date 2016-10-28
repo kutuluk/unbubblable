@@ -5,12 +5,6 @@ import (
 	"errors"
 )
 
-type CharPosition struct {
-	X float64 `json:"x"`
-	Y float64 `json:"y"`
-	Z float64 `json:"z"`
-}
-
 type MessageHeader struct {
 	Time int64  `json:"time"`
 	Tick int64  `json:"tick"`
@@ -29,11 +23,6 @@ type Messager interface {
 type Message struct {
 	Header MessageHeader
 	Data   Messager
-}
-
-type MessagePosition struct {
-	Position CharPosition `json:"position"`
-	Angle    float64      `json:"angle"`
 }
 
 type KeyModifiers struct {
