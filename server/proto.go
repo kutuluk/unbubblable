@@ -46,7 +46,7 @@ type MessageController struct {
 
 func (m MessageController) Exec(p *Player) {
 	//	p.Controller = append(p.Controller, m)
-	p.Controller = m
+	//	p.Controller = m
 }
 
 func ParseMessage(Json []byte) (Message, error) {

@@ -1,10 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"time"
 
+	"./proto"
+
+	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"
 )
 
@@ -69,14 +71,18 @@ func (h *Hub) loop() {
 			c.Player.Tick()
 
 			// Тупо сериализуем игрока в JSON
-			message, err := json.Marshal(c.Player)
-			if err != nil {
-				log.Println("[json]:", err)
-				break
-			}
+			/*
+				message, err := json.Marshal(c.Player)
+				if err != nil {
+					log.Println("[json]:", err)
+					break
+				}
+			*/
 
 			// Отправляем сообщение клиенту
-			go c.send(message)
+			//			go c.send(message)
+			go c.sendPlayerPosition()
+
 		}
 	}
 
@@ -90,6 +96,7 @@ type Connect struct {
 	Hub    *Hub
 	ws     *websocket.Conn
 	Player *Player
+	Bytes  int
 }
 
 // receiver обрабатывает входящие сообщения
@@ -101,20 +108,30 @@ func (c *Connect) receiver() {
 			log.Println("[ws read]:", err)
 			break
 		}
-		if mt != websocket.TextMessage {
-			log.Println("[ws read]: неподдерживаемый формат сообщения")
-			break
-		}
 
-		// Парсим полученное сообщение
-		msg, err := ParseMessage(message)
-		if err != nil {
-			log.Println("[proto]:", err)
-			break
-		}
+		c.Bytes += len(message)
 
-		// Применяем сообщение к игроку
-		msg.Data.Exec(c.Player)
+		if mt == websocket.BinaryMessage {
+			// Получено бинарное сообщение
+			msg := new(protocol.Controller)
+			err = proto.Unmarshal(message, msg)
+			if err != nil {
+				log.Println("[proto read]:", err)
+				break
+			}
+
+			c.Player.Controller = msg
+		} else {
+			// Получено текстовое сообщение
+			msg, err := ParseMessage(message)
+			if err != nil {
+				log.Println("[proto]:", err)
+				break
+			}
+
+			// Применяем сообщение к игроку
+			msg.Data.Exec(c.Player)
+		}
 	}
 	c.Hub.Leave(c)
 	log.Println("[connect]: ресивер завершился")
@@ -126,4 +143,32 @@ func (c *Connect) send(message []byte) {
 	if err != nil {
 		log.Println("[ws write]:", err)
 	}
+}
+
+// send отправляет сообщение клиенту
+func (c *Connect) sendPlayerPosition() {
+
+	message := new(protocol.PlayerPosition)
+	message.Position = new(protocol.Vec3)
+	message.Position.X = c.Player.Position.X()
+	message.Position.Y = c.Player.Position.Y()
+	message.Position.Z = c.Player.Position.Z()
+	message.Motion = new(protocol.Vec3)
+	message.Motion.X = c.Player.Motion.X()
+	message.Motion.Y = c.Player.Motion.Y()
+	message.Motion.Z = c.Player.Motion.Z()
+	message.Angle = c.Player.Angle
+	message.Slew = c.Player.Slew
+
+	msg, err := proto.Marshal(message)
+	if err != nil {
+		log.Println("[proto send]:", err)
+		return
+	}
+
+	err = c.ws.WriteMessage(websocket.BinaryMessage, msg)
+	if err != nil {
+		log.Println("[ws write]:", err)
+	}
+
 }

@@ -3,6 +3,8 @@ package main
 import (
 	"math"
 
+	"./proto"
+
 	mathgl "github.com/go-gl/mathgl/mgl64"
 )
 
@@ -23,7 +25,7 @@ type Player struct {
 
 	// Controller определяет слайс состояний контроллера игрока
 	//	Controller []MessageController
-	Controller MessageController
+	Controller *protocol.Controller
 }
 
 // NewPlayer инициализирует нового игрока
@@ -49,49 +51,52 @@ func (p *Player) Tick() {
 	//		controller := p.Controller[0]
 	controller := p.Controller
 
-	// Формируем величину поворота
-	if controller.RotateLeft {
-		p.Slew += p.Speed / (math.Pi * 2) / LoopAmplitude
+	if controller != nil {
+		p.Controller = nil
+
+		// Формируем величину поворота
+		if controller.RotateLeft {
+			p.Slew += p.Speed / (math.Pi * 2) / LoopAmplitude
+		}
+
+		if controller.RotateRight {
+			p.Slew -= p.Speed / (math.Pi * 2) / LoopAmplitude
+		}
+
+		// Рассчитываем единичный вектор движения прямо
+		forwardDirection := mathgl.QuatRotate(p.Angle, mathgl.Vec3{0, 0, 1}).Rotate(mathgl.Vec3{0, 1, 0})
+
+		// Расчитываем единичный вектор стрейфа направо
+		rightDirection := mathgl.QuatRotate(math.Pi/2, mathgl.Vec3{0, 0, -1}).Rotate(forwardDirection)
+
+		// Формируем вектор движения
+		if controller.MoveRight {
+			p.Motion = p.Motion.Add(rightDirection)
+		}
+
+		if controller.MoveLeft {
+			p.Motion = p.Motion.Sub(rightDirection)
+		}
+
+		if controller.MoveForward {
+			p.Motion = p.Motion.Add(forwardDirection)
+		}
+
+		if controller.MoveBackward {
+			p.Motion = p.Motion.Sub(forwardDirection)
+		}
+
+		if p.Motion.Len() > 0 {
+			p.Motion = p.Motion.Normalize()
+		}
+		p.Motion = p.Motion.Mul(p.Speed / LoopAmplitude)
+
+		// Уменьшаем приращения в 4 раза при нажатом шифте
+		if controller.Modifiers.Shift {
+			p.Motion = p.Motion.Mul(0.25)
+			p.Slew *= 0.25
+		}
 	}
-
-	if controller.RotateRight {
-		p.Slew -= p.Speed / (math.Pi * 2) / LoopAmplitude
-	}
-
-	// Рассчитываем единичный вектор движения прямо
-	forwardDirection := mathgl.QuatRotate(p.Angle, mathgl.Vec3{0, 0, 1}).Rotate(mathgl.Vec3{0, 1, 0})
-
-	// Расчитываем единичный вектор стрейфа направо
-	rightDirection := mathgl.QuatRotate(math.Pi/2, mathgl.Vec3{0, 0, -1}).Rotate(forwardDirection)
-
-	// Формируем вектор движения
-	if controller.MoveRight {
-		p.Motion = p.Motion.Add(rightDirection)
-	}
-
-	if controller.MoveLeft {
-		p.Motion = p.Motion.Sub(rightDirection)
-	}
-
-	if controller.MoveForward {
-		p.Motion = p.Motion.Add(forwardDirection)
-	}
-
-	if controller.MoveBackward {
-		p.Motion = p.Motion.Sub(forwardDirection)
-	}
-
-	if p.Motion.Len() > 0 {
-		p.Motion = p.Motion.Normalize()
-	}
-	p.Motion = p.Motion.Mul(p.Speed / LoopAmplitude)
-
-	// Уменьшаем приращения в 4 раза при нажатом шифте
-	if controller.Modifiers.Shift {
-		p.Motion = p.Motion.Mul(0.25)
-		p.Slew *= 0.25
-	}
-
 	//		p.Controller = p.Controller[1:]
 	//	}
 }
