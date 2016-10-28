@@ -13,7 +13,7 @@ var hub = NewHub()
 
 // Информационная страница о статусе сервера
 func status(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintln(w, "MyRormg v. 0.6")
+	fmt.Fprintln(w, "Unbubblable v. 0.6")
 	fmt.Fprintln(w, "Коннектов: ", hub.Count())
 }
 
