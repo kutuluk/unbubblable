@@ -2,11 +2,11 @@
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
 			var renderer, scene, camera, stats;
-//			var objects = [];
 
 			var meshMap;
 			var meshCube;
 			var meshChar;
+			var meshEchoChar;
 			var WIDTH = window.innerWidth;
 			var HEIGHT = window.innerHeight;
 
@@ -14,17 +14,138 @@
 
 			var scale = 16;
 
+			var ping = 100;
+
 			var Character = {};
 			Character.position = new THREE.Vector3(0, 0, scale/4);
 			Character.angle = 0; //угол
 
 //	var clock = new THREE.Clock();
-//	var matrix = new THREE.Matrix4();
-//	var period = 15;
 
 			var camHeight = 14;
 
+			function Log() {
+				this.dom = document.createElement("div");
+
+				//this.dom.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+				this.dom.style.margin = "0";
+				this.dom.style.textAlign = "left";
+				this.dom.style.padding = "0.5em 0.5em 0.5em 0.5em";
+				this.dom.style.position = "absolute";
+				this.dom.style.left = "1em";
+				this.dom.style.width = "30em";
+				this.dom.style.height = "10em";
+				this.dom.style.bottom = "1em";
+				this.dom.style.overflow = "auto";
+//				this.dom.style.font = "normal 16px Fixedsys";
+				this.dom.style.font = "normal 16px sans-serif";
+//				this.dom.style.textShadow = "1px 1px 2px black, 0 0 1em red";
+//				this.dom.style.textShadow = "1px 1px 0px #000000, -1px -1px 0px #000000";
+//				this.dom.style.textShadow = "0px 1px 0px #000000, 0px 2px 0px #333333";
+				this.dom.style.textShadow = "0px 1px 0px #000000";
+
+		    	this.appendLog = function(item) {
+        			var doScroll = this.dom.scrollTop === this.dom.scrollHeight - this.dom.clientHeight;
+        			this.dom.appendChild(item);
+        			if (doScroll) {
+            			this.dom.scrollTop = this.dom.scrollHeight - this.dom.clientHeight;
+        			}
+    			};
+				
+				this.appendText = function(text) {
+			        var item = document.createElement("div");
+			        item.innerHTML = text;
+			        this.appendLog(item);
+				};
+			};
+
+			var log = new Log();
+
+			WebSocketConnect = function () {
+
+				var _this = this;
+
+			    if (window["WebSocket"]) {
+
+					this.connected = false;
+			        this.ws = new WebSocket("ws://" + window.location.host + "/echo");
+
+					this.ws.onopen = function() {
+						_this.connected = true;
+
+						log.appendText("[WS] Соединение установлено.");
+						//this.send("test");
+					};
+
+					this.ws.onerror = function(error) {
+						log.appendText("[WS] Ошибка: " + error.message);
+					};
+
+					this.ws.onclose = function(event) {
+						//this.connected = false;
+						var text ="[WS] ";
+						if (event.wasClean) {
+							text += 'Соединение закрыто чисто.';
+						} else {
+							text += 'Обрыв соединения.';
+						}
+						text += 'Код: ' + event.code + ', причина: ' + event.reason;
+				        log.appendText(text);
+					};
+
+        			this.ws.onmessage = function (evt) {
+						/*
+						log.appendText("[SRW] Получены данные:");
+			            var messages = evt.data.split('\n');
+			            for (var i = 0; i < messages.length; i++) {
+							log.appendText(messages[i]);
+			            }
+						*/
+						var msg = JSON.parse(evt.data);
+						console.log(msg.data);
+					//	meshEchoChar.position.set(msg.data.position.x, msg.data.position.y, msg.data.position.z);
+						meshEchoChar.position.x = msg.data.position.x;
+						meshEchoChar.position.y = msg.data.position.y;
+						var echoQuat = new THREE.Quaternion();
+						echoQuat.setFromAxisAngle(new THREE.Vector3(0, 0, 1), msg.data.angle);
+						meshEchoChar.rotation.setFromQuaternion( echoQuat, 'XYZ' );
+
+			        };
+
+					this.send = function (msg) {
+						if (this.connected) {
+							_this = this;
+							setTimeout(function() {_this.ws.send(msg);}, Math.floor(Math.random() * ping));
+						}
+		//				this.ws.send(msg);
+					};
+
+    			} else {
+			        log.appendText("[WS] Браузер не поддерживает WebSockets.");
+    			}
+			};
+
+			var connect = new WebSocketConnect();
+
+			var currTick = 0;
+			function tick() {
+				
+				var msg = {
+					time: new Date().getTime(),
+					tick: currTick,
+			    	type: "character",
+					data: Character
+				};
+				connect.send(JSON.stringify(msg));
+
+				currTick += 1;
+			}
+
+
 			init();
+
+			var timerId = setInterval(tick, 50);
+
 			animate();
 			
 
@@ -135,6 +256,11 @@
 
 				var atlasMap = new THREE.MeshBasicMaterial( { map: canvasMap } );
 
+				var transMaterial = new THREE.MeshBasicMaterial( { map: canvasMap } );
+				transMaterial.transparent = true;
+				transMaterial.opacity = 0.8;
+				transMaterial.side = THREE.DoubleSide;
+
 				// Map
 				/*
 				var geometryMap = new THREE.PlaneGeometry( scale*16, scale*16, 16, 16 );
@@ -213,7 +339,18 @@
 					geometryChar.faceVertexUvs[0].push( atlas.Tiles[217].Faces[0][1] );
 				}
 				meshChar.position.z = scale/4;
+				//meshChar.visible = false;
 				scene.add( meshChar );
+
+				// echoChar
+				var geometryEchoChar = new THREE.PlaneGeometry( 1*scale, 1*scale, 1, 1 );
+				geometryEchoChar.faceVertexUvs = [[]];
+				geometryEchoChar.faceVertexUvs[0].push( atlas.Tiles[220].Faces[0][0] );
+				geometryEchoChar.faceVertexUvs[0].push( atlas.Tiles[220].Faces[0][1] );
+				meshEchoChar = new THREE.Mesh( geometryEchoChar, transMaterial );
+
+				meshEchoChar.position.set( 0, 0, 0.01 );
+				scene.add( meshEchoChar );
 
 /*
 var axisHelper = new THREE.AxisHelper( 50 );
@@ -240,6 +377,8 @@ scene.add( arrowHelper );
 				stats = new Stats();
 				container.appendChild( stats.dom );
 
+				container.appendChild( log.dom );
+
 				//
 				var debug = document.getElementById( 'info' );
 
@@ -264,6 +403,9 @@ scene.add( arrowHelper );
 			function render() {
 
 				var time = Date.now() * 0.001;
+
+//			connect.send(time);
+//	        log.appendText(connect.connected);
 
 				if( keyboard.pressed("Q") ) {
 					Character.angle += 0.05;
