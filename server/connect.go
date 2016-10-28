@@ -4,7 +4,7 @@ import (
 	"log"
 	"time"
 
-	"./proto"
+	"github.com/kutuluk/unbubblable/server/proto"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"
