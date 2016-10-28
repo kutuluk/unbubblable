@@ -1,14 +1,14 @@
 function Atlas(cols, rows, size, src) {
 
-    var atlas = this;
+	var atlas = this;
 
-    this.cols = cols;
-    this.rows = rows;
-    this.size = size;
+	this.cols = cols;
+	this.rows = rows;
+	this.size = size;
 
 	// Рассчитываем UV-размеры 1 пиксела 
-    this.uOff = 1 / this.cols / (this.size + 2);
-    this.vOff = 1 / this.rows / (this.size + 2);
+	this.uOff = 1 / this.cols / (this.size + 2);
+	this.vOff = 1 / this.rows / (this.size + 2);
 
 	// Создаем канву увеличенного размера
 	var canvas = document.createElement("canvas");

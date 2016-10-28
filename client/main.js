@@ -1,5 +1,3 @@
-//var myProtocol = require('./proto/protocol_pb');
-//var protobuf = proto.protocol;
 import { log } from './log';
 import { game } from './game';
 

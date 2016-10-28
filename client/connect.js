@@ -9,7 +9,7 @@ function Connect(delay, game) {
     this.game = game;
     this.proto = dcodeIO.ProtoBuf.loadProtoFile("./js/protocol.proto").build("protocol");
 
-//    this.connected = false;
+    //    this.connected = false;
     var connect = this;
 
     if (window["WebSocket"]) {
@@ -18,7 +18,7 @@ function Connect(delay, game) {
         this.ws.binaryType = 'arraybuffer';
 
         this.ws.onopen = function () {
-//            connect.connected = true;
+            //            connect.connected = true;
             log.appendText("[WS] Соединение установлено.");
         };
 
@@ -27,7 +27,7 @@ function Connect(delay, game) {
         };
 
         this.ws.onclose = function (event) {
-//            connect.connected = false;
+            //            connect.connected = false;
             var text = "[WS] ";
             if (event.wasClean) {
                 text += 'Соединение закрыто чисто.';
@@ -52,25 +52,25 @@ function Connect(delay, game) {
         game.echo.next.angle = msg.Angle;
         game.echo.next.slew = msg.Slew;
 */
-        try {
-            // Decode the Message
-            var msg = connect.proto.PlayerPosition.decode(evt.data);
+            try {
+                // Decode the Message
+                var msg = connect.proto.PlayerPosition.decode(evt.data);
 
-        game.echo.next.position.x = msg.Position.X;
-        game.echo.next.position.y = msg.Position.Y;
-        game.echo.next.position.z = msg.Position.Z;
-        game.echo.next.motion.x = msg.Motion.X;
-        game.echo.next.motion.y = msg.Motion.Y;
-        game.echo.next.motion.z = msg.Motion.Z;
-        game.echo.next.angle = msg.Angle;
-        game.echo.next.slew = msg.Slew;
-            
-//            log.appendText("[PROTO READ: ] " +JSON.stringify(msg));
-        } catch (err) {
-            log.appendText("[PROTO READ error: ] " + err);
-        }
-    };
-        
+                game.echo.next.position.x = msg.Position.X;
+                game.echo.next.position.y = msg.Position.Y;
+                game.echo.next.position.z = msg.Position.Z;
+                game.echo.next.motion.x = msg.Motion.X;
+                game.echo.next.motion.y = msg.Motion.Y;
+                game.echo.next.motion.z = msg.Motion.Z;
+                game.echo.next.angle = msg.Angle;
+                game.echo.next.slew = msg.Slew;
+
+                //            log.appendText("[PROTO READ: ] " +JSON.stringify(msg));
+            } catch (err) {
+                log.appendText("[PROTO READ error: ] " + err);
+            }
+        };
+
 
     } else {
         log.appendText("[WS] Браузер не поддерживает WebSockets.");
@@ -83,7 +83,7 @@ Connect.prototype = {
 
     sendMessage: function (msg) {
         if (this.ws.readyState == WebSocket.OPEN) {
-//        if (this.connected) {
+            //        if (this.connected) {
             if (this.delay > 0) {
                 var connect = this;
                 setTimeout(function () { connect.ws.send(msg); }, this.delay + Math.floor(Math.random() * this.delay / 10) - Math.floor(this.delay / 20));
@@ -96,11 +96,11 @@ Connect.prototype = {
     sendController: function (controller) {
         if (this.ws.readyState == WebSocket.OPEN) {
 
-//        var ProtoBuf = dcodeIO.ProtoBuf;
-//        var builder = ProtoBuf.loadProtoFile("./js/protocol.proto");
-//        var Proto = builder.build("protocol");
+            //        var ProtoBuf = dcodeIO.ProtoBuf;
+            //        var builder = ProtoBuf.loadProtoFile("./js/protocol.proto");
+            //        var Proto = builder.build("protocol");
 
-        // Формируем сообщение на сервер
+            // Формируем сообщение на сервер
             var msg = new this.proto.Controller(
                 controller.moveForward,
                 controller.moveBackward,
