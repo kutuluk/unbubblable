@@ -81,27 +81,48 @@
 
 				//scene.fog = new THREE.Fog( 0x111111, 16*1500, 16*2000 );
 
-				var textureMap = new THREE.TextureLoader().load( 'textures/atlas.png' );
-				textureMap.magFilter = THREE.NearestFilter;
-				textureMap.minFilter = THREE.NearestFilter;
-				//THREE.NearestMipMapNearestFilter;
-				//THREE.LinearFilter;
-				//THREE.LinearMipMapLinearFilter;
-				textureMap.flipY = false;
-				textureMap.generateMipmaps = false;
-				//textureMap.anisotropy = 4;
-				//textureMap.anisotropy = renderer.getMaxAnisotropy();
-
-				var atlasMap = new THREE.MeshBasicMaterial( { map: textureMap } );
-
 				var atlas = {};
 				atlas.Cols = 16;
 				atlas.Rows = 16;
 				atlas.TileSize = 32;
-				atlas.Uoff = 1/atlas.Cols / (atlas.TileSize * 2 * 4);
-				atlas.Voff = 1/atlas.Rows / (atlas.TileSize * 2 * 4);
-				//atlas.Uoff = 0;
-				//atlas.Voff = 0;
+				atlas.Uoff = 1/atlas.Cols / (atlas.TileSize + 2);
+				atlas.Voff = 1/atlas.Rows / (atlas.TileSize + 2);
+
+
+				var canvas = document.createElement("canvas");
+				canvas.width = atlas.Cols*(atlas.TileSize + 2);
+				canvas.height = atlas.Rows*(atlas.TileSize + 2);
+				var ctx = canvas.getContext('2d');
+
+				var canvasMap = new THREE.Texture(canvas);
+				canvasMap.magFilter = THREE.NearestFilter;
+				canvasMap.minFilter = THREE.NearestFilter;
+				canvasMap.flipY = false;
+
+                var img = new Image();
+                img.onload = function () {
+					for (var y = 0; y < atlas.Rows; y++) {
+						for (var x = 0; x < atlas.Cols; x++) {
+
+							var sx = x * atlas.TileSize;
+							var sy = y * atlas.TileSize;
+							var dx = x * (atlas.TileSize + 2);
+							var dy = y * (atlas.TileSize + 2);
+
+							ctx.drawImage(img, sx, sy, atlas.TileSize, atlas.TileSize, dx+1, dy+1, atlas.TileSize, atlas.TileSize);
+
+							ctx.drawImage(img, sx, sy, 1, atlas.TileSize, dx, dy+1, 1, atlas.TileSize);
+							ctx.drawImage(img, sx+atlas.TileSize-1, sy, 1, atlas.TileSize, dx+atlas.TileSize + 1, dy+1, 1, atlas.TileSize);
+
+							ctx.drawImage(img, sx, sy, atlas.TileSize, 1, dx+1, dy, atlas.TileSize, 1);
+							ctx.drawImage(img, sx, sy+atlas.TileSize-1, atlas.TileSize, 1, dx+1, dy+atlas.TileSize + 1, atlas.TileSize, 1);
+
+						};
+					};
+					canvasMap.needsUpdate = true;
+				};
+                img.src = 'textures/atlas.png';
+				
 				atlas.Tiles = [];
 
 				for (var i = 0; i < atlas.Cols*atlas.Rows; i++) {
@@ -152,6 +173,8 @@
 					atlas.Tiles.push( tile );
 				}
 
+				var atlasMap = new THREE.MeshBasicMaterial( { map: canvasMap } );
+
 				// Map
 				/*
 				var geometryMap = new THREE.PlaneGeometry( scale*16, scale*16, 16, 16 );
@@ -163,16 +186,16 @@
 				*/
 
 				var mapSize = 32;
-				var br = [0,1,6,7,16,17,18,19,36,37];
+				var br = [0,0,0,0,17,18,19,48,53,78,133,126,142];
 				var geometryMap = new THREE.PlaneGeometry( scale*mapSize, scale*mapSize, mapSize, mapSize );
+
 				geometryMap.faceVertexUvs = [[]];
 				for (var i = 0; i < mapSize*mapSize; i++) {
 
-					var s = Math.floor(Math.random() * (10));
+					var s = Math.floor(Math.random() * (br.length));
 					geometryMap.faceVertexUvs[0].push( atlas.Tiles[br[s]].Faces[0][0] );
 					geometryMap.faceVertexUvs[0].push( atlas.Tiles[br[s]].Faces[0][1] );
 				}
-
 
 				meshMap = new THREE.Mesh( geometryMap, atlasMap );
 				scene.add( meshMap );
@@ -217,18 +240,12 @@
 				meshCube.position.y = scale/2;
 				meshCube.position.z = scale/2;
 
-				// Tiles
+				// Tex
 				/*
-				var geometryTile = new THREE.PlaneGeometry( 2*scale*3, 2*scale*3, 3, 3 );
-				geometryTile.faceVertexUvs = [[]];
-				for (var i = 0; i < 9; i++) {
-					geometryTile.faceVertexUvs[0].push( atlas.Tiles[177].Faces[0][0] );
-					geometryTile.faceVertexUvs[0].push( atlas.Tiles[177].Faces[0][1] );
-				}
-				
-				meshTile = new THREE.Mesh( geometryTile, atlasMap );
-				meshTile.position.set( scale*8, scale*4, scale );
-				scene.add( meshTile );
+				var geometryTex = new THREE.PlaneGeometry( 2*scale*3, 2*scale*3, 1, 1 );
+				meshTex = new THREE.Mesh( geometryTex, atlasMap );
+				meshTex.position.set( scale*8, 0, scale );
+				scene.add( meshTex );
 				*/
 
 				// Char
@@ -346,7 +363,7 @@ scene.add( arrowHelper );
 					camHeight += 0.1;
 				}
 
-
+				// Перемещаем чара
 				charMotion.normalize();
 				charMotion.multiplyScalar( speed );
 				Character.position.add( charMotion );
@@ -355,16 +372,14 @@ scene.add( arrowHelper );
 				meshChar.position.x = Character.position.x;
 				meshChar.position.y = Character.position.y;
 
-// крутим чара
-meshChar.rotation.setFromQuaternion( charQuat, 'XYZ' );
-//meshChar.rotateOnAxis( new THREE.Vector3(-1,0,0), time*0.5);
+				// крутим чара
+				meshChar.rotation.setFromQuaternion( charQuat, 'XYZ' );
+				//meshChar.rotateOnAxis( new THREE.Vector3(-1,0,0), time*0.5);
 
-// крутим камеру
-camera.rotation.setFromQuaternion( charQuat, 'XYZ' );
-camera.rotateOnAxis( new THREE.Vector3(1,0,0), Math.PI/6);
+				// крутим камеру
+				camera.rotation.setFromQuaternion( charQuat, 'XYZ' );
+				camera.rotateOnAxis( new THREE.Vector3(1,0,0), Math.PI/6);
 
-
-				//var camDistance = -7*scale;
 				var camDistance = camHeight*scale/-2;
 				
 				// перемещаем камеру
