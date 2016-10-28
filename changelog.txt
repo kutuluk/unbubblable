@@ -4,29 +4,6 @@ version 0.6
 * [клиент] Код разбит на модули, для сборки используется babel и browserify
 
 
-Установить node.js
-
-Запустить в корневой папке:
-
-npm install --global browserify
-
-npm install --save-dev babel-cli babel-preset-es2015 babelify
-
-Запустить в папке client:
-
-Создать в папке client файл package.json:
-
-{
-  "browserify": {
-    "transform": [["babelify", { "presets": ["es2015"] }]]
-  }
-}
-
-Сборка из корня:
-
-protoc --go_out=./server ./proto/*.proto
-browserify ./client/main.js -o ./public/js/app.js
-
 
 --------------------------------------
 version 0.5.2

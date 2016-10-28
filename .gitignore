@@ -1,4 +1,5 @@
 node_modules/
 *.exe
 public/js/app.js
+public/js/protocol.proto
 *~
