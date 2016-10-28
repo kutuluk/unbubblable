@@ -1,0 +1,97 @@
+package main
+
+import (
+	"math"
+
+	mathgl "github.com/go-gl/mathgl/mgl64"
+)
+
+// Player хранит информацию об игроке
+type Player struct {
+	// Speed определяет скорость игрока.
+	// Speed деленное на 10, определяет скорость движения в тайлах в секунду
+	// Speed деленное на 50, определяет скорость поворота в радианах в секунду
+	Speed int
+	// Position определяет положение игрока
+	Position mathgl.Vec3
+	// Motion определяет движение игрока
+	Motion mathgl.Vec3
+	// Angle определяет направление игрока (угол между положительным направленим оси Y и направлением игрока по часовой стрелке)
+	Angle float64
+	// Slew определяет поворот игрока
+	Slew float64
+
+	// Controller определяет слайс состояний контроллера игрока
+	//	Controller []MessageController
+	Controller MessageController
+}
+
+// NewPlayer инициализирует нового игрока
+func NewPlayer() *Player {
+	return &Player{
+		Speed:    100,
+		Position: mathgl.Vec3{0, 0, 0.5},
+		//		Controller: make([]MessageController, 20),
+	}
+}
+
+// Tick пересчитывает параметры игрока в каждом тике
+func (p *Player) Tick() {
+	// Изменяем параметры игрока в соответствии с приращениями прошлого тика
+	p.Position = p.Position.Add(p.Motion)
+	p.Angle += p.Slew
+
+	// Обнуляем приращения
+	p.Motion = mathgl.Vec3{0, 0, 0}
+	p.Slew = 0
+
+	//	if len(p.Controller) > 0 {
+	//		controller := p.Controller[0]
+	controller := p.Controller
+
+	// Рассчитываем единичный вектор движения прямо
+	forwardDirection := mathgl.QuatRotate(p.Angle, mathgl.Vec3{0, 0, 1}).Rotate(mathgl.Vec3{0, 1, 0})
+
+	// Расчитываем единичный вектор стрейфа направо
+	rightDirection := mathgl.QuatRotate(math.Pi/2, mathgl.Vec3{0, 0, -1}).Rotate(forwardDirection)
+
+	// Обрабатываем показания контроллера
+	if controller.RotateLeft {
+		p.Slew += float64(p.Speed) / 50.0 / 20.0
+	}
+
+	if controller.RotateRight {
+		p.Slew -= float64(p.Speed) / 50.0 / 20.0
+	}
+
+	if controller.MoveRight {
+		p.Motion = p.Motion.Add(rightDirection)
+	}
+
+	if controller.MoveLeft {
+		p.Motion = p.Motion.Sub(rightDirection)
+	}
+
+	if controller.MoveForward {
+		p.Motion = p.Motion.Add(forwardDirection)
+	}
+
+	if controller.MoveBackward {
+		p.Motion = p.Motion.Sub(forwardDirection)
+	}
+
+	// Формируем вектор движения
+	if p.Motion.Len() > 0 {
+		p.Motion = p.Motion.Normalize()
+	}
+
+	p.Motion = p.Motion.Mul(float64(p.Speed) / 10.0 / 20.0)
+
+	if controller.Modifiers.Shift {
+		p.Motion = p.Motion.Mul(0.25)
+		p.Slew *= 0.25
+	}
+
+	//		p.Controller = p.Controller[1:]
+	//	}
+}
