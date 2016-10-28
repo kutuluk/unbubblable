@@ -28,7 +28,6 @@ protoc --go_out=./server ./proto/*.proto
 browserify ./client/main.js -o ./public/js/app.js
 
 
-
 --------------------------------------
 version 0.5.2
 

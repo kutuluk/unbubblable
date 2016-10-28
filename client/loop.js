@@ -45,7 +45,7 @@ Loop.prototype = {
 		this.game.player.camMotion = 0;
 
 		// Передвигаем эхо
-		this.game.echo.set(this.game.echo.next.position, this.game.echo.next.motion, this.game.echo.next.angle, this.game.echo.next.slew);
+		this.game.echo.set(new THREE.Vector3().copy(this.game.echo.next.position), new THREE.Vector3().copy(this.game.echo.next.motion), this.game.echo.next.angle, this.game.echo.next.slew);
 
 
 		// Рассчитываем единичный вектор движения прямо
