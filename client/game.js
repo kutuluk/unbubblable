@@ -24,6 +24,12 @@ function Game() {
         return
     };
 
+    // Проверяем поддержку Protocol Buffers
+    if (typeof dcodeIO === 'undefined' || !dcodeIO.ProtoBuf) {
+        log.appendText("[PROTO] Не обнаружена поддержка Protocol Buffers.");
+        return
+    };
+
     this.playable = true;
     var game = this;
 

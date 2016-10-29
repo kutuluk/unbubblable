@@ -1,8 +1,5 @@
 import { log } from './log';
 
-//var myProtocol = require('./proto/protocol_pb');
-//var protobuf = proto.protocol;
-
 function Connect(delay, game) {
 
     this.delay = delay || 0;
