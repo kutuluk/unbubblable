@@ -100,7 +100,7 @@ type Connect struct {
 // receiver обрабатывает входящие сообщения
 func (c *Connect) receiver() {
 	for {
-		// Читаем сообщение от клиента
+		// Читаем данные из сокета
 		messageType, messageData, err := c.ws.ReadMessage()
 		if err != nil {
 			log.Println("[ws read]:", err)
@@ -110,26 +110,40 @@ func (c *Connect) receiver() {
 		// Увеличиваем счетчик принятых байт
 		c.Received += len(messageData)
 
-		if messageType == websocket.BinaryMessage {
-			// Получено бинарное сообщение
-			msg := new(protocol.Controller)
-			err = proto.Unmarshal(messageData, msg)
-			if err != nil {
-				log.Println("[proto read]:", err)
-				break
-			}
+		if messageType != websocket.BinaryMessage {
+			// Полученное сообщение в текстовом формате
+			log.Println("[ws read]: не ожидаемое текстовое сообщение")
+			break
+		}
 
-			c.Player.Controller = msg
-		} else {
-			// Получено текстовое сообщение
-			msg, err := ParseMessage(messageData)
-			if err != nil {
-				log.Println("[proto]:", err)
-				break
-			}
+		// Преобразуем полученные данные в контейнер
+		msgContainer := new(protocol.MessageContainer)
+		err = proto.Unmarshal(messageData, msgContainer)
+		if err != nil {
+			log.Println("[proto read]:", err)
+			break
+		}
 
-			// Применяем сообщение к игроку
-			msg.Data.Exec(c.Player)
+		// Обходим сообщения в контейнере
+		for _, message := range msgContainer.Messages {
+			switch message.Type {
+
+			// Controller
+			case protocol.MessageType_MsgController:
+
+				msgController := new(protocol.Controller)
+				// Декодируем сообщение
+				err = proto.Unmarshal(message.Body, msgController)
+				if err != nil {
+					log.Println("[proto read]:", err)
+					break
+				}
+				// Применяем сообщение
+				c.Player.Controller = msgController
+
+			default:
+				log.Println("[proto read]: не известное сообщение")
+			}
 		}
 	}
 	c.Hub.Leave(c)
@@ -148,32 +162,48 @@ func (c *Connect) send(message []byte) {
 func (c *Connect) sendPlayerPosition() {
 
 	// Формируем сообщение
-	message := new(protocol.PlayerPosition)
-	message.Position = new(protocol.Vec3)
-	message.Position.X = c.Player.Position.X()
-	message.Position.Y = c.Player.Position.Y()
-	message.Position.Z = c.Player.Position.Z()
-	message.Motion = new(protocol.Vec3)
-	message.Motion.X = c.Player.Motion.X()
-	message.Motion.Y = c.Player.Motion.Y()
-	message.Motion.Z = c.Player.Motion.Z()
-	message.Angle = c.Player.Angle
-	message.Slew = c.Player.Slew
+	msgPlayerPosition := new(protocol.PlayerPosition)
+	msgPlayerPosition.Position = new(protocol.Vec3)
+	msgPlayerPosition.Position.X = c.Player.Position.X()
+	msgPlayerPosition.Position.Y = c.Player.Position.Y()
+	msgPlayerPosition.Position.Z = c.Player.Position.Z()
+	msgPlayerPosition.Motion = new(protocol.Vec3)
+	msgPlayerPosition.Motion.X = c.Player.Motion.X()
+	msgPlayerPosition.Motion.Y = c.Player.Motion.Y()
+	msgPlayerPosition.Motion.Z = c.Player.Motion.Z()
+	msgPlayerPosition.Angle = c.Player.Angle
+	msgPlayerPosition.Slew = c.Player.Slew
 
-	// Сериализуем протобафом
-	msg, err := proto.Marshal(message)
+	// Сериализуем сообщение протобафом
+	msgBuffer, err := proto.Marshal(msgPlayerPosition)
+	if err != nil {
+		log.Println("[proto send]:", err)
+		return
+	}
+
+	// Упаковываем сообщение в элемент контейнера
+	msgItem := new(protocol.MessageItem)
+	msgItem.Type = protocol.MessageType_MsgPlayerPosition
+	msgItem.Body = msgBuffer
+
+	// Создаем контейнер и добавляем в него сообщение
+	msgContainer := new(protocol.MessageContainer)
+	msgContainer.Messages = append(msgContainer.Messages, msgItem)
+
+	// Сериализуем контейнер протобафом
+	message, err := proto.Marshal(msgContainer)
 	if err != nil {
 		log.Println("[proto send]:", err)
 		return
 	}
 
 	// Отправляем сообщение
-	err = c.ws.WriteMessage(websocket.BinaryMessage, msg)
+	err = c.ws.WriteMessage(websocket.BinaryMessage, message)
 	if err != nil {
 		log.Println("[ws write]:", err)
 	}
 
 	// Увеличиваем счетчик отправленных байт
-	c.Sent += len(msg)
+	c.Sent += len(message)
 
 }
