@@ -37,8 +37,8 @@ func NewPlayer() *Player {
 	}
 }
 
-// Tick пересчитывает параметры игрока в каждом тике
-func (p *Player) Tick() {
+// Update пересчитывает параметры игрока в каждом тике
+func (p *Player) Update() {
 	// Изменяем параметры игрока в соответствии с приращениями прошлого тика
 	p.Position = p.Position.Add(p.Motion)
 	p.Angle += p.Slew

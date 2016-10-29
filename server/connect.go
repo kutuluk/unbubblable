@@ -19,7 +19,11 @@ const (
 // Hub определяет список коннектов
 type Hub struct {
 	connections map[*Connect]bool
-	ticker      *time.Ticker
+	// Порядковый номер текущего тика
+	Tick int64
+	// Время начала текущего тика
+	Time   int64
+	ticker *time.Ticker
 }
 
 // NewHub создает пустой список коннектов
@@ -64,20 +68,13 @@ func (h *Hub) Count() int {
 func (h *Hub) loop() {
 	// Ждем следующего тика
 	for range h.ticker.C {
+		h.Tick++
+		h.Time = time.Now().Unix()
 		// Перебираем все соединения
 		for c := range h.connections {
 
 			// Осуществляем перерасчет
-			c.Player.Tick()
-
-			// Тупо сериализуем игрока в JSON
-			/*
-				message, err := json.Marshal(c.Player)
-				if err != nil {
-					log.Println("[json]:", err)
-					break
-				}
-			*/
+			c.Player.Update()
 
 			// Отправляем сообщение клиенту
 			//			go c.send(message)
@@ -93,28 +90,30 @@ func (h *Hub) loop() {
 
 // Connect связывает коннект с персонажем
 type Connect struct {
-	Hub    *Hub
-	ws     *websocket.Conn
-	Player *Player
-	Bytes  int
+	Hub      *Hub
+	ws       *websocket.Conn
+	Player   *Player
+	Received int
+	Sent     int
 }
 
 // receiver обрабатывает входящие сообщения
 func (c *Connect) receiver() {
 	for {
 		// Читаем сообщение от клиента
-		mt, message, err := c.ws.ReadMessage()
+		messageType, messageData, err := c.ws.ReadMessage()
 		if err != nil {
 			log.Println("[ws read]:", err)
 			break
 		}
 
-		c.Bytes += len(message)
+		// Увеличиваем счетчик принятых байт
+		c.Received += len(messageData)
 
-		if mt == websocket.BinaryMessage {
+		if messageType == websocket.BinaryMessage {
 			// Получено бинарное сообщение
 			msg := new(protocol.Controller)
-			err = proto.Unmarshal(message, msg)
+			err = proto.Unmarshal(messageData, msg)
 			if err != nil {
 				log.Println("[proto read]:", err)
 				break
@@ -123,7 +122,7 @@ func (c *Connect) receiver() {
 			c.Player.Controller = msg
 		} else {
 			// Получено текстовое сообщение
-			msg, err := ParseMessage(message)
+			msg, err := ParseMessage(messageData)
 			if err != nil {
 				log.Println("[proto]:", err)
 				break
@@ -145,9 +144,10 @@ func (c *Connect) send(message []byte) {
 	}
 }
 
-// send отправляет сообщение клиенту
+// sendPlayerPosition отправляет клиенту позицию персонажа
 func (c *Connect) sendPlayerPosition() {
 
+	// Формируем сообщение
 	message := new(protocol.PlayerPosition)
 	message.Position = new(protocol.Vec3)
 	message.Position.X = c.Player.Position.X()
@@ -160,15 +160,20 @@ func (c *Connect) sendPlayerPosition() {
 	message.Angle = c.Player.Angle
 	message.Slew = c.Player.Slew
 
+	// Сериализуем протобафом
 	msg, err := proto.Marshal(message)
 	if err != nil {
 		log.Println("[proto send]:", err)
 		return
 	}
 
+	// Отправляем сообщение
 	err = c.ws.WriteMessage(websocket.BinaryMessage, msg)
 	if err != nil {
 		log.Println("[ws write]:", err)
 	}
+
+	// Увеличиваем счетчик отправленных байт
+	c.Sent += len(msg)
 
 }
