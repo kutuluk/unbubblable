@@ -134,6 +134,7 @@ function Atlas(cols, rows, size, src) {
 	// Прозрачный материал
 	this.transMaterial = new THREE.MeshBasicMaterial({ map: this.texture });
 	this.transMaterial.transparent = true;
+	this.transMaterial.alphaTest = 0.5;
 	//	this.transMaterial.opacity = 0.8;
 	this.transMaterial.side = THREE.DoubleSide;
 

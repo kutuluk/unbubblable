@@ -66,7 +66,22 @@ function Game() {
     this.player = new Player(this.camera, createEchoMesh(219));
     this.echo = new Unit(createEchoMesh(220));
     createTerrain();
-    createDecole(2.5, 2, 0.5);
+
+    var mapSize = 64;
+    for (var i = 0; i < mapSize * mapSize / 16; i++) {
+        var x = Math.floor(Math.random() * (mapSize)) - Math.floor(mapSize / 2);
+        var y = Math.floor(Math.random() * (mapSize)) - Math.floor(mapSize / 2);
+        var csale = Math.random() * (1 - 0.7) + 0.7;
+        createDecole(x, y, csale, 200);
+    };
+
+    for (var i = 0; i < mapSize * mapSize / 48; i++) {
+        var x = Math.floor(Math.random() * (mapSize)) - Math.floor(mapSize / 2);
+        var y = Math.floor(Math.random() * (mapSize)) - Math.floor(mapSize / 2);
+        var csale = Math.random() * (1 - 0.7) + 0.7;
+        createDecole(x, y, csale, 55);
+    };
+
     //    createTexture();
 
     this.connect = new Connect(0, this);
@@ -110,7 +125,8 @@ function Game() {
     // Местность
     function createTerrain() {
         var mapSize = 64;
-        var br = [0, 0, 0, 0, 17, 19, 53, 53, 78, 126, 142];
+        //        var br = [0, 0, 0, 0, 17, 19, 53, 53, 78, 126, 142];
+        var br = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 53, 53, 78, 201, 201, 17, 18, 19];
 
         var geometryMap = new THREE.PlaneGeometry(mapSize, mapSize, mapSize, mapSize);
         geometryMap.faceVertexUvs = [[]];
@@ -132,48 +148,73 @@ function Game() {
         //    		backSide         // 5 - Back side
         //		];
 
-        // Подготавливаем меш для пенька
-        var geometryCube = new THREE.BoxGeometry(1, 1, 1);
+        // Подготавливаем меши для пеньков
         var faceTop = 21;
-        var faceWall = 20;
-        geometryCube.faceVertexUvs = [[]];
-        for (var i = 0; i < 6; i++) {
-            geometryCube.faceVertexUvs[0].push(atlas.tiles[faceWall].faces[0][0]); //231+i
-            geometryCube.faceVertexUvs[0].push(atlas.tiles[faceWall].faces[0][1]);
-        }
-        geometryCube.faceVertexUvs[0][2 * 2] = atlas.tiles[faceTop].faces[0][0];
-        geometryCube.faceVertexUvs[0][2 * 2 + 1] = atlas.tiles[faceTop].faces[0][1];
+        var fw = [20, 116, 117]; // +153
 
-        var meshCube = new THREE.Mesh(geometryCube, atlas.opaqueMaterial);
-        meshCube.rotation.x = Math.PI / 2;
+        var faceWalls = [];
+
+        for (var w = 0; w < fw.length; w++) {
+
+            var geometryCube = new THREE.BoxGeometry(1, 1, 1);
+            geometryCube.faceVertexUvs = [[]];
+            for (var i = 0; i < 6; i++) {
+                geometryCube.faceVertexUvs[0].push(atlas.tiles[fw[w]].faces[0][0]); //231+i
+                geometryCube.faceVertexUvs[0].push(atlas.tiles[fw[w]].faces[0][1]);
+            }
+            geometryCube.faceVertexUvs[0][2 * 2] = atlas.tiles[faceTop].faces[0][0];
+            geometryCube.faceVertexUvs[0][2 * 2 + 1] = atlas.tiles[faceTop].faces[0][1];
+
+            var meshCube = new THREE.Mesh(geometryCube, atlas.opaqueMaterial);
+            meshCube.rotation.x = Math.PI / 2;
+
+            faceWalls.push(meshCube);
+        }
 
         // Рассаживаем пеньки
         for (var i = 0; i < mapSize * mapSize / 16; i++) {
             var x = Math.floor(Math.random() * (mapSize)) - Math.floor(mapSize / 2);
             var y = Math.floor(Math.random() * (mapSize)) - Math.floor(mapSize / 2);
-            meshCube.position.set(x + 0.5, y + 0.5, 0.5);
-            game.scene.add(meshCube.clone());
+            var w = Math.floor(Math.random() * (fw.length));
+
+            faceWalls[w].position.set(x + 0.5, y + 0.5, 0.5);
+            game.scene.add(faceWalls[w].clone());
+            //            faceWalls[w].position.set(x + 0.5, y + 0.5, 1.5);
+            //            game.scene.add(faceWalls[w].clone());
         };
 
     };
 
     // Травка
-    function createDecole(x, y, z) {
+    function createDecole(x, y, scale, tile) {
         var geometryDec = new THREE.PlaneGeometry(1, 1, 1, 1);
         geometryDec.faceVertexUvs = [[]];
-        geometryDec.faceVertexUvs[0].push(atlas.tiles[13].faces[0][0]);  //89 //90
-        geometryDec.faceVertexUvs[0].push(atlas.tiles[13].faces[0][1]);
+        geometryDec.faceVertexUvs[0].push(atlas.tiles[tile].faces[0][0]);  //89 //90 //13 //56
+        geometryDec.faceVertexUvs[0].push(atlas.tiles[tile].faces[0][1]);
         var meshDec = new THREE.Mesh(geometryDec, atlas.transMaterial);
         meshDec.rotation.x = Math.PI / 2;
 
-        meshDec.position.set(x, y, z);
+        var groupDec = new THREE.Group();
+
+        meshDec.position.set(0, 0, 0);
+        groupDec.add(meshDec.clone());
+
+        meshDec.rotation.y = Math.PI / 2;
+        groupDec.add(meshDec.clone());
+
+        /*
         var count = 4;
         for (var i = 0; i < count; i++) {
             meshDec.position.y = y + i / count + 1 / count / 2;
-            game.scene.add(meshDec.clone());
+            groupDec.add(meshDec.clone());
         }
+        */
 
-        game.scene.add(meshDec);
+        groupDec.position.set(x + 0.5, y + 0.5, scale / 2);
+        groupDec.rotation.z = Math.random() * (Math.PI / 2);
+        groupDec.scale.set(scale, scale, scale);
+
+        game.scene.add(groupDec);
     }
 
     this.loop = new Loop(this, 20);
