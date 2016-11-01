@@ -11,15 +11,15 @@ message Controller {
 	bool RotateLeft = 5;
 	bool RotateRight = 6;
 
-		// Modifiers определяет клавиши-модификаторы
-		message Modifiers {
-        	bool Shift = 1; 
-        	bool Ctrl = 2;
-        	bool Alt = 3;
-        	bool Meta = 4;
-		}
+	// Modifiers определяет клавиши-модификаторы
+	message Modifiers {
+       	bool Shift = 1; 
+       	bool Ctrl = 2;
+       	bool Alt = 3;
+       	bool Meta = 4;
+	}
 	
-        Modifiers modifiers = 7;
+    Modifiers modifiers = 7;
 }
 
 message Vec3 {
@@ -40,11 +40,32 @@ message PlayerPosition {
 	double Slew = 4;
 }
 
+// Map определяет карту
+message Terrain {
+	// Width определяет ширину
+	int32 Width = 1;
+	// Height определяет высоту
+	int32 Height = 2;
+	// Seed определяет зерно генератора
+	int64 Seed = 3;
+
+	// Tile определяет тайл карты
+	message Tile {
+		int32 Ground = 1;
+		int32 Block = 2;
+		int32 Detail = 3;
+	}
+
+	// Map определяет карту
+    repeated Tile Map = 4;
+}
+
 // MessageType определяет типы сообщений
 enum MessageType
 {
 	MsgController = 0;
 	MsgPlayerPosition = 1;
+	MsgTerrain = 2;
 }
 
 // MessageItem определяет одно сообщение

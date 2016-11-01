@@ -72,7 +72,7 @@ function Game() {
         var x = Math.floor(Math.random() * (mapSize)) - Math.floor(mapSize / 2);
         var y = Math.floor(Math.random() * (mapSize)) - Math.floor(mapSize / 2);
         var csale = Math.random() * (1 - 0.7) + 0.7;
-        createDecole(x, y, csale, 200);
+        createDecole(x, y, csale, 39); //200
     };
 
     for (var i = 0; i < mapSize * mapSize / 48; i++) {
@@ -126,7 +126,7 @@ function Game() {
     function createTerrain() {
         var mapSize = 64;
         //        var br = [0, 0, 0, 0, 17, 19, 53, 53, 78, 126, 142];
-        var br = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 53, 53, 78, 201, 201, 17, 18, 19];
+        var br = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 203, 203, 203, 203, 202, 201, 201, 17, 142, 19];
 
         var geometryMap = new THREE.PlaneGeometry(mapSize, mapSize, mapSize, mapSize);
         geometryMap.faceVertexUvs = [[]];
@@ -244,9 +244,9 @@ Game.prototype = {
     },
 
     animate: function () {
-        requestAnimationFrame(game.animate);
         game.render();
         game.stats.update();
+        requestAnimationFrame(game.animate);
     },
 
     render: function () {
