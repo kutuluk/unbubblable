@@ -40,7 +40,7 @@ message PlayerPosition {
 	double Slew = 4;
 }
 
-// Map определяет карту
+// Terrain определяет карту
 message Terrain {
 	// Width определяет ширину
 	int32 Width = 1;

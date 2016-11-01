@@ -136,7 +136,7 @@ func (m *PlayerPosition) GetMotion() *Vec3 {
 	return nil
 }
 
-// Map определяет карту
+// Terrain определяет карту
 type Terrain struct {
 	// Width определяет ширину
 	Width int32 `protobuf:"varint,1,opt,name=Width" json:"Width,omitempty"`

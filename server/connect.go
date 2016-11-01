@@ -4,9 +4,9 @@ import (
 	"log"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/kutuluk/unbubblable/server/proto"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"
 )
 
@@ -24,6 +24,8 @@ type Hub struct {
 	// Время начала текущего тика
 	Time   int64
 	ticker *time.Ticker
+	// Terrain определяет карту
+	Terrain *Terrain
 }
 
 // NewHub создает пустой список коннектов
@@ -31,6 +33,7 @@ func NewHub() *Hub {
 	h := &Hub{
 		connections: make(map[*Connect]bool),
 		ticker:      time.NewTicker(time.Millisecond * LoopInterval),
+		Terrain:     NewTerrain(256, 256, 0),
 	}
 	go h.loop()
 	return h

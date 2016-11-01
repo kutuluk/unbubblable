@@ -100,19 +100,6 @@ Loop.prototype = {
 
 		this.updating = false;
 
-		/*
-				// Формируем сообщение на сервер
-				var msg = {
-					header: {
-						time: new Date().getTime(),
-						tick: this.current,
-						type: "controller"
-					},
-					data: this.game.controller
-				};
-				// И отправляем его
-				this.game.connect.sendMessage(JSON.stringify(msg));
-		*/
 		this.game.connect.sendController(this.game.controller);
 
 	}
