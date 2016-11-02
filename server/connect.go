@@ -33,7 +33,7 @@ func NewHub() *Hub {
 	h := &Hub{
 		connections: make(map[*Connect]bool),
 		ticker:      time.NewTicker(time.Millisecond * LoopInterval),
-		Terrain:     NewTerrain(64, 64, 3184627059),
+		Terrain:     NewTerrain(32, 32, 3184627059),
 	}
 	go h.loop()
 	return h

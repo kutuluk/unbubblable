@@ -258,18 +258,21 @@ Game.prototype = {
         var geometryMap = new THREE.PlaneGeometry(this.terrain.Width, this.terrain.Height, this.terrain.Width, this.terrain.Height);
         geometryMap.faceVertexUvs = [[]];
 
+        var grounds = [0, 1, 2, 201, 16, 17, 142, 19, 203, 202];
         var blocks = [[0, 0], [20, 21], [116, 21], [117, 21]];
         var details = [0, 39, 200, 55];
-        //      	console.log(blocks);
-        //        	console.log(blocks[this.terrain.Map[0].Block][0]);
 
+        // Перебираем все тайлы карты
         for (var i = 0; i < this.terrain.Width * this.terrain.Height; i++) {
+
             // Координаты (от левого нижнего угла карты направо и вверх)
             var y = Math.floor(i / this.terrain.Width)
             var x = i - (y * this.terrain.Width)
+
             // Поверхность
-            geometryMap.faceVertexUvs[0].push(this.atlas.tiles[this.terrain.Map[i].Ground].faces[0][0]);
-            geometryMap.faceVertexUvs[0].push(this.atlas.tiles[this.terrain.Map[i].Ground].faces[0][1]);
+            // ToDo: Переделать - инвертированна по оси y 
+            geometryMap.faceVertexUvs[0].push(this.atlas.tiles[grounds[this.terrain.Map[i].Ground]].faces[0][0]);
+            geometryMap.faceVertexUvs[0].push(this.atlas.tiles[grounds[this.terrain.Map[i].Ground]].faces[0][1]);
 
             // Блок
             if (this.terrain.Map[i].Block != 0) {

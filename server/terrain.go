@@ -103,17 +103,10 @@ type Instance struct {
 }
 
 // NewTerrain создает рандомную карту
-func NewTerrain(width int, height int, seed int64) *Terrain {
+func NewTerrain(width, height int, seed int64) *Terrain {
 	// Генерируем случайное зерно, если seed == 0
 	for ; seed == 0; seed = rand.New(rand.NewSource(time.Now().UnixNano())).Int63() {
 	}
-
-	/*
-		if seed == 0 {
-			// Генерируем случайное зерно
-			seed = rand.New(rand.NewSource(time.Now().UnixNano())).Int63()
-		}
-	*/
 
 	t := &Terrain{
 		Width:  width,
@@ -123,12 +116,12 @@ func NewTerrain(width int, height int, seed int64) *Terrain {
 	}
 
 	// Инициализируем рандомизатор зерном
-	random := rand.New(rand.NewSource(t.Seed))
+	random := rand.New(rand.NewSource(seed))
 
 	// Заполняем поверхность рандомными тайлами
 	tiles := []int{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 8, 8, 8, 8, 9, 3, 3, 5, 6, 7}
 	for i := 0; i < width*height; i++ {
-		t.Map[i].Ground = Grounds[tiles[random.Intn(len(tiles))]].Texture
+		t.Map[i].Ground = tiles[random.Intn(len(tiles))]
 	}
 
 	// Рассаживаем пеньки
@@ -138,27 +131,33 @@ func NewTerrain(width int, height int, seed int64) *Terrain {
 		var x, y int
 		var block = 1
 		for block != 0 {
-			x = random.Intn(width - 1)
-			y = random.Intn(height - 1)
-			block = t.Map[y*height+x].Block
+			x = random.Intn(width)
+			y = random.Intn(height)
+			block = t.Map[y*width+x].Block
 		}
-		t.Map[y*height+x].Block = trees[random.Intn(len(trees))]
+		t.Map[y*width+x].Block = trees[random.Intn(len(trees))]
 	}
 
 	// Рассаживаем кустики
-	details := []int{1, 2, 3}
-	detailsCount := width * height / 16
+	//details := []int{1, 2, 3}
+	detailsCount := width * height / 32
 	for i := 0; i < detailsCount; i++ {
 		var x, y int
 		var block = 1
 		var detail = 1
-		for (block != 0) && (detail != 0) {
-			x = random.Intn(width - 1)
-			y = random.Intn(height - 1)
-			block = t.Map[y*height+x].Block
-			detail = t.Map[y*height+x].Detail
+		var ground = 0
+		for !((block == 0) && (detail == 0) && (ground == 1)) {
+			x = random.Intn(width)
+			y = random.Intn(height)
+			block = t.Map[y*width+x].Block
+			detail = t.Map[y*width+x].Detail
+			ground = t.Map[y*width+x].Ground
 		}
-		t.Map[y*height+x].Detail = details[random.Intn(len(details))]
+		//		t.Map[y*height+x].Detail = details[random.Intn(len(details))]
+		if t.Map[y*width+x].Ground != 1 {
+			log.Print("[!]")
+		}
+		t.Map[y*width+x].Detail = 3
 	}
 
 	// Подготовливаем данные для сериализации
@@ -166,7 +165,7 @@ func NewTerrain(width int, height int, seed int64) *Terrain {
 
 	msgTerrain.Width = int32(t.Width)
 	msgTerrain.Height = int32(t.Height)
-	msgTerrain.Seed = int64(t.Seed)
+	msgTerrain.Seed = t.Seed
 	msgTerrain.Map = make([]*protocol.Terrain_Tile, width*height)
 
 	for i := 0; i < width*height; i++ {
