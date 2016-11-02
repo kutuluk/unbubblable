@@ -128,7 +128,7 @@ func NewTerrain(width int, height int, seed int64) *Terrain {
 	// Заполняем поверхность рандомными тайлами
 	tiles := []int{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 8, 8, 8, 8, 9, 3, 3, 5, 6, 7}
 	for i := 0; i < width*height; i++ {
-		t.Map[i].Ground = tiles[random.Intn(len(tiles))]
+		t.Map[i].Ground = Grounds[tiles[random.Intn(len(tiles))]].Texture
 	}
 
 	// Рассаживаем пеньки

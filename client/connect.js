@@ -71,6 +71,22 @@ function Connect(delay, game) {
 
                     break
 
+                // Terrain
+                case connect.proto.MessageType.MsgTerrain:
+
+                    try {
+                        // Декодируем сообщение
+                        var msgTerrain = connect.proto.Terrain.decode(message.Body);
+
+                        // Применяем сообщение
+                        game.terrain = msgTerrain;
+                        game.createTerrain();
+                    } catch (err) {
+                        log.appendText("[proto read]: " + err);
+                    };
+
+                    break
+
                 default:
                     log.appendText("[proto read]: не известное сообщение");
                     break

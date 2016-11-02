@@ -36,7 +36,7 @@ func main() {
 	http.HandleFunc("/ws", ws)
 
 	// Запускаем http-сервер
-	err := http.ListenAndServe(":80", nil)
+	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		log.Fatal("[http]:", err)
 	}

@@ -33,7 +33,7 @@ func NewHub() *Hub {
 	h := &Hub{
 		connections: make(map[*Connect]bool),
 		ticker:      time.NewTicker(time.Millisecond * LoopInterval),
-		Terrain:     NewTerrain(256, 256, 0),
+		Terrain:     NewTerrain(64, 64, 3184627059),
 	}
 	go h.loop()
 	return h
@@ -53,6 +53,7 @@ func (h *Hub) Join(ws *websocket.Conn) {
 	// Запускаем обработчик входящих сообщений
 	go c.receiver()
 	log.Print("[connect]: новое подключение с адреса ", c.ws.RemoteAddr())
+	c.sendMap()
 }
 
 // Leave закрывает соединение и удаляет его из списка коннектов
@@ -188,6 +189,36 @@ func (c *Connect) sendPlayerPosition() {
 	msgItem := new(protocol.MessageItem)
 	msgItem.Type = protocol.MessageType_MsgPlayerPosition
 	msgItem.Body = msgBuffer
+
+	// Создаем контейнер и добавляем в него сообщение
+	msgContainer := new(protocol.MessageContainer)
+	msgContainer.Messages = append(msgContainer.Messages, msgItem)
+
+	// Сериализуем контейнер протобафом
+	message, err := proto.Marshal(msgContainer)
+	if err != nil {
+		log.Println("[proto send]:", err)
+		return
+	}
+
+	// Отправляем сообщение
+	err = c.ws.WriteMessage(websocket.BinaryMessage, message)
+	if err != nil {
+		log.Println("[ws write]:", err)
+	}
+
+	// Увеличиваем счетчик отправленных байт
+	c.Sent += len(message)
+
+}
+
+// sendMap отправляет клиенту карту
+func (c *Connect) sendMap() {
+
+	// Упаковываем сообщение в элемент контейнера
+	msgItem := new(protocol.MessageItem)
+	msgItem.Type = protocol.MessageType_MsgTerrain
+	msgItem.Body = c.Hub.Terrain.Proto
 
 	// Создаем контейнер и добавляем в него сообщение
 	msgContainer := new(protocol.MessageContainer)

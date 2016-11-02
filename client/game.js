@@ -50,7 +50,7 @@ function Game() {
     this.scene = new THREE.Scene();
     //	this.scene.fog = new THREE.Fog( 0xaaaaff, 1*18, 1*24 );
 
-    var atlas = new Atlas(16, 16, 32, 'textures/atlas.png');
+    this.atlas = new Atlas(16, 16, 32, 'textures/atlas.png');
 
 
     this.controller = new Controller(this.renderer.domElement);
@@ -65,6 +65,10 @@ function Game() {
     //    this.player = new Player(this.camera, createPlayerMesh());
     this.player = new Player(this.camera, createEchoMesh(219));
     this.echo = new Unit(createEchoMesh(220));
+
+    this.terrain = undefined;
+
+    /*
     createTerrain();
 
     var mapSize = 64;
@@ -81,6 +85,7 @@ function Game() {
         var csale = Math.random() * (1 - 0.7) + 0.7;
         createDecole(x, y, csale, 55);
     };
+    */
 
     //    createTexture();
 
@@ -91,11 +96,11 @@ function Game() {
     function createPlayerMesh() {
         var playerSize = 2 / 3;
         var geometryChar = new THREE.BoxGeometry(playerSize, playerSize, playerSize);
-        var meshPlayer = new THREE.Mesh(geometryChar, atlas.opaqueMaterial);
+        var meshPlayer = new THREE.Mesh(geometryChar, game.atlas.opaqueMaterial);
         geometryChar.faceVertexUvs = [[]];
         for (var i = 0; i < 6; i++) {
-            geometryChar.faceVertexUvs[0].push(atlas.tiles[217].faces[0][0]);
-            geometryChar.faceVertexUvs[0].push(atlas.tiles[217].faces[0][1]);
+            geometryChar.faceVertexUvs[0].push(game.atlas.tiles[217].faces[0][0]);
+            geometryChar.faceVertexUvs[0].push(game.atlas.tiles[217].faces[0][1]);
         }
         game.scene.add(meshPlayer);
 
@@ -106,9 +111,9 @@ function Game() {
     function createEchoMesh(tile) {
         var geometryEcho = new THREE.PlaneGeometry(1, 1, 1, 1);
         geometryEcho.faceVertexUvs = [[]];
-        geometryEcho.faceVertexUvs[0].push(atlas.tiles[tile].faces[0][0]);
-        geometryEcho.faceVertexUvs[0].push(atlas.tiles[tile].faces[0][1]);
-        var meshEcho = new THREE.Mesh(geometryEcho, atlas.transMaterial);
+        geometryEcho.faceVertexUvs[0].push(game.atlas.tiles[tile].faces[0][0]);
+        geometryEcho.faceVertexUvs[0].push(game.atlas.tiles[tile].faces[0][1]);
+        var meshEcho = new THREE.Mesh(geometryEcho, game.atlas.transMaterial);
         game.scene.add(meshEcho);
 
         return meshEcho
@@ -117,7 +122,7 @@ function Game() {
     // Текстура
     function createTexture() {
         var geometryTex = new THREE.PlaneGeometry(8, 8, 1, 1);
-        var meshTex = new THREE.Mesh(geometryTex, atlas.transMaterial);
+        var meshTex = new THREE.Mesh(geometryTex, game.atlas.transMaterial);
         meshTex.position.set(10, 0, 1.5);
         game.scene.add(meshTex);
     }
@@ -132,10 +137,10 @@ function Game() {
         geometryMap.faceVertexUvs = [[]];
         for (var i = 0; i < mapSize * mapSize; i++) {
             var s = Math.floor(Math.random() * (br.length));
-            geometryMap.faceVertexUvs[0].push(atlas.tiles[br[s]].faces[0][0]);
-            geometryMap.faceVertexUvs[0].push(atlas.tiles[br[s]].faces[0][1]);
+            geometryMap.faceVertexUvs[0].push(game.atlas.tiles[br[s]].faces[0][0]);
+            geometryMap.faceVertexUvs[0].push(game.atlas.tiles[br[s]].faces[0][1]);
         }
-        var meshMap = new THREE.Mesh(geometryMap, atlas.opaqueMaterial);
+        var meshMap = new THREE.Mesh(geometryMap, game.atlas.opaqueMaterial);
         game.scene.add(meshMap);
 
         // Пеньки
@@ -159,13 +164,13 @@ function Game() {
             var geometryCube = new THREE.BoxGeometry(1, 1, 1);
             geometryCube.faceVertexUvs = [[]];
             for (var i = 0; i < 6; i++) {
-                geometryCube.faceVertexUvs[0].push(atlas.tiles[fw[w]].faces[0][0]); //231+i
-                geometryCube.faceVertexUvs[0].push(atlas.tiles[fw[w]].faces[0][1]);
+                geometryCube.faceVertexUvs[0].push(game.atlas.tiles[fw[w]].faces[0][0]); //231+i
+                geometryCube.faceVertexUvs[0].push(game.atlas.tiles[fw[w]].faces[0][1]);
             }
-            geometryCube.faceVertexUvs[0][2 * 2] = atlas.tiles[faceTop].faces[0][0];
-            geometryCube.faceVertexUvs[0][2 * 2 + 1] = atlas.tiles[faceTop].faces[0][1];
+            geometryCube.faceVertexUvs[0][2 * 2] = game.atlas.tiles[faceTop].faces[0][0];
+            geometryCube.faceVertexUvs[0][2 * 2 + 1] = game.atlas.tiles[faceTop].faces[0][1];
 
-            var meshCube = new THREE.Mesh(geometryCube, atlas.opaqueMaterial);
+            var meshCube = new THREE.Mesh(geometryCube, game.atlas.opaqueMaterial);
             meshCube.rotation.x = Math.PI / 2;
 
             faceWalls.push(meshCube);
@@ -189,9 +194,9 @@ function Game() {
     function createDecole(x, y, scale, tile) {
         var geometryDec = new THREE.PlaneGeometry(1, 1, 1, 1);
         geometryDec.faceVertexUvs = [[]];
-        geometryDec.faceVertexUvs[0].push(atlas.tiles[tile].faces[0][0]);  //89 //90 //13 //56
-        geometryDec.faceVertexUvs[0].push(atlas.tiles[tile].faces[0][1]);
-        var meshDec = new THREE.Mesh(geometryDec, atlas.transMaterial);
+        geometryDec.faceVertexUvs[0].push(game.atlas.tiles[tile].faces[0][0]);  //89 //90 //13 //56
+        geometryDec.faceVertexUvs[0].push(game.atlas.tiles[tile].faces[0][1]);
+        var meshDec = new THREE.Mesh(geometryDec, game.atlas.transMaterial);
         meshDec.rotation.x = Math.PI / 2;
 
         var groupDec = new THREE.Group();
@@ -247,6 +252,72 @@ Game.prototype = {
         game.render();
         game.stats.update();
         requestAnimationFrame(game.animate);
+    },
+
+    createTerrain: function () {
+        var geometryMap = new THREE.PlaneGeometry(this.terrain.Width, this.terrain.Height, this.terrain.Width, this.terrain.Height);
+        geometryMap.faceVertexUvs = [[]];
+
+        var blocks = [[0, 0], [20, 21], [116, 21], [117, 21]];
+        var details = [0, 39, 200, 55];
+        //      	console.log(blocks);
+        //        	console.log(blocks[this.terrain.Map[0].Block][0]);
+
+        for (var i = 0; i < this.terrain.Width * this.terrain.Height; i++) {
+            // Координаты (от левого нижнего угла карты направо и вверх)
+            var y = Math.floor(i / this.terrain.Width)
+            var x = i - (y * this.terrain.Width)
+            // Поверхность
+            geometryMap.faceVertexUvs[0].push(this.atlas.tiles[this.terrain.Map[i].Ground].faces[0][0]);
+            geometryMap.faceVertexUvs[0].push(this.atlas.tiles[this.terrain.Map[i].Ground].faces[0][1]);
+
+            // Блок
+            if (this.terrain.Map[i].Block != 0) {
+                var geometryCube = new THREE.BoxGeometry(1, 1, 1);
+                geometryCube.faceVertexUvs = [[]];
+                for (var v = 0; v < 6; v++) {
+                    geometryCube.faceVertexUvs[0].push(this.atlas.tiles[blocks[this.terrain.Map[i].Block][0]].faces[0][0]);
+                    geometryCube.faceVertexUvs[0].push(this.atlas.tiles[blocks[this.terrain.Map[i].Block][0]].faces[0][1]);
+                }
+                geometryCube.faceVertexUvs[0][4] = this.atlas.tiles[blocks[this.terrain.Map[i].Block][1]].faces[0][0];
+                geometryCube.faceVertexUvs[0][5] = this.atlas.tiles[blocks[this.terrain.Map[i].Block][1]].faces[0][1];
+
+                var meshCube = new THREE.Mesh(geometryCube, this.atlas.opaqueMaterial);
+                meshCube.position.set(x + 0.5 - this.terrain.Width / 2, y + 0.5 - this.terrain.Height / 2, 0.5);
+                meshCube.rotation.x = Math.PI / 2;
+                this.scene.add(meshCube);
+            }
+
+            // Деталь
+            if (this.terrain.Map[i].Detail != 0) {
+                var geometryDec = new THREE.PlaneGeometry(1, 1, 1, 1);
+                geometryDec.faceVertexUvs = [[]];
+                geometryDec.faceVertexUvs[0].push(this.atlas.tiles[details[this.terrain.Map[i].Detail]].faces[0][0]);
+                geometryDec.faceVertexUvs[0].push(this.atlas.tiles[details[this.terrain.Map[i].Detail]].faces[0][1]);
+                var meshDec = new THREE.Mesh(geometryDec, this.atlas.transMaterial);
+                meshDec.rotation.x = Math.PI / 2;
+
+                var groupDec = new THREE.Group();
+
+                meshDec.position.set(0, 0, 0);
+                groupDec.add(meshDec.clone());
+
+                meshDec.rotation.y = Math.PI / 2;
+                groupDec.add(meshDec.clone());
+
+                var scale = Math.random() * (1 - 0.7) + 0.7;
+                groupDec.position.set(x + 0.5 - this.terrain.Width / 2, y + 0.5 - this.terrain.Height / 2, scale / 2);
+                groupDec.rotation.z = Math.random() * (Math.PI / 2);
+                groupDec.scale.set(scale, scale, scale);
+
+                this.scene.add(groupDec);
+            }
+
+        }
+
+        var meshMap = new THREE.Mesh(geometryMap, this.atlas.opaqueMaterial);
+        this.scene.add(meshMap);
+
     },
 
     render: function () {
