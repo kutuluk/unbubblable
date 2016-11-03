@@ -77,13 +77,13 @@ function Connect(delay, game) {
                     try {
                         // Декодируем сообщение
                         var msgTerrain = connect.proto.Terrain.decode(message.Body);
+                    } catch (err) {
+                        log.appendText("[proto read]: " + err);
+                    };
 
                         // Применяем сообщение
                         game.terrain = msgTerrain;
                         game.createTerrain();
-                    } catch (err) {
-                        log.appendText("[proto read]: " + err);
-                    };
 
                     break
 

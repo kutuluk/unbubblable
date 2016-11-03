@@ -80,16 +80,28 @@ function Atlas(cols, rows, size, src) {
 		var u = i - (v * this.cols)
 
 		/*
-			красный		0        1
-						*---------*		зеленый
-						|         |
-						|    ^    |
-						|         |
-			синий   	*---------*		желтый
-						3        2
+                        0         1
+            красный     *---------*     зеленый
+                        |\        |
+                        |    ^    |
+                        |        \|
+            синий       *---------*     желтый
+                        2         3
 
-			1: 3-0-2
-			2: 0-1-2
+			1 треугольник: 2-0-3
+			2 треугольник: 0-1-3
+		*/
+		/*
+                        2         3
+            красный     *---------*     зеленый
+                        |\        |
+                        |    ^    |
+                        |        \|
+            синий       *---------*     желтый
+                        0         1
+
+			1 треугольник: 0-2-1
+			2 треугольник: 2-3-1
 		*/
 
 		var tile = {};
@@ -98,32 +110,43 @@ function Atlas(cols, rows, size, src) {
 		tile.uvs = [
 			new THREE.Vector2(u / this.cols + this.uOff, (v + 1) / this.rows - this.vOff),
 			new THREE.Vector2((u + 1) / this.cols - this.uOff, (v + 1) / this.rows - this.vOff),
+			new THREE.Vector2(u / this.cols + this.uOff, v / this.rows + this.vOff),
 			new THREE.Vector2((u + 1) / this.cols - this.uOff, v / this.rows + this.vOff),
-			new THREE.Vector2(u / this.cols + this.uOff, v / this.rows + this.vOff)
 		];
+//		tile.uvs = [
+//			new THREE.Vector2(u / this.cols + this.uOff, v / this.rows + this.vOff),
+//			new THREE.Vector2((u + 1) / this.cols - this.uOff, v / this.rows + this.vOff),
+//			new THREE.Vector2(u / this.cols + this.uOff, (v + 1) / this.rows - this.vOff),
+//			new THREE.Vector2((u + 1) / this.cols - this.uOff, (v + 1) / this.rows - this.vOff),
+//		];
 
 		// Faces - 4 набора координат, определяющих поворот текстуры 
 		tile.faces = [];
 
+
 		// Изначальное направление текстуры
 		tile.faces.push([
-			[tile.uvs[3], tile.uvs[0], tile.uvs[2]],
-			[tile.uvs[0], tile.uvs[1], tile.uvs[2]]]);
+			[tile.uvs[2], tile.uvs[0], tile.uvs[3]],
+			[tile.uvs[0], tile.uvs[1], tile.uvs[3]]]);
+// 0 -> 2
+// 1 -> 3
+//			[tile.uvs[0], tile.uvs[2], tile.uvs[1]],
+//			[tile.uvs[2], tile.uvs[3], tile.uvs[1]]]);
 
-		// Текстура повернута на 90 градусов направо
+		// Текстура повернута на 90 градусов налево
 		tile.faces.push([
-			[tile.uvs[2], tile.uvs[3], tile.uvs[1]],
-			[tile.uvs[3], tile.uvs[0], tile.uvs[1]]]);
+			[tile.uvs[3], tile.uvs[2], tile.uvs[1]],
+			[tile.uvs[2], tile.uvs[0], tile.uvs[1]]]);
 
-		// Текстура повернута на 180 градусов направо
+		// Текстура повернута на 180 градусов налево
 		tile.faces.push([
-			[tile.uvs[1], tile.uvs[2], tile.uvs[0]],
-			[tile.uvs[2], tile.uvs[3], tile.uvs[0]]]);
+			[tile.uvs[1], tile.uvs[3], tile.uvs[0]],
+			[tile.uvs[3], tile.uvs[2], tile.uvs[0]]]);
 
-		// Текстура повернута на 270 градусов направо
+		// Текстура повернута на 270 градусов налево
 		tile.faces.push([
-			[tile.uvs[0], tile.uvs[1], tile.uvs[3]],
-			[tile.uvs[1], tile.uvs[2], tile.uvs[3]]]);
+			[tile.uvs[0], tile.uvs[1], tile.uvs[2]],
+			[tile.uvs[1], tile.uvs[3], tile.uvs[2]]]);
 
 		this.tiles.push(tile);
 	};

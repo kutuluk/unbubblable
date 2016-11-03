@@ -36,6 +36,7 @@ func NewHub() *Hub {
 		Terrain:     NewTerrain(32, 32, 3184627059),
 	}
 	go h.loop()
+	log.Println("[hub]: луп запустился")
 	return h
 }
 
