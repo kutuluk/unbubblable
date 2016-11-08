@@ -44,7 +44,7 @@ function Game() {
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(this.screen.width, this.screen.height);
 
-    this.camera = new THREE.PerspectiveCamera(40, this.screen.width / this.screen.height, 1, 1 * 200);
+    this.camera = new THREE.PerspectiveCamera(40, this.screen.width / this.screen.height, 1, 1 * 2000);
     this.camera.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 5);
 
     this.scene = new THREE.Scene();
@@ -260,246 +260,126 @@ Game.prototype = {
         var blocks = [[0, 0], [20, 21], [116, 21], [117, 21]];
         var details = [0, 39, 200, 55];
 
-        /*
-                // Создаем геомертию карты
-                var geometry = new THREE.BufferGeometry();
-        
-                // Подготавливаем вершинный буфер
-        //        var verticesCount = (this.terrain.Width + 1) * (this.terrain.Height + 1) * 2;
-                var verticesCount = (this.terrain.Width + 1) * (this.terrain.Height + 1);
-                var vertices = new Float32Array(verticesCount * 3);
-        
-                // Заполняем вершинный буфер
-                var bottom = 0;
-                var top = (this.terrain.Width + 1) * (this.terrain.Height + 1) * 3;
-                for (var y = 0; y < this.terrain.Height + 1; y++) {
-                    for (var x = 0; x < this.terrain.Width + 1; x++) {
-                        // Нижний ряд вершин
-                        vertices[bottom] = x
-                        vertices[bottom + 1] = y
-                        vertices[bottom + 2] = 0
-                        bottom += 3;
-                        // Верхний ряд вершин
-        //                vertices[top] = x
-        //                vertices[top + 1] = y
-        //                vertices[top + 2] = 1
-        //                top += 3;
-                    }
-                }
-        
-                // Инициализируем вершинный буфер
-                geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
-        
-                // Заполняем промежуточный индексный буфер
-                var faces = [];
-                var indices = [];
-                var t = 0;
-                for (var y = 0; y < this.terrain.Height; y++) {
-                    for (var x = 0; x < this.terrain.Width; x++) {
-                        // Рассчитываем индексы 4 вершин тайла
-                        // Оптимизация
-                        // indices1 = t
-                        // indices3 = t + this.terrain.Width + 1 
-                        var indices1 = (y * this.terrain.Width + x);
-                        var indices2 = (y * this.terrain.Width + (x + 1));
-                        var indices3 = ((y + 1) * this.terrain.Width + (x + 1));
-                        var indices4 = ((y + 1) * this.terrain.Width + x);
-                        if (this.terrain.Map[t].Block == 0) {
-                            var face = {};
-                            face.indices = [];
-                            face.indices.push(indices1, indices2, indices4, indices2, indices4, indices3);
-                            face.uvs = [];
-                            face.uvs.push(this.atlas.tiles[grounds[this.terrain.Map[t].Ground]].faces[0][0][0].x);
-                            face.uvs.push(this.atlas.tiles[grounds[this.terrain.Map[t].Ground]].faces[0][0][0].y);
-                            face.uvs.push(this.atlas.tiles[grounds[this.terrain.Map[t].Ground]].faces[0][0][1].x);
-                            face.uvs.push(this.atlas.tiles[grounds[this.terrain.Map[t].Ground]].faces[0][0][1].y);
-                            face.uvs.push(this.atlas.tiles[grounds[this.terrain.Map[t].Ground]].faces[0][0][2].x);
-                            face.uvs.push(this.atlas.tiles[grounds[this.terrain.Map[t].Ground]].faces[0][0][2].y);
-                            face.uvs.push(this.atlas.tiles[grounds[this.terrain.Map[t].Ground]].faces[0][1][0].x);
-                            face.uvs.push(this.atlas.tiles[grounds[this.terrain.Map[t].Ground]].faces[0][1][0].y);
-                            face.uvs.push(this.atlas.tiles[grounds[this.terrain.Map[t].Ground]].faces[0][1][1].x);
-                            face.uvs.push(this.atlas.tiles[grounds[this.terrain.Map[t].Ground]].faces[0][1][1].y);
-                            face.uvs.push(this.atlas.tiles[grounds[this.terrain.Map[t].Ground]].faces[0][1][2].x);
-                            face.uvs.push(this.atlas.tiles[grounds[this.terrain.Map[t].Ground]].faces[0][1][2].y);
-                            faces.push(face);
-                            // Первый треугольник
-                            indices.push(indices1);
-                            indices.push(indices2);
-                            indices.push(indices4);
-                            // Второй треугольник
-                            indices.push(indices2);
-                            indices.push(indices4);
-                            indices.push(indices3);
-                        }
-        
-                        t++
-                    }
-                }
-        
-                        // Инициализируем индесный буфер
-        //                var finalIndices = new Uint16Array(indices.length);
-        //                for (var i = 0; i < indices.length; i++) {
-        //                    finalIndices[i] = indices[i];
-        //                }
-        
-                // Инициализируем индесный и текстурный буфер
-                var finalIndices = new Uint16Array(faces.length * 6);
-                var uvs = new Float32Array(faces.length * 12);
-                for (var f = 0; f < faces.length; f++) {
-                    for (var i = 0; i < 6; i++) {
-                        finalIndices[f * 6 + i] = faces[f].indices[i];
-                    }
-                    for (var i = 0; i < 12; i++) {
-                        uvs[f * 12 + i] = faces[f].uvs[i];
-                    }
-                }
-        
-                geometry.addAttribute('index', new THREE.BufferAttribute(finalIndices, 3));
-                geometry.addAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-        
-                geometry.computeBoundingSphere();
-        
-                var material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-                var mesh = new THREE.Mesh(geometry, this.atlas.opaqueMaterial);
-                mesh.position.z = 3;
-                this.scene.add(mesh);
-        
-        */
-        // ------------------------------------------------
+        // Ландшафт
+        var geoLandscape = new THREE.Geometry();
+        // Детали
+        var geoDetails = new THREE.Geometry();
 
-        // Поверхность
-        var geometryMap = new THREE.PlaneGeometry(this.terrain.Width, this.terrain.Height, this.terrain.Width, this.terrain.Height);
-        geometryMap.faceVertexUvs = [[]];
-
-        for (var b = this.terrain.Width * (this.terrain.Height - 1); b >= 0; b = b - this.terrain.Width) {
-            //      for (var y = 0; y < this.terrain.Height; y++) {
-            //            var b = this.terrain.Width * this.terrain.Height - (y + 1) * this.terrain.Width
-            for (var x = 0; x < this.terrain.Width; x++) {
-                geometryMap.faceVertexUvs[0].push(this.atlas.tiles[grounds[this.terrain.Map[b + x].Ground]].faces[0][0]);
-                geometryMap.faceVertexUvs[0].push(this.atlas.tiles[grounds[this.terrain.Map[b + x].Ground]].faces[0][1]);
+        // Заполняем вершинный буфер ландшафта
+        for (var z = 0; z < 2; z++) {
+            for (var y = 0; y < this.terrain.Height + 1; y++) {
+                for (var x = 0; x < this.terrain.Width + 1; x++) {
+                    geoLandscape.vertices.push(new THREE.Vector3(x, y, z));
+                }
             }
         }
 
-        // ------ кастомная геометрия
-        var geoMap = new THREE.Geometry();
-        //        console.log(geoMap);
+        // Смещение индексов верхних вершин
+        var iTopOffset = (this.terrain.Width + 1) * (this.terrain.Height + 1);
 
-        // Заполняем вершинный буфер
-        for (var y = 0; y < this.terrain.Height + 1; y++) {
-            for (var x = 0; x < this.terrain.Width + 1; x++) {
-                geoMap.vertices.push(new THREE.Vector3(x, y, 0));
-            }
+        // quad добавляет в геометрию квадрат по 4 индексам вершин
+        function quad(geo, atlas, tile, v0, v1, v2, v3) {
+
+            // Создаем 2 треугольника
+            geo.faces.push(new THREE.Face3(v0, v2, v1));
+            geo.faces.push(new THREE.Face3(v2, v3, v1));
+            // Задаем текстурные координаты
+            geo.faceVertexUvs[0].push(atlas.tiles[tile].faces[0][0]);
+            geo.faceVertexUvs[0].push(atlas.tiles[tile].faces[0][1]);
+
         }
 
-        // Перебираем все тайлы карты
+        // detail добавляет в геометрию деталь (два перпендикулярных квадрата)
+        function detail(geo, atlas, tile, x, y) {
+
+            var geoDec = new THREE.Geometry();
+            // Заполняем вершинный буфер
+            geoDec.vertices.push(new THREE.Vector3(-0.5, 0, 1));
+            geoDec.vertices.push(new THREE.Vector3(0.5, 0, 1));
+            geoDec.vertices.push(new THREE.Vector3(-0.5, 0, 0));
+            geoDec.vertices.push(new THREE.Vector3(0.5, 0, 0));
+
+            // Создаем первую плоскость
+            quad(geoDec, atlas, tile, 0, 1, 2, 3);
+
+            // Добавляем вторую плоскость, перпендикулярную первой
+            geoDec.merge(geoDec.clone(), new THREE.Matrix4().makeRotationZ(Math.PI / 2));
+
+            // Перемещаем
+            var mt = new THREE.Matrix4().makeTranslation(x, y, 0);
+            // Масштабируем
+            var scale = Math.random() * (1 - 0.7) + 0.7;
+            var ms = new THREE.Matrix4().makeScale(scale, scale, scale);
+            // Крутим
+            var mr = new THREE.Matrix4().makeRotationZ(Math.random() * (Math.PI / 2));
+            // Формируем матрицу трансформации
+            var m = new THREE.Matrix4().multiplyMatrices(mt, ms);
+            m.multiply(mr);
+
+            // Мержим деталь с геометрией
+            geo.merge(geoDec, m);
+        }
+
+        // Перебираем все тайлы карты (от левого нижнего угла направо и вверх)
         for (var y = 0; y < this.terrain.Height; y++) {
+
+            // Вычисляем смещения индексов вершин
+            var yb = y * (this.terrain.Width + 1);
+            var yt = yb + this.terrain.Width + 1;
+
             for (var x = 0; x < this.terrain.Width; x++) {
-                // Вычисляем индексы 4 точек тайла
 
-                /*
-                     0         1
-                     *---------*
-                     |         |
-                     |         |
-                     |         |
-                     *---------*
-                     2         3
-                */
+                // Индекс текущего тайла
+                var index = x + y * this.terrain.Width;
 
-                var i0 = x + (y + 1) * (this.terrain.Width + 1);
-                var i1 = (x + 1) + (y + 1) * (this.terrain.Width + 1);
-                var i2 = x + y * (this.terrain.Width + 1);
-                var i3 = (x + 1) + y * (this.terrain.Width + 1);
+                // Вычисляем индексы 4 нижних точек тайла
+                //
+                //   0  *---*  1
+                //      |   |
+                //   2  *---*  3
 
-                // Тайл без блока
-                if (this.terrain.Map[x + y * this.terrain.Width].Block == 0) {
-                    // Создаем 2 треугольника
-                    geoMap.faces.push(new THREE.Face3(i0, i2, i1));
-                    geoMap.faces.push(new THREE.Face3(i2, i3, i1));
-                    // Задаем текстурные координаты
-                    geoMap.faceVertexUvs[0].push(this.atlas.tiles[grounds[this.terrain.Map[x + y * this.terrain.Width].Ground]].faces[0][0]);
-                    geoMap.faceVertexUvs[0].push(this.atlas.tiles[grounds[this.terrain.Map[x + y * this.terrain.Width].Ground]].faces[0][1]);
+                var i0 = yt + x;
+                var i1 = yt + x + 1;
+                var i2 = yb + x;
+                var i3 = yb + x + 1;
+
+                if (this.terrain.Map[index].Block == 0) {
+                    // Плоский тайл
+
+                    // Поверхность
+                    quad(geoLandscape, this.atlas, grounds[this.terrain.Map[index].Ground], i0, i1, i2, i3);
+                    // Деталь
+                    if (this.terrain.Map[index].Detail != 0) {
+                        detail(geoDetails, this.atlas, details[this.terrain.Map[index].Detail], x, y);
+                    };
+                }
+                else {
+                    // Блочный тайл
+
+                    // Южная сторона
+                    quad(geoLandscape, this.atlas, blocks[this.terrain.Map[index].Block][0], i2 + iTopOffset, i3 + iTopOffset, i2, i3);
+                    // Восточная сторона
+                    quad(geoLandscape, this.atlas, blocks[this.terrain.Map[index].Block][0], i3 + iTopOffset, i1 + iTopOffset, i3, i1);
+                    // Северная сторона
+                    quad(geoLandscape, this.atlas, blocks[this.terrain.Map[index].Block][0], i1 + iTopOffset, i0 + iTopOffset, i1, i0);
+                    // Западная сторона
+                    quad(geoLandscape, this.atlas, blocks[this.terrain.Map[index].Block][0], i0 + iTopOffset, i2 + iTopOffset, i0, i2);
+                    // Верхушка
+                    quad(geoLandscape, this.atlas, blocks[this.terrain.Map[index].Block][1], i0 + iTopOffset, i1 + iTopOffset, i2 + iTopOffset, i3 + iTopOffset);
                 }
             }
         }
 
-        //        geoMap.computeFaceNormals();
-        //        geoMap.computeVertexNormals();
-        // ------
+        //        geoLandscape.computeFaceNormals();
+        //        geoLandscape.computeVertexNormals();
 
-        var geo = new THREE.Geometry();
-        var matrix = new THREE.Matrix4();
-
-        // Перебираем все тайлы карты
-        for (var i = 0; i < this.terrain.Width * this.terrain.Height; i++) {
-
-            // Координаты (от левого нижнего угла карты направо и вверх)
-            var y = Math.floor(i / this.terrain.Width)
-            var x = i - (y * this.terrain.Width)
-
-            var gr = new THREE.PlaneBufferGeometry(1, 1);
-            // console.log(gr.attributes.uv.array); => [0, 1, 1, 1, 0, 0, 1, 0]
-            gr.attributes.uv.array = this.atlas.tiles[grounds[this.terrain.Map[i].Ground]].uvarray;
-            //            gr.translate(x, y, 0);
-
-            matrix.makeTranslation(x, y, 0);
-
-            var tmp = new THREE.Geometry().fromBufferGeometry(gr);
-
-            geo.merge(tmp, matrix);
-
-            // Блок
-            if (this.terrain.Map[i].Block != 0) {
-                var geometryCube = new THREE.BoxGeometry(1, 1, 1);
-                geometryCube.faceVertexUvs = [[]];
-                for (var v = 0; v < 6; v++) {
-                    geometryCube.faceVertexUvs[0].push(this.atlas.tiles[blocks[this.terrain.Map[i].Block][0]].faces[0][0]);
-                    geometryCube.faceVertexUvs[0].push(this.atlas.tiles[blocks[this.terrain.Map[i].Block][0]].faces[0][1]);
-                }
-                geometryCube.faceVertexUvs[0][4] = this.atlas.tiles[blocks[this.terrain.Map[i].Block][1]].faces[0][0];
-                geometryCube.faceVertexUvs[0][5] = this.atlas.tiles[blocks[this.terrain.Map[i].Block][1]].faces[0][1];
-
-                //                        geometryCube.translate(x + 0.5 - this.terrain.Width / 2, y + 0.5 - this.terrain.Height / 2, 0.5);
-
-                var meshCube = new THREE.Mesh(geometryCube, this.atlas.opaqueMaterial);
-                meshCube.position.set(x + 0.5 - this.terrain.Width / 2, y + 0.5 - this.terrain.Height / 2, 0.5);
-                meshCube.rotation.x = Math.PI / 2;
-                this.scene.add(meshCube);
-
-            }
-
-            // Деталь
-            if (this.terrain.Map[i].Detail != 0) {
-                var geometryDec = new THREE.PlaneGeometry(1, 1, 1, 1);
-                geometryDec.faceVertexUvs = [[]];
-                geometryDec.faceVertexUvs[0].push(this.atlas.tiles[details[this.terrain.Map[i].Detail]].faces[0][0]);
-                geometryDec.faceVertexUvs[0].push(this.atlas.tiles[details[this.terrain.Map[i].Detail]].faces[0][1]);
-                var meshDec = new THREE.Mesh(geometryDec, this.atlas.transMaterial);
-                meshDec.rotation.x = Math.PI / 2;
-
-                var groupDec = new THREE.Group();
-
-                meshDec.position.set(0, 0, 0);
-                groupDec.add(meshDec.clone());
-
-                meshDec.rotation.y = Math.PI / 2;
-                groupDec.add(meshDec.clone());
-
-                var scale = Math.random() * (1 - 0.7) + 0.7;
-                groupDec.position.set(x + 0.5 - this.terrain.Width / 2, y + 0.5 - this.terrain.Height / 2, scale / 2);
-                groupDec.rotation.z = Math.random() * (Math.PI / 2);
-                groupDec.scale.set(scale, scale, scale);
-
-                this.scene.add(groupDec);
-            }
-
-        }
-
-        //        var meshMap = new THREE.Mesh(geometryMap, this.atlas.opaqueMaterial);
-        //        var meshMap = new THREE.Mesh(geo, this.atlas.opaqueMaterial);
-        var meshMap = new THREE.Mesh(geoMap, this.atlas.opaqueMaterial);
+        var meshMap = new THREE.Mesh(geoLandscape, this.atlas.opaqueMaterial);
         meshMap.position.set(this.terrain.Width / -2, this.terrain.Height / -2, 0);
         this.scene.add(meshMap);
+
+        var meshDetails = new THREE.Mesh(geoDetails, this.atlas.transMaterial);
+        meshDetails.position.set(0.5 + this.terrain.Width / -2, 0.5 + this.terrain.Height / -2, 0);
+        this.scene.add(meshDetails);
 
     },
 
