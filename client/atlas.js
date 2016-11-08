@@ -37,7 +37,7 @@ function Atlas(cols, rows, size, src) {
 		//		|---*---*---*---*
 		//		| <-|-X | X-|-> |
 		//		|---*-|-*-|-*---*
-		//      |   | v | v |   |
+		//		|   | v | v |   |
 		//		*---*---*---*---*
 		//
 
@@ -82,26 +82,24 @@ function Atlas(cols, rows, size, src) {
 		/*
                         0         1
             красный     *---------*     зеленый
-                        |\        |
+                        |        /|
                         |    ^    |
-                        |        \|
+                        |/        |
             синий       *---------*     желтый
                         2         3
 
-			1 треугольник: 2-0-3
-			2 треугольник: 0-1-3
-		*/
-		/*
-                        2         3
-            красный     *---------*     зеленый
-                        |\        |
-                        |    ^    |
-                        |        \|
-            синий       *---------*     желтый
-                        0         1
+			Порядок отрисовки тайла по вершинам (counter-clockwise winding order):
 
-			1 треугольник: 0-2-1
-			2 треугольник: 2-3-1
+			http://learnopengl.com/#!Advanced-OpenGL/Face-culling
+			https://threejs.org/examples/misc_uv_tests.html
+
+				1 треугольник: 0-2-1
+				2 треугольник: 2-3-1
+
+			Из-за отраженной текстуры порядок uv-координат другой:
+
+				1 треугольник: 2-0-3
+				2 треугольник: 0-1-3
 		*/
 
 		var tile = {};
@@ -113,12 +111,6 @@ function Atlas(cols, rows, size, src) {
 			new THREE.Vector2(u / this.cols + this.uOff, v / this.rows + this.vOff),
 			new THREE.Vector2((u + 1) / this.cols - this.uOff, v / this.rows + this.vOff),
 		];
-//		tile.uvs = [
-//			new THREE.Vector2(u / this.cols + this.uOff, v / this.rows + this.vOff),
-//			new THREE.Vector2((u + 1) / this.cols - this.uOff, v / this.rows + this.vOff),
-//			new THREE.Vector2(u / this.cols + this.uOff, (v + 1) / this.rows - this.vOff),
-//			new THREE.Vector2((u + 1) / this.cols - this.uOff, (v + 1) / this.rows - this.vOff),
-//		];
 
 		// Faces - 4 набора координат, определяющих поворот текстуры 
 		tile.faces = [];
@@ -128,10 +120,6 @@ function Atlas(cols, rows, size, src) {
 		tile.faces.push([
 			[tile.uvs[2], tile.uvs[0], tile.uvs[3]],
 			[tile.uvs[0], tile.uvs[1], tile.uvs[3]]]);
-// 0 -> 2
-// 1 -> 3
-//			[tile.uvs[0], tile.uvs[2], tile.uvs[1]],
-//			[tile.uvs[2], tile.uvs[3], tile.uvs[1]]]);
 
 		// Текстура повернута на 90 градусов налево
 		tile.faces.push([
@@ -148,11 +136,23 @@ function Atlas(cols, rows, size, src) {
 			[tile.uvs[0], tile.uvs[1], tile.uvs[2]],
 			[tile.uvs[1], tile.uvs[3], tile.uvs[2]]]);
 
+		tile.uvarray = [];
+
+            tile.uvarray.push(tile.uvs[0].x);
+            tile.uvarray.push(tile.uvs[0].y);
+            tile.uvarray.push(tile.uvs[1].x);
+            tile.uvarray.push(tile.uvs[1].y);
+            tile.uvarray.push(tile.uvs[2].x);
+            tile.uvarray.push(tile.uvs[2].y);
+            tile.uvarray.push(tile.uvs[3].x);
+            tile.uvarray.push(tile.uvs[3].y);
+
 		this.tiles.push(tile);
 	};
 
 	// Непрозрачный материал
 	this.opaqueMaterial = new THREE.MeshBasicMaterial({ map: this.texture });
+//	this.opaqueMaterial.side = THREE.DoubleSide;
 
 	// Прозрачный материал
 	this.transMaterial = new THREE.MeshBasicMaterial({ map: this.texture });

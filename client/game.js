@@ -367,8 +367,65 @@ Game.prototype = {
         */
         // ------------------------------------------------
 
+        // Поверхность
         var geometryMap = new THREE.PlaneGeometry(this.terrain.Width, this.terrain.Height, this.terrain.Width, this.terrain.Height);
         geometryMap.faceVertexUvs = [[]];
+
+        for (var b = this.terrain.Width * (this.terrain.Height - 1); b >= 0; b = b - this.terrain.Width) {
+            //      for (var y = 0; y < this.terrain.Height; y++) {
+            //            var b = this.terrain.Width * this.terrain.Height - (y + 1) * this.terrain.Width
+            for (var x = 0; x < this.terrain.Width; x++) {
+                geometryMap.faceVertexUvs[0].push(this.atlas.tiles[grounds[this.terrain.Map[b + x].Ground]].faces[0][0]);
+                geometryMap.faceVertexUvs[0].push(this.atlas.tiles[grounds[this.terrain.Map[b + x].Ground]].faces[0][1]);
+            }
+        }
+
+        // ------ кастомная геометрия
+        var geoMap = new THREE.Geometry();
+        //        console.log(geoMap);
+
+        // Заполняем вершинный буфер
+        for (var y = 0; y < this.terrain.Height + 1; y++) {
+            for (var x = 0; x < this.terrain.Width + 1; x++) {
+                geoMap.vertices.push(new THREE.Vector3(x, y, 0));
+            }
+        }
+
+        // Перебираем все тайлы карты
+        for (var y = 0; y < this.terrain.Height; y++) {
+            for (var x = 0; x < this.terrain.Width; x++) {
+                // Вычисляем индексы 4 точек тайла
+
+                /*
+                     0         1
+                     *---------*
+                     |         |
+                     |         |
+                     |         |
+                     *---------*
+                     2         3
+                */
+
+                var i0 = x + (y + 1) * (this.terrain.Width + 1);
+                var i1 = (x + 1) + (y + 1) * (this.terrain.Width + 1);
+                var i2 = x + y * (this.terrain.Width + 1);
+                var i3 = (x + 1) + y * (this.terrain.Width + 1);
+
+                // Тайл без блока
+                if (this.terrain.Map[x + y * this.terrain.Width].Block == 0) {
+                    // Создаем 2 треугольника
+                    geoMap.faces.push(new THREE.Face3(i0, i2, i1));
+                    geoMap.faces.push(new THREE.Face3(i2, i3, i1));
+                    // Задаем текстурные координаты
+                    geoMap.faceVertexUvs[0].push(this.atlas.tiles[grounds[this.terrain.Map[x + y * this.terrain.Width].Ground]].faces[0][0]);
+                    geoMap.faceVertexUvs[0].push(this.atlas.tiles[grounds[this.terrain.Map[x + y * this.terrain.Width].Ground]].faces[0][1]);
+                }
+            }
+        }
+
+        //        geoMap.computeFaceNormals();
+        //        geoMap.computeVertexNormals();
+        // ------
 
         var geo = new THREE.Geometry();
         var matrix = new THREE.Matrix4();
@@ -380,23 +437,9 @@ Game.prototype = {
             var y = Math.floor(i / this.terrain.Width)
             var x = i - (y * this.terrain.Width)
 
-            // Поверхность
-            // ToDo: Переделать - инвертированна по оси y 
-            geometryMap.faceVertexUvs[0].push(this.atlas.tiles[grounds[this.terrain.Map[i].Ground]].faces[0][0]);
-            geometryMap.faceVertexUvs[0].push(this.atlas.tiles[grounds[this.terrain.Map[i].Ground]].faces[0][1]);
-
             var gr = new THREE.PlaneBufferGeometry(1, 1);
             // console.log(gr.attributes.uv.array); => [0, 1, 1, 1, 0, 0, 1, 0]
-            gr.attributes.uv.array[0] = this.atlas.tiles[grounds[this.terrain.Map[i].Ground]].uvs[0].x
-            gr.attributes.uv.array[1] = this.atlas.tiles[grounds[this.terrain.Map[i].Ground]].uvs[0].y
-            gr.attributes.uv.array[2] = this.atlas.tiles[grounds[this.terrain.Map[i].Ground]].uvs[1].x
-            gr.attributes.uv.array[3] = this.atlas.tiles[grounds[this.terrain.Map[i].Ground]].uvs[1].y
-            gr.attributes.uv.array[4] = this.atlas.tiles[grounds[this.terrain.Map[i].Ground]].uvs[2].x
-            gr.attributes.uv.array[5] = this.atlas.tiles[grounds[this.terrain.Map[i].Ground]].uvs[2].y
-            gr.attributes.uv.array[6] = this.atlas.tiles[grounds[this.terrain.Map[i].Ground]].uvs[3].x
-            gr.attributes.uv.array[7] = this.atlas.tiles[grounds[this.terrain.Map[i].Ground]].uvs[3].y
-            //            console.log(gr.attributes.uv.array);
-
+            gr.attributes.uv.array = this.atlas.tiles[grounds[this.terrain.Map[i].Ground]].uvarray;
             //            gr.translate(x, y, 0);
 
             matrix.makeTranslation(x, y, 0);
@@ -416,10 +459,13 @@ Game.prototype = {
                 geometryCube.faceVertexUvs[0][4] = this.atlas.tiles[blocks[this.terrain.Map[i].Block][1]].faces[0][0];
                 geometryCube.faceVertexUvs[0][5] = this.atlas.tiles[blocks[this.terrain.Map[i].Block][1]].faces[0][1];
 
+                //                        geometryCube.translate(x + 0.5 - this.terrain.Width / 2, y + 0.5 - this.terrain.Height / 2, 0.5);
+
                 var meshCube = new THREE.Mesh(geometryCube, this.atlas.opaqueMaterial);
                 meshCube.position.set(x + 0.5 - this.terrain.Width / 2, y + 0.5 - this.terrain.Height / 2, 0.5);
                 meshCube.rotation.x = Math.PI / 2;
                 this.scene.add(meshCube);
+
             }
 
             // Деталь
@@ -450,7 +496,9 @@ Game.prototype = {
         }
 
         //        var meshMap = new THREE.Mesh(geometryMap, this.atlas.opaqueMaterial);
-        var meshMap = new THREE.Mesh(geo, this.atlas.opaqueMaterial);
+        //        var meshMap = new THREE.Mesh(geo, this.atlas.opaqueMaterial);
+        var meshMap = new THREE.Mesh(geoMap, this.atlas.opaqueMaterial);
+        meshMap.position.set(this.terrain.Width / -2, this.terrain.Height / -2, 0);
         this.scene.add(meshMap);
 
     },
