@@ -1,19 +1,19 @@
-function Atlas(cols, rows, size, src) {
+function Atlas(cols, rows, resolution, src) {
 
 	var atlas = this;
 
 	this.cols = cols;
 	this.rows = rows;
-	this.size = size;
+	this.resolution = resolution;
 
 	// Рассчитываем UV-размеры 1 пиксела 
-	this.uOff = 1 / this.cols / (this.size + 2);
-	this.vOff = 1 / this.rows / (this.size + 2);
+	var uOff = 1 / this.cols / (this.resolution + 2);
+	var vOff = 1 / this.rows / (this.resolution + 2);
 
 	// Создаем канву увеличенного размера
 	var canvas = document.createElement("canvas");
-	canvas.width = this.cols * (this.size + 2);
-	canvas.height = this.rows * (this.size + 2);
+	canvas.width = this.cols * (this.resolution + 2);
+	canvas.height = this.rows * (this.resolution + 2);
 	var ctx = canvas.getContext('2d');
 
 	// Создаем текстуру из созданной канвы
@@ -27,7 +27,8 @@ function Atlas(cols, rows, size, src) {
 	// Создание новой текстуры начнется после успешной загрузки исходной
 	img.onload = function () {
 
-		// Расширяем каждый тайл на 1 пиксел во все стороны
+		// Во избежание появления артефактов на границах тайлов
+		// расширяем каждый тайл на 1 пиксел во все стороны
 		// и копируем в образовавшееся пространство боковые линии исходного тайла
 		//
 		//		*---*---*---*---*
@@ -45,20 +46,20 @@ function Atlas(cols, rows, size, src) {
 			for (var x = 0; x < atlas.cols; x++) {
 
 				// Начальная позиция верхнего левого пиксела тайла в исходной текстуре
-				var sx = x * atlas.size;
-				var sy = y * atlas.size;
+				var sx = x * atlas.resolution;
+				var sy = y * atlas.resolution;
 				// Начальная позиция верхнего левого пиксела тайла в новой текстуре
-				var dx = x * (atlas.size + 2);
-				var dy = y * (atlas.size + 2);
+				var dx = x * (atlas.resolution + 2);
+				var dy = y * (atlas.resolution + 2);
 
 				// Копируем исходный тайл
-				ctx.drawImage(img, sx, sy, atlas.size, atlas.size, dx + 1, dy + 1, atlas.size, atlas.size);
+				ctx.drawImage(img, sx, sy, atlas.resolution, atlas.resolution, dx + 1, dy + 1, atlas.resolution, atlas.resolution);
 				// Копируем левую и правую линии
-				ctx.drawImage(img, sx, sy, 1, atlas.size, dx, dy + 1, 1, atlas.size);
-				ctx.drawImage(img, sx + atlas.size - 1, sy, 1, atlas.size, dx + atlas.size + 1, dy + 1, 1, atlas.size);
+				ctx.drawImage(img, sx, sy, 1, atlas.resolution, dx, dy + 1, 1, atlas.resolution);
+				ctx.drawImage(img, sx + atlas.resolution - 1, sy, 1, atlas.resolution, dx + atlas.resolution + 1, dy + 1, 1, atlas.resolution);
 				// Копируем верхнюю и нижнюю линии
-				ctx.drawImage(img, sx, sy, atlas.size, 1, dx + 1, dy, atlas.size, 1);
-				ctx.drawImage(img, sx, sy + atlas.size - 1, atlas.size, 1, dx + 1, dy + atlas.size + 1, atlas.size, 1);
+				ctx.drawImage(img, sx, sy, atlas.resolution, 1, dx + 1, dy, atlas.resolution, 1);
+				ctx.drawImage(img, sx, sy + atlas.resolution - 1, atlas.resolution, 1, dx + 1, dy + atlas.resolution + 1, atlas.resolution, 1);
 
 			};
 		};
@@ -106,10 +107,10 @@ function Atlas(cols, rows, size, src) {
 
 		// Рассчитываем uv-координаты 4 углов тайла
 		tile.uvs = [
-			new THREE.Vector2(u / this.cols + this.uOff, (v + 1) / this.rows - this.vOff),
-			new THREE.Vector2((u + 1) / this.cols - this.uOff, (v + 1) / this.rows - this.vOff),
-			new THREE.Vector2(u / this.cols + this.uOff, v / this.rows + this.vOff),
-			new THREE.Vector2((u + 1) / this.cols - this.uOff, v / this.rows + this.vOff),
+			new THREE.Vector2(u / this.cols + uOff, (v + 1) / this.rows - vOff),
+			new THREE.Vector2((u + 1) / this.cols - uOff, (v + 1) / this.rows - vOff),
+			new THREE.Vector2(u / this.cols + uOff, v / this.rows + vOff),
+			new THREE.Vector2((u + 1) / this.cols - uOff, v / this.rows + vOff),
 		];
 
 		// Faces - 4 набора координат, определяющих поворот текстуры 

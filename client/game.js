@@ -5,6 +5,7 @@ import { Player } from './player';
 import { Atlas } from './atlas';
 import { Loop } from './loop';
 import { Connect } from './connect';
+import { Terrain } from './map';
 
 
 function Game() {
@@ -273,6 +274,11 @@ Game.prototype = {
                 }
             }
         }
+
+        var tt = new Terrain(32, 32, 16, this.atlas);
+        console.log(tt);
+
+        console.log(this.terrain.Map);
 
         // Смещение индексов верхних вершин
         var iTopOffset = (this.terrain.Width + 1) * (this.terrain.Height + 1);

@@ -80,6 +80,14 @@ type MapTile struct {
 	Detail int
 }
 
+// Chunk определяет чанк карты
+type Chunk struct {
+	// Index определяет индекс чанка (от левого нижнего угла направо и вверх)
+	Index int
+	// Proto определяет сериализованное сообщение с информацией о чанке
+	Proto []byte
+}
+
 // Terrain определяет карту
 type Terrain struct {
 	// Width определяет ширину
@@ -90,6 +98,14 @@ type Terrain struct {
 	Seed int64
 	// Map определяет карту
 	Map []MapTile
+	// ChunkSize определяет размер чанка
+	ChunkSize int
+	// ChunkedWidth определяет ширину в чанках
+	ChunkedWidth int
+	// ChunkedHeight определяет высоту в чанках
+	ChunkedHeight int
+	// Chunk определяет чанки карты
+	Chunks []*Chunk
 	// Proto определяет сериализованное сообщение с информацией о карте
 	Proto []byte
 }
@@ -102,17 +118,77 @@ type Instance struct {
 	Terrain Terrain
 }
 
+// NewChank создает чанк по индексу
+func (t Terrain) NewChank(i int) *Chunk {
+
+	oy := i / t.ChunkedWidth
+	ox := i - oy*t.ChunkedWidth
+
+	// Копируем кусок карты
+	m := make([]MapTile, t.ChunkSize*t.ChunkSize)
+	for y := 0; y < t.ChunkSize; y++ {
+		for x := 0; x < t.ChunkSize; x++ {
+			m[y*t.ChunkSize+x] = t.Map[(oy*t.ChunkSize+y)*t.Width+ox*t.ChunkSize+x]
+		}
+	}
+
+	// Подготовливаем данные для сериализации
+	msgChunk := new(protocol.Chunk)
+
+	msgChunk.Index = int32(i)
+	msgChunk.Map = make([]*protocol.Chunk_Tile, t.ChunkSize*t.ChunkSize)
+
+	// ToDo: Перенести в верхний цикл и избавиться от промежуточного слайса m
+	for i := 0; i < t.ChunkSize*t.ChunkSize; i++ {
+		msgChunkTile := new(protocol.Chunk_Tile)
+		msgChunkTile.Ground = int32(m[i].Ground)
+		msgChunkTile.Block = int32(m[i].Block)
+		msgChunkTile.Detail = int32(m[i].Detail)
+
+		msgChunk.Map[i] = msgChunkTile
+	}
+
+	// Сериализуем данные протобафом
+	buffer, err := proto.Marshal(msgChunk)
+	if err != nil {
+		log.Fatal("[proto chunk]:", err)
+	}
+
+//	c.Proto = buffer
+
+/*
+	c := &Chunk{
+		Index: i,
+	Proto: buffer,
+	}
+
+	return c
+*/
+	return &Chunk{
+		Index: i,
+		Proto: buffer,
+	}
+
+}
+
 // NewTerrain создает рандомную карту
 func NewTerrain(width, height int, seed int64) *Terrain {
 	// Генерируем случайное зерно, если seed == 0
 	for ; seed == 0; seed = rand.New(rand.NewSource(time.Now().UnixNano())).Int63() {
 	}
 
+	chunkSize := 16
+
+	// Для корректной работы размеры карты должны быть кратны chunkSize
 	t := &Terrain{
-		Width:  width,
-		Height: height,
-		Map:    make([]MapTile, width*height),
-		Seed:   seed,
+		Width:         width,
+		Height:        height,
+		Seed:          seed,
+		Map:           make([]MapTile, width*height),
+		ChunkSize:     chunkSize,
+		ChunkedWidth:  width / chunkSize,
+		ChunkedHeight: height / chunkSize,
+		Chunks:        make([]*Chunk, width*height/chunkSize*chunkSize),
 	}
 
 	// Инициализируем рандомизатор зерном
@@ -158,6 +234,10 @@ func NewTerrain(width, height int, seed int64) *Terrain {
 			log.Print("[!]")
 		}
 		t.Map[y*width+x].Detail = 3
+	}
+
+	for i := 0; i <	t.ChunkedWidth*t.ChunkedHeight; i++ {
+		t.Chunks[i] = t.NewChank(i)
 	}
 
 	// Подготовливаем данные для сериализации

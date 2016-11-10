@@ -55,6 +55,10 @@ func (h *Hub) Join(ws *websocket.Conn) {
 	go c.receiver()
 	log.Print("[connect]: новое подключение с адреса ", c.ws.RemoteAddr())
 	c.sendMap()
+
+	for i := 0; i < c.Hub.Terrain.ChunkedWidth*c.Hub.Terrain.ChunkedHeight; i++ {
+		c.sendChunk(i)
+	}
 }
 
 // Leave закрывает соединение и удаляет его из списка коннектов
@@ -220,6 +224,36 @@ func (c *Connect) sendMap() {
 	msgItem := new(protocol.MessageItem)
 	msgItem.Type = protocol.MessageType_MsgTerrain
 	msgItem.Body = c.Hub.Terrain.Proto
+
+	// Создаем контейнер и добавляем в него сообщение
+	msgContainer := new(protocol.MessageContainer)
+	msgContainer.Messages = append(msgContainer.Messages, msgItem)
+
+	// Сериализуем контейнер протобафом
+	message, err := proto.Marshal(msgContainer)
+	if err != nil {
+		log.Println("[proto send]:", err)
+		return
+	}
+
+	// Отправляем сообщение
+	err = c.ws.WriteMessage(websocket.BinaryMessage, message)
+	if err != nil {
+		log.Println("[ws write]:", err)
+	}
+
+	// Увеличиваем счетчик отправленных байт
+	c.Sent += len(message)
+
+}
+
+// sendMap отправляет клиенту карту
+func (c *Connect) sendChunk(i int) {
+
+	// Упаковываем сообщение в элемент контейнера
+	msgItem := new(protocol.MessageItem)
+	msgItem.Type = protocol.MessageType_MsgChunk
+	msgItem.Body = c.Hub.Terrain.Chunks[i].Proto
 
 	// Создаем контейнер и добавляем в него сообщение
 	msgContainer := new(protocol.MessageContainer)

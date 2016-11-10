@@ -60,12 +60,29 @@ message Terrain {
     repeated Tile Map = 4;
 }
 
+// Chunk определяет чанк карты
+message Chunk {
+	// Index определяет индекс чанка
+	int32 Index = 1;
+
+	// Tile определяет тайл карты
+	message Tile {
+		int32 Ground = 1;
+		int32 Block = 2;
+		int32 Detail = 3;
+	}
+
+	// Map определяет карту
+    repeated Tile Map = 2;
+}
+
 // MessageType определяет типы сообщений
 enum MessageType
 {
 	MsgController = 0;
 	MsgPlayerPosition = 1;
 	MsgTerrain = 2;
+	MsgChunk =3;
 }
 
 // MessageItem определяет одно сообщение
