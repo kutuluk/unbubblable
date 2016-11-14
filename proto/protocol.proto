@@ -48,16 +48,8 @@ message Terrain {
 	int32 Height = 2;
 	// Seed определяет зерно генератора
 	int64 Seed = 3;
-
-	// Tile определяет тайл карты
-	message Tile {
-		int32 Ground = 1;
-		int32 Block = 2;
-		int32 Detail = 3;
-	}
-
-	// Map определяет карту
-    repeated Tile Map = 4;
+	// ChunkSize определяет размер чанка
+	int32 ChunkSize = 4;
 }
 
 // Chunk определяет чанк карты

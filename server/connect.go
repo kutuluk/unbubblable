@@ -33,7 +33,7 @@ func NewHub() *Hub {
 	h := &Hub{
 		connections: make(map[*Connect]bool),
 		ticker:      time.NewTicker(time.Millisecond * LoopInterval),
-		Terrain:     NewTerrain(32, 32, 3184627059),
+		Terrain:     NewTerrain(32, 32, 4, 3184627059),
 	}
 	go h.loop()
 	log.Println("[hub]: луп запустился")
@@ -55,10 +55,11 @@ func (h *Hub) Join(ws *websocket.Conn) {
 	go c.receiver()
 	log.Print("[connect]: новое подключение с адреса ", c.ws.RemoteAddr())
 	c.sendMap()
-
-	for i := 0; i < c.Hub.Terrain.ChunkedWidth*c.Hub.Terrain.ChunkedHeight; i++ {
-		c.sendChunk(i)
-	}
+	/*
+		for i := 0; i < c.Hub.Terrain.ChunkedWidth*c.Hub.Terrain.ChunkedHeight; i++ {
+			c.sendChunk(i)
+		}
+	*/
 }
 
 // Leave закрывает соединение и удаляет его из списка коннектов
@@ -86,8 +87,9 @@ func (h *Hub) loop() {
 			c.Player.Update()
 
 			// Отправляем сообщение клиенту
-			//			go c.send(message)
-			go c.sendPlayerPosition()
+			//			go c.sendPlayerPosition()
+			c.sendPlayerPosition()
+			c.sendChunk(c.Hub.Terrain.GetChank(int(c.Player.Position.X()), int(c.Player.Position.Y())))
 
 		}
 	}

@@ -1,4 +1,5 @@
 import { log } from './log';
+import { Action } from './unit';
 
 function Connect(delay, game) {
 
@@ -57,6 +58,7 @@ function Connect(delay, game) {
                         var msgPlayerPosition = connect.proto.PlayerPosition.decode(message.Body);
 
                         // Применяем сообщение
+                        game.echo.next = new Action();
                         game.echo.next.position.x = msgPlayerPosition.Position.X;
                         game.echo.next.position.y = msgPlayerPosition.Position.Y;
                         game.echo.next.position.z = msgPlayerPosition.Position.Z;
@@ -81,13 +83,16 @@ function Connect(delay, game) {
                         log.appendText("[proto read]: " + err);
                     };
 
-                        // Применяем сообщение
-                        game.terrain = msgTerrain;
-                        game.createTerrain();
+                    // Применяем сообщение
+                    game.createTerra(msgTerrain);
+
+                    //                    game.terrain = msgTerrain;
+                    //                    game.createTerrain();
+
 
                     break
 
-                // Terrain
+                // Chunk
                 case connect.proto.MessageType.MsgChunk:
 
                     try {
@@ -97,9 +102,12 @@ function Connect(delay, game) {
                         log.appendText("[proto read]: " + err);
                     };
 
-                        // Применяем сообщение
-                        //game.terrain = msgTerrain;
-                        //game.createTerrain();
+                    // Применяем сообщение
+                    //                    game.terra.setChunk(msgChunk);
+                    if (game.terrain.chunks[msgChunk.Index] == undefined) {
+                        game.newChunk(msgChunk);
+                    }
+                    //console.log(game.terrain.chunks[msgChunk.Index]);
 
                     break
 

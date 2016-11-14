@@ -96,4 +96,4 @@ Unit.prototype = {
 
 };
 
-export { Unit };
+export { Unit, Action };

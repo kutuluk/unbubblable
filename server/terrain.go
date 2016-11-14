@@ -154,16 +154,16 @@ func (t Terrain) NewChank(i int) *Chunk {
 		log.Fatal("[proto chunk]:", err)
 	}
 
-//	c.Proto = buffer
+	//	c.Proto = buffer
 
-/*
-	c := &Chunk{
-		Index: i,
-	Proto: buffer,
-	}
+	/*
+		c := &Chunk{
+			Index: i,
+		Proto: buffer,
+		}
 
-	return c
-*/
+		return c
+	*/
 	return &Chunk{
 		Index: i,
 		Proto: buffer,
@@ -172,12 +172,10 @@ func (t Terrain) NewChank(i int) *Chunk {
 }
 
 // NewTerrain создает рандомную карту
-func NewTerrain(width, height int, seed int64) *Terrain {
+func NewTerrain(width, height, chunkSize int, seed int64) *Terrain {
 	// Генерируем случайное зерно, если seed == 0
 	for ; seed == 0; seed = rand.New(rand.NewSource(time.Now().UnixNano())).Int63() {
 	}
-
-	chunkSize := 16
 
 	// Для корректной работы размеры карты должны быть кратны chunkSize
 	t := &Terrain{
@@ -236,7 +234,7 @@ func NewTerrain(width, height int, seed int64) *Terrain {
 		t.Map[y*width+x].Detail = 3
 	}
 
-	for i := 0; i <	t.ChunkedWidth*t.ChunkedHeight; i++ {
+	for i := 0; i < t.ChunkedWidth*t.ChunkedHeight; i++ {
 		t.Chunks[i] = t.NewChank(i)
 	}
 
@@ -245,17 +243,8 @@ func NewTerrain(width, height int, seed int64) *Terrain {
 
 	msgTerrain.Width = int32(t.Width)
 	msgTerrain.Height = int32(t.Height)
-	msgTerrain.Seed = t.Seed
-	msgTerrain.Map = make([]*protocol.Terrain_Tile, width*height)
-
-	for i := 0; i < width*height; i++ {
-		msgTerrainTile := new(protocol.Terrain_Tile)
-		msgTerrainTile.Ground = int32(t.Map[i].Ground)
-		msgTerrainTile.Block = int32(t.Map[i].Block)
-		msgTerrainTile.Detail = int32(t.Map[i].Detail)
-
-		msgTerrain.Map[i] = msgTerrainTile
-	}
+	msgTerrain.ChunkSize = int32(t.ChunkSize)
+	msgTerrain.Seed = int64(t.Seed)
 
 	// Сериализуем данные протобафом
 	buffer, err := proto.Marshal(msgTerrain)
@@ -266,4 +255,11 @@ func NewTerrain(width, height int, seed int64) *Terrain {
 	t.Proto = buffer
 
 	return t
+}
+
+// GetChank возвращает индекс чанка по координатам тайла
+func (t Terrain) GetChank(x, y int) int {
+	xx := x / t.ChunkSize
+	yy := y / t.ChunkSize
+	return yy*t.ChunkedWidth + xx
 }
