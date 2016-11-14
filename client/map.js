@@ -74,7 +74,6 @@ Chunk.prototype = {
         // Детали
         var geoDetails = new THREE.Geometry();
 
-
         // quad добавляет в геометрию квадрат по 4 индексам вершин
         function quad(geo, atlas, tile, v0, v1, v2, v3) {
 
@@ -154,7 +153,7 @@ Chunk.prototype = {
                 };
 
 
-                // Блочный тайл
+                // Блок
                 if (this.tiles[index].block != 0) {
 
                     // Южная сторона
@@ -171,16 +170,11 @@ Chunk.prototype = {
             }
         }
 
-        this.meshMap = new THREE.Mesh(geoLandscape, this.terrain.atlas.opaqueMaterial);
-        this.meshMap.position.set(this.meshX, this.meshY, 0);
-
-        //this.scene.add(this.meshMap);
+        this.meshLandscape = new THREE.Mesh(geoLandscape, this.terrain.atlas.opaqueMaterial);
+        this.meshLandscape.position.set(this.meshX, this.meshY, 0);
 
         this.meshDetails = new THREE.Mesh(geoDetails, this.terrain.atlas.transMaterial);
         this.meshDetails.position.set(this.meshX + 0.5, this.meshY + 0.5, 0);
-
-        //this.scene.add(this.meshDetails);
-
 
     },
 
@@ -191,6 +185,10 @@ function Terrain(width, height, chunkSize, atlas) {
     this.width = width;
     this.height = height;
     this.chunkSize = chunkSize;
+
+    this.chunkedWidth = Math.ceil(width / chunkSize);
+	this.chunkedHeight = Math.ceil(height / chunkSize);
+
     this.atlas = atlas;
 
     this.chunks = [];

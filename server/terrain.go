@@ -67,7 +67,7 @@ type Detail struct {
 
 // Details определяет виды деталей
 var Details = []Detail{
-	{0, "Empty", 0},       // Пустая деталь
+	{0, "Empty", 0},       // Нет детали
 	{1, "Grass", 39},      // Трава
 	{2, "Fern", 200},      // Папоротник
 	{3, "Dead Shrub", 55}, // Сухой куст
@@ -154,16 +154,6 @@ func (t Terrain) NewChank(i int) *Chunk {
 		log.Fatal("[proto chunk]:", err)
 	}
 
-	//	c.Proto = buffer
-
-	/*
-		c := &Chunk{
-			Index: i,
-		Proto: buffer,
-		}
-
-		return c
-	*/
 	return &Chunk{
 		Index: i,
 		Proto: buffer,
@@ -257,9 +247,16 @@ func NewTerrain(width, height, chunkSize int, seed int64) *Terrain {
 	return t
 }
 
-// GetChank возвращает индекс чанка по координатам тайла
-func (t Terrain) GetChank(x, y int) int {
+// GetChankIndex возвращает индекс чанка по координатам тайла
+func (t Terrain) GetChankIndex(x, y int) int {
 	xx := x / t.ChunkSize
 	yy := y / t.ChunkSize
 	return yy*t.ChunkedWidth + xx
+}
+
+// GetChankCoord возвращает координаты чанка по индексу
+func (t Terrain) GetChankCoord(i int) (x, y int) {
+	y = i / t.ChunkedWidth
+	x = i - y*t.ChunkedWidth
+	return
 }

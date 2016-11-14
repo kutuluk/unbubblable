@@ -104,6 +104,25 @@ Loop.prototype = {
 
 		this.game.connect.sendController(this.game.controller);
 
+		var cx = Math.floor(this.game.player.position.x / this.game.terrain.chunkSize);
+		var cy = Math.floor(this.game.player.position.y / this.game.terrain.chunkSize);
+
+		var chunksIndecies = [];
+		for (var yy = cy - 1; yy < cy + 2; yy++) {
+			for (var xx = cx - 1; xx < cx + 2; xx++) {
+
+//				if (!((yy < 0) || (yy > this.game.terrain.chunkedHeight - 1) || (xx < 0) || (xx > this.game.terrain.chunkedWidth - 1))) {
+					var index = yy * this.game.terrain.chunkedWidth + xx;
+					if (this.game.terrain.chunks[index] == undefined) {
+						chunksIndecies.push(index);
+					}
+//				}
+
+			}
+		}
+
+		this.game.connect.sendChanksRequest(chunksIndecies);
+
 	}
 
 };

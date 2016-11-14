@@ -7,6 +7,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/kutuluk/unbubblable/server/proto"
 
+	"math"
+
 	"github.com/gorilla/websocket"
 )
 
@@ -33,7 +35,7 @@ func NewHub() *Hub {
 	h := &Hub{
 		connections: make(map[*Connect]bool),
 		ticker:      time.NewTicker(time.Millisecond * LoopInterval),
-		Terrain:     NewTerrain(32, 32, 4, 3184627059),
+		Terrain:     NewTerrain(24*5, 24*5, 24, 3184627059),
 	}
 	go h.loop()
 	log.Println("[hub]: луп запустился")
@@ -54,12 +56,7 @@ func (h *Hub) Join(ws *websocket.Conn) {
 	// Запускаем обработчик входящих сообщений
 	go c.receiver()
 	log.Print("[connect]: новое подключение с адреса ", c.ws.RemoteAddr())
-	c.sendMap()
-	/*
-		for i := 0; i < c.Hub.Terrain.ChunkedWidth*c.Hub.Terrain.ChunkedHeight; i++ {
-			c.sendChunk(i)
-		}
-	*/
+	c.sendTerrain()
 }
 
 // Leave закрывает соединение и удаляет его из списка коннектов
@@ -89,7 +86,7 @@ func (h *Hub) loop() {
 			// Отправляем сообщение клиенту
 			//			go c.sendPlayerPosition()
 			c.sendPlayerPosition()
-			c.sendChunk(c.Hub.Terrain.GetChank(int(c.Player.Position.X()), int(c.Player.Position.Y())))
+			//			c.sendChunk(c.Hub.Terrain.GetChank(int(c.Player.Position.X()), int(c.Player.Position.Y())))
 
 		}
 	}
@@ -152,6 +149,36 @@ func (c *Connect) receiver() {
 				// Применяем сообщение
 				c.Player.Controller = msgController
 
+			// ChunkRequest
+			case protocol.MessageType_MsgChunkRequest:
+
+				msgChunkRequest := new(protocol.ChunkRequest)
+				// Декодируем сообщение
+				err = proto.Unmarshal(message.Body, msgChunkRequest)
+				if err != nil {
+					log.Println("[proto read]:", err)
+					break
+				}
+
+				// Применяем сообщение
+
+				// Обходим все запрашиваемые индексы чанков
+				for _, index := range msgChunkRequest.Chunks {
+
+					// Проверяем на соответсвие диапазону
+					if !((index < 0) || (int(index) > c.Hub.Terrain.ChunkedWidth*c.Hub.Terrain.ChunkedHeight-1)) {
+						cx, cy := c.Hub.Terrain.GetChankCoord(int(index))
+						px := math.Floor(c.Player.Position.X() / float64(c.Hub.Terrain.ChunkSize))
+						py := math.Floor(c.Player.Position.Y() / float64(c.Hub.Terrain.ChunkSize))
+						dx := math.Abs(px - float64(cx))
+						dy := math.Abs(py - float64(cy))
+						// Проверяем смежность запрашиваемого чанка с координатами персонажа
+						if (dx <= 1) && (dy <= 1) {
+							c.sendChunk(int(index))
+						}
+					}
+				}
+
 			default:
 				log.Println("[proto read]: не известное сообщение")
 			}
@@ -161,12 +188,30 @@ func (c *Connect) receiver() {
 	log.Println("[connect]: ресивер завершился")
 }
 
-// send отправляет сообщение клиенту
-func (c *Connect) send(message []byte) {
-	err := c.ws.WriteMessage(websocket.TextMessage, message)
+// sendMessage упаковывает сообщение в контейнер и отправляет его клиенту
+func (c *Connect) sendMessage(m *protocol.MessageItem) {
+
+	// Создаем контейнер и добавляем в него сообщение
+	msgContainer := new(protocol.MessageContainer)
+	msgContainer.Messages = append(msgContainer.Messages, m)
+
+	// Сериализуем контейнер протобафом
+	message, err := proto.Marshal(msgContainer)
+	if err != nil {
+		log.Println("[proto send]:", err)
+		return
+	}
+
+	// Отправляем сообщение
+	err = c.ws.WriteMessage(websocket.BinaryMessage, message)
 	if err != nil {
 		log.Println("[ws write]:", err)
+		return
 	}
+
+	// Увеличиваем счетчик отправленных байт
+	c.Sent += len(message)
+
 }
 
 // sendPlayerPosition отправляет клиенту позицию персонажа
@@ -197,59 +242,25 @@ func (c *Connect) sendPlayerPosition() {
 	msgItem.Type = protocol.MessageType_MsgPlayerPosition
 	msgItem.Body = msgBuffer
 
-	// Создаем контейнер и добавляем в него сообщение
-	msgContainer := new(protocol.MessageContainer)
-	msgContainer.Messages = append(msgContainer.Messages, msgItem)
-
-	// Сериализуем контейнер протобафом
-	message, err := proto.Marshal(msgContainer)
-	if err != nil {
-		log.Println("[proto send]:", err)
-		return
-	}
-
 	// Отправляем сообщение
-	err = c.ws.WriteMessage(websocket.BinaryMessage, message)
-	if err != nil {
-		log.Println("[ws write]:", err)
-	}
-
-	// Увеличиваем счетчик отправленных байт
-	c.Sent += len(message)
+	c.sendMessage(msgItem)
 
 }
 
 // sendMap отправляет клиенту карту
-func (c *Connect) sendMap() {
+func (c *Connect) sendTerrain() {
 
 	// Упаковываем сообщение в элемент контейнера
 	msgItem := new(protocol.MessageItem)
 	msgItem.Type = protocol.MessageType_MsgTerrain
 	msgItem.Body = c.Hub.Terrain.Proto
 
-	// Создаем контейнер и добавляем в него сообщение
-	msgContainer := new(protocol.MessageContainer)
-	msgContainer.Messages = append(msgContainer.Messages, msgItem)
-
-	// Сериализуем контейнер протобафом
-	message, err := proto.Marshal(msgContainer)
-	if err != nil {
-		log.Println("[proto send]:", err)
-		return
-	}
-
 	// Отправляем сообщение
-	err = c.ws.WriteMessage(websocket.BinaryMessage, message)
-	if err != nil {
-		log.Println("[ws write]:", err)
-	}
-
-	// Увеличиваем счетчик отправленных байт
-	c.Sent += len(message)
+	c.sendMessage(msgItem)
 
 }
 
-// sendMap отправляет клиенту карту
+// sendChunk отправляет клиенту чанк по индексу
 func (c *Connect) sendChunk(i int) {
 
 	// Упаковываем сообщение в элемент контейнера
@@ -257,24 +268,7 @@ func (c *Connect) sendChunk(i int) {
 	msgItem.Type = protocol.MessageType_MsgChunk
 	msgItem.Body = c.Hub.Terrain.Chunks[i].Proto
 
-	// Создаем контейнер и добавляем в него сообщение
-	msgContainer := new(protocol.MessageContainer)
-	msgContainer.Messages = append(msgContainer.Messages, msgItem)
-
-	// Сериализуем контейнер протобафом
-	message, err := proto.Marshal(msgContainer)
-	if err != nil {
-		log.Println("[proto send]:", err)
-		return
-	}
-
 	// Отправляем сообщение
-	err = c.ws.WriteMessage(websocket.BinaryMessage, message)
-	if err != nil {
-		log.Println("[ws write]:", err)
-	}
-
-	// Увеличиваем счетчик отправленных байт
-	c.Sent += len(message)
+	c.sendMessage(msgItem)
 
 }

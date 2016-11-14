@@ -113,40 +113,29 @@ function Atlas(cols, rows, resolution, src) {
 			new THREE.Vector2((u + 1) / this.cols - uOff, v / this.rows + vOff),
 		];
 
-		// Faces - 4 набора координат, определяющих поворот текстуры 
+		// faces - 4 набора uv-координат, определяющих разные повороты текстуры 
 		tile.faces = [];
 
 
-		// Изначальное направление текстуры
+		// Изначальное направление текстуры (север)
 		tile.faces.push([
 			[tile.uvs[2], tile.uvs[0], tile.uvs[3]],
 			[tile.uvs[0], tile.uvs[1], tile.uvs[3]]]);
 
-		// Текстура повернута на 90 градусов налево
+		// Текстура повернута на 90 градусов налево (запад)
 		tile.faces.push([
 			[tile.uvs[3], tile.uvs[2], tile.uvs[1]],
 			[tile.uvs[2], tile.uvs[0], tile.uvs[1]]]);
 
-		// Текстура повернута на 180 градусов налево
+		// Текстура повернута на 180 градусов налево (юг)
 		tile.faces.push([
 			[tile.uvs[1], tile.uvs[3], tile.uvs[0]],
 			[tile.uvs[3], tile.uvs[2], tile.uvs[0]]]);
 
-		// Текстура повернута на 270 градусов налево
+		// Текстура повернута на 270 градусов налево (восток)
 		tile.faces.push([
 			[tile.uvs[0], tile.uvs[1], tile.uvs[2]],
 			[tile.uvs[1], tile.uvs[3], tile.uvs[2]]]);
-
-		tile.uvarray = [];
-
-            tile.uvarray.push(tile.uvs[0].x);
-            tile.uvarray.push(tile.uvs[0].y);
-            tile.uvarray.push(tile.uvs[1].x);
-            tile.uvarray.push(tile.uvs[1].y);
-            tile.uvarray.push(tile.uvs[2].x);
-            tile.uvarray.push(tile.uvs[2].y);
-            tile.uvarray.push(tile.uvs[3].x);
-            tile.uvarray.push(tile.uvs[3].y);
 
 		this.tiles.push(tile);
 	};

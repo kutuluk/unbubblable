@@ -1,5 +1,4 @@
 import { log } from './log';
-import { Action } from './unit';
 
 function Connect(delay, game) {
 
@@ -57,19 +56,13 @@ function Connect(delay, game) {
                         // Декодируем сообщение
                         var msgPlayerPosition = connect.proto.PlayerPosition.decode(message.Body);
 
-                        // Применяем сообщение
-                        game.echo.next = new Action();
-                        game.echo.next.position.x = msgPlayerPosition.Position.X;
-                        game.echo.next.position.y = msgPlayerPosition.Position.Y;
-                        game.echo.next.position.z = msgPlayerPosition.Position.Z;
-                        game.echo.next.motion.x = msgPlayerPosition.Motion.X;
-                        game.echo.next.motion.y = msgPlayerPosition.Motion.Y;
-                        game.echo.next.motion.z = msgPlayerPosition.Motion.Z;
-                        game.echo.next.angle = msgPlayerPosition.Angle;
-                        game.echo.next.slew = msgPlayerPosition.Slew;
                     } catch (err) {
                         log.appendText("[proto read]: " + err);
+                        break
                     };
+
+                    // Запускаем обработчик
+                    game.handlePlayerPositionMessage(msgPlayerPosition);
 
                     break
 
@@ -81,14 +74,11 @@ function Connect(delay, game) {
                         var msgTerrain = connect.proto.Terrain.decode(message.Body);
                     } catch (err) {
                         log.appendText("[proto read]: " + err);
+                        break
                     };
 
-                    // Применяем сообщение
-                    game.createTerra(msgTerrain);
-
-                    //                    game.terrain = msgTerrain;
-                    //                    game.createTerrain();
-
+                    // Запускаем обработчик
+                    game.handleTerrainMessage(msgTerrain);
 
                     break
 
@@ -100,14 +90,11 @@ function Connect(delay, game) {
                         var msgChunk = connect.proto.Chunk.decode(message.Body);
                     } catch (err) {
                         log.appendText("[proto read]: " + err);
+                        break
                     };
 
-                    // Применяем сообщение
-                    //                    game.terra.setChunk(msgChunk);
-                    if (game.terrain.chunks[msgChunk.Index] == undefined) {
-                        game.newChunk(msgChunk);
-                    }
-                    //console.log(game.terrain.chunks[msgChunk.Index]);
+                    // Запускаем обработчик
+                    game.handleChunkMessage(msgChunk);
 
                     break
 
@@ -126,47 +113,64 @@ Connect.prototype = {
 
     sendMessage: function (msg) {
         if (this.ws.readyState == WebSocket.OPEN) {
-            if (this.delay > 0) {
-                var connect = this;
-                setTimeout(function () { connect.ws.send(msg); }, this.delay + Math.floor(Math.random() * this.delay / 10) - Math.floor(this.delay / 20));
-            } else {
-                this.ws.send(msg);
-            }
+
+            // Создаем контейнер и добавляем в него сообщение
+            var msgContainer = new this.proto.MessageContainer;
+            msgContainer.Messages.push(msg);
+
+            // Отправляем сообщение
+            this.ws.send(msgContainer.toArrayBuffer());
+
         }
     },
 
     sendController: function (controller) {
-        if (this.ws.readyState == WebSocket.OPEN) {
+        // Формируем сообщение
+        var msg = new this.proto.Controller(
+            controller.moveForward,
+            controller.moveBackward,
+            controller.moveLeft,
+            controller.moveRight,
+            controller.rotateLeft,
+            controller.rotateRight,
+            new this.proto.Controller.Modifiers(
+                controller.modifiers.shift,
+                controller.modifiers.ctrl,
+                controller.modifiers.alt,
+                controller.modifiers.meta)
+        );
+
+        // Упаковываем сообщение в элемент контейнера
+        var msgItem = new this.proto.MessageItem(
+            this.proto.MessageType.MsgController,
+            msg.encode()
+        );
+
+        this.sendMessage(msgItem);
+
+    },
+
+    sendChanksRequest: function (chunksIndecies) {
+        if (chunksIndecies.length > 0) {
 
             // Формируем сообщение
-            var msg = new this.proto.Controller(
-                controller.moveForward,
-                controller.moveBackward,
-                controller.moveLeft,
-                controller.moveRight,
-                controller.rotateLeft,
-                controller.rotateRight,
-                new this.proto.Controller.Modifiers(
-                    controller.modifiers.shift,
-                    controller.modifiers.ctrl,
-                    controller.modifiers.alt,
-                    controller.modifiers.meta)
-            );
+            var msg = new this.proto.ChunkRequest();
+            msg.Chunks = chunksIndecies;
+
+            //            console.log(msg);
 
             // Упаковываем сообщение в элемент контейнера
             var msgItem = new this.proto.MessageItem(
-                this.proto.MessageType.MsgController,
+                this.proto.MessageType.MsgChunkRequest,
                 msg.encode()
             );
 
-            // Создаем контейнер и добавляем в него сообщение
-            var msgContainer = new this.proto.MessageContainer;
-            msgContainer.Messages.push(msgItem);
+            this.sendMessage(msgItem);
 
-            // Отправляем сообщение
-            this.ws.send(msgContainer.toArrayBuffer());
         }
+
     }
+
 
 }
 

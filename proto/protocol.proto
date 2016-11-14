@@ -2,6 +2,29 @@ syntax = "proto3";
 
 package protocol;
 
+// MessageType определяет типы сообщений
+enum MessageType
+{
+	MsgController = 0;
+	MsgPlayerPosition = 1;
+	MsgTerrain = 2;
+	MsgChunk = 3;
+	MsgChunkRequest = 4;
+}
+
+// MessageItem определяет одно сообщение
+message MessageItem
+{
+    MessageType Type = 1;
+    bytes Body = 2;
+}
+
+// MessageContainer определяет несколько сообщений
+message MessageContainer
+{
+    repeated MessageItem Messages = 1;
+}
+
 // Controller определяет клавиши управления
 message Controller {
 	bool MoveForward = 1;
@@ -68,24 +91,7 @@ message Chunk {
     repeated Tile Map = 2;
 }
 
-// MessageType определяет типы сообщений
-enum MessageType
-{
-	MsgController = 0;
-	MsgPlayerPosition = 1;
-	MsgTerrain = 2;
-	MsgChunk =3;
-}
-
-// MessageItem определяет одно сообщение
-message MessageItem
-{
-    MessageType Type = 1;
-    bytes Body = 2;
-}
-
-// MessageContainer определяет несколько сообщений
-message MessageContainer
-{
-    repeated MessageItem Messages = 1;
+// ChunkRequest определяет список необходимых чанков
+message	ChunkRequest {
+    repeated int32 Chunks = 1;
 }

@@ -1,6 +1,6 @@
 import { log } from './log';
 import { Controller } from './controller';
-import { Unit } from './unit';
+import { Action, Unit } from './unit';
 import { Player } from './player';
 import { Atlas } from './atlas';
 import { Loop } from './loop';
@@ -45,7 +45,7 @@ function Game() {
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(this.screen.width, this.screen.height);
 
-    this.camera = new THREE.PerspectiveCamera(40, this.screen.width / this.screen.height, 1, 1 * 2000);
+    this.camera = new THREE.PerspectiveCamera(40, this.screen.width / this.screen.height, 1, 2000);
     this.camera.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 5);
 
     this.scene = new THREE.Scene();
@@ -66,9 +66,7 @@ function Game() {
     this.player = new Player(this.camera, createCharacter(219));
     this.echo = new Unit(createCharacter(220));
 
-    this.terrain = undefined;
-
-//    this.terra = undefined;
+//    this.terrain = undefined;
 
     //    createTexture();
 
@@ -126,17 +124,37 @@ Game.prototype = {
         requestAnimationFrame(game.animate);
     },
 
-    createTerra: function (msgTerrain) {
+    handlePlayerPositionMessage: function (msgPlayerPosition) {
 
-        this.terrain = new Terrain(msgTerrain.Width, msgTerrain.Height, msgTerrain.ChunkSize, this.atlas);
+        this.echo.next = new Action();
+        this.echo.next.position.set(msgPlayerPosition.Position.X, msgPlayerPosition.Position.Y, msgPlayerPosition.Position.Z);
+        this.echo.next.motion.set(msgPlayerPosition.Motion.X, msgPlayerPosition.Motion.Y, msgPlayerPosition.Motion.Z);
+        this.echo.next.angle = msgPlayerPosition.Angle;
+        this.echo.next.slew = msgPlayerPosition.Slew;
 
     },
 
-    newChunk: function (msgChunk) {
+    handleTerrainMessage: function (msgTerrain) {
 
-        this.terrain.setChunk(msgChunk);
-        this.scene.add(this.terrain.chunks[msgChunk.Index].meshMap);
-        this.scene.add(this.terrain.chunks[msgChunk.Index].meshDetails);
+        this.terrain = new Terrain(msgTerrain.Width, msgTerrain.Height, msgTerrain.ChunkSize, this.atlas);
+
+
+        var geoGrid = new THREE.PlaneGeometry(msgTerrain.Width, msgTerrain.Height, msgTerrain.Width/msgTerrain.ChunkSize, msgTerrain.Height/msgTerrain.ChunkSize);
+        var material = new THREE.MeshBasicMaterial( {color: 0xffffff, wireframe: true, side: THREE.DoubleSide} );
+        var grid = new THREE.Mesh( geoGrid, material );
+        grid.position.set( msgTerrain.Width/2, msgTerrain.Height/2, 0.03 );
+        this.scene.add(grid);
+    },
+
+    handleChunkMessage: function (msgChunk) {
+
+        if (this.terrain.chunks[msgChunk.Index] == undefined) {
+
+            this.terrain.setChunk(msgChunk);
+            this.scene.add(this.terrain.chunks[msgChunk.Index].meshLandscape);
+            this.scene.add(this.terrain.chunks[msgChunk.Index].meshDetails);
+
+        }
 
     },
 
