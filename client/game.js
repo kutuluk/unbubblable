@@ -66,7 +66,7 @@ function Game() {
     this.player = new Player(this.camera, createCharacter(219));
     this.echo = new Unit(createCharacter(220));
 
-//    this.terrain = undefined;
+    this.terrain = undefined;
 
     //    createTexture();
 
@@ -138,11 +138,10 @@ Game.prototype = {
 
         this.terrain = new Terrain(msgTerrain.Width, msgTerrain.Height, msgTerrain.ChunkSize, this.atlas);
 
-
-        var geoGrid = new THREE.PlaneGeometry(msgTerrain.Width, msgTerrain.Height, msgTerrain.Width/msgTerrain.ChunkSize, msgTerrain.Height/msgTerrain.ChunkSize);
-        var material = new THREE.MeshBasicMaterial( {color: 0xffffff, wireframe: true, side: THREE.DoubleSide} );
-        var grid = new THREE.Mesh( geoGrid, material );
-        grid.position.set( msgTerrain.Width/2, msgTerrain.Height/2, 0.03 );
+        var geoGrid = new THREE.PlaneGeometry(msgTerrain.Width, msgTerrain.Height, msgTerrain.Width / msgTerrain.ChunkSize, msgTerrain.Height / msgTerrain.ChunkSize);
+        var material = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, side: THREE.DoubleSide });
+        var grid = new THREE.Mesh(geoGrid, material);
+        grid.position.set(msgTerrain.Width / 2, msgTerrain.Height / 2, 0.03);
         this.scene.add(grid);
     },
 

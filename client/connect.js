@@ -31,7 +31,7 @@ function Connect(delay, game) {
             text += 'Обрыв соединения.';
         }
         // http://stackoverflow.com/questions/18803971/websocket-onerror-how-to-read-error-description
-        text += 'Код: ' + event.code;
+        text += ' Код: ' + event.code;
         log.appendText(text);
     };
 

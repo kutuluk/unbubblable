@@ -187,7 +187,7 @@ function Terrain(width, height, chunkSize, atlas) {
     this.chunkSize = chunkSize;
 
     this.chunkedWidth = Math.ceil(width / chunkSize);
-	this.chunkedHeight = Math.ceil(height / chunkSize);
+    this.chunkedHeight = Math.ceil(height / chunkSize);
 
     this.atlas = atlas;
 
