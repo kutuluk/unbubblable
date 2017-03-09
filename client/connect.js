@@ -11,20 +11,18 @@ class Connect {
         //        var Proto = builder.build("protocol");
         this.proto = dcodeIO.ProtoBuf.loadProtoFile('./js/protocol.proto').build('protocol');
 
-        let connect = this;
-
         this.ws = new WebSocket(`ws://${window.location.host}/ws`);
         this.ws.binaryType = 'arraybuffer';
 
-        this.ws.onopen = function () {
+        this.ws.onopen = () => {
             log.appendText('[WS] Соединение установлено.');
         };
 
-        this.ws.onerror = function (error) {
+        this.ws.onerror = error => {
             log.appendText(`[WS] Ошибка: ${error.message}`);
         };
 
-        this.ws.onclose = function (event) {
+        this.ws.onclose = event => {
 
             if (event.wasClean) {
                 var text = 'Соединение закрыто чисто.';
@@ -36,63 +34,63 @@ class Connect {
 
         };
 
-        this.ws.onmessage = function (event) {
+        this.ws.onmessage = event => {
             // Преобразуем полученные данные в контейнер
             try {
-                var msgContainer = connect.proto.MessageContainer.decode(event.data);
+                var msgContainer = this.proto.MessageContainer.decode(event.data);
             } catch (err) {
                 log.appendText(`[proto read]: ${err}`);
                 return;
             }
 
             // Обходим сообщения в контейнере
-            msgContainer.Messages.forEach(function (message) {
+            msgContainer.Messages.forEach( message => {
 
                 switch (message.Type) {
 
                     // PlayerPosition
-                    case connect.proto.MessageType.MsgPlayerPosition:
+                    case this.proto.MessageType.MsgPlayerPosition:
 
                         try {
                             // Декодируем сообщение
-                            var msgPlayerPosition = connect.proto.PlayerPosition.decode(message.Body);
+                            var msgPlayerPosition = this.proto.PlayerPosition.decode(message.Body);
                         } catch (err) {
                             log.appendText(`[proto read]: ${err}`);
                             break
                         };
 
                         // Запускаем обработчик
-                        connect.game.handlePlayerPositionMessage(msgPlayerPosition);
+                        this.game.handlePlayerPositionMessage(msgPlayerPosition);
                         break
 
                     // Terrain
-                    case connect.proto.MessageType.MsgTerrain:
+                    case this.proto.MessageType.MsgTerrain:
 
                         try {
                             // Декодируем сообщение
-                            var msgTerrain = connect.proto.Terrain.decode(message.Body);
+                            var msgTerrain = this.proto.Terrain.decode(message.Body);
                         } catch (err) {
                             log.appendText(`[proto read]: ${err}`);
                             break
                         };
 
                         // Запускаем обработчик
-                        connect.game.handleTerrainMessage(msgTerrain);
+                        this.game.handleTerrainMessage(msgTerrain);
                         break
 
                     // Chunk
-                    case connect.proto.MessageType.MsgChunk:
+                    case this.proto.MessageType.MsgChunk:
 
                         try {
                             // Декодируем сообщение
-                            var msgChunk = connect.proto.Chunk.decode(message.Body);
+                            var msgChunk = this.proto.Chunk.decode(message.Body);
                         } catch (err) {
                             log.appendText(`[proto read]: ${err}`);
                             break
                         };
 
                         // Запускаем обработчик
-                        connect.game.handleChunkMessage(msgChunk);
+                        this.game.handleChunkMessage(msgChunk);
                         break
 
                     default:

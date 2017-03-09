@@ -4,8 +4,6 @@ class Atlas {
 
 	constructor(cols, rows, resolution, src) {
 
-		let atlas = this;
-
 		this.cols = cols;
 		this.rows = rows;
 		this.resolution = resolution;
@@ -30,7 +28,7 @@ class Atlas {
 		let img = new Image();
 
 		// Создание атласа начнется после успешной загрузки изображения исходной текстуры
-		img.onload = function () {
+		img.onload = () => {
 
 			// Во избежание появления артефактов на границах тайлов
 			// расширяем каждый тайл на 1 пиксел во все стороны
@@ -47,35 +45,35 @@ class Atlas {
 			//		*---*---*---*---*
 			//
 
-			for (let y = 0; y < atlas.rows; y++) {
-				for (let x = 0; x < atlas.cols; x++) {
+			for (let y = 0; y < this.rows; y++) {
+				for (let x = 0; x < this.cols; x++) {
 
 					// Начальная позиция верхнего левого пиксела тайла в исходной текстуре
-					let sx = x * atlas.resolution;
-					let sy = y * atlas.resolution;
+					let sx = x * this.resolution;
+					let sy = y * this.resolution;
 					// Начальная позиция верхнего левого пиксела тайла в новой текстуре
-					let dx = x * (atlas.resolution + 2);
-					let dy = y * (atlas.resolution + 2);
+					let dx = x * (this.resolution + 2);
+					let dy = y * (this.resolution + 2);
 
 					// Копируем исходный тайл
-					ctx.drawImage(img, sx, sy, atlas.resolution, atlas.resolution, dx + 1, dy + 1, atlas.resolution, atlas.resolution);
+					ctx.drawImage(img, sx, sy, this.resolution, this.resolution, dx + 1, dy + 1, this.resolution, this.resolution);
 					// Копируем левую и правую линии
-					ctx.drawImage(img, sx, sy, 1, atlas.resolution, dx, dy + 1, 1, atlas.resolution);
-					ctx.drawImage(img, sx + atlas.resolution - 1, sy, 1, atlas.resolution, dx + atlas.resolution + 1, dy + 1, 1, atlas.resolution);
+					ctx.drawImage(img, sx, sy, 1, this.resolution, dx, dy + 1, 1, this.resolution);
+					ctx.drawImage(img, sx + this.resolution - 1, sy, 1, this.resolution, dx + this.resolution + 1, dy + 1, 1, this.resolution);
 					// Копируем верхнюю и нижнюю линии
-					ctx.drawImage(img, sx, sy, atlas.resolution, 1, dx + 1, dy, atlas.resolution, 1);
-					ctx.drawImage(img, sx, sy + atlas.resolution - 1, atlas.resolution, 1, dx + 1, dy + atlas.resolution + 1, atlas.resolution, 1);
+					ctx.drawImage(img, sx, sy, this.resolution, 1, dx + 1, dy, this.resolution, 1);
+					ctx.drawImage(img, sx, sy + this.resolution - 1, this.resolution, 1, dx + 1, dy + this.resolution + 1, this.resolution, 1);
 
 				};
 			};
 			// Выставляем флаг необходимости обновления текстуры
-			atlas.texture.needsUpdate = true;
+			this.texture.needsUpdate = true;
 
 		};
 
 		// Обработчик ошибки загрузки исходного изображения текстуры
-		img.onerror = function () {
-			log.appendText(`[IMG] Ошибка загрузки файла: ${atlas.src}`);
+		img.onerror = () => {
+			log.appendText(`[IMG] Ошибка загрузки файла: ${this.src}`);
 		};
 
 		// Загружаем исходную текстуру
