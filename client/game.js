@@ -70,7 +70,7 @@ function Game() {
 
     //    createTexture();
 
-    this.connect = new Connect(0, this);
+    this.connect = new Connect(this);
 
     // Персонаж
     function createCharacter(tile) {

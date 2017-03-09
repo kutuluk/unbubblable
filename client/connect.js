@@ -1,132 +1,126 @@
 import { log } from './log';
 
-function Connect(delay, game) {
+class Connect {
 
-    this.delay = delay || 0;
-    this.game = game;
+    constructor(game) {
 
-    //        var ProtoBuf = dcodeIO.ProtoBuf;
-    //        var builder = ProtoBuf.loadProtoFile("./js/protocol.proto");
-    //        var Proto = builder.build("protocol");
-    this.proto = dcodeIO.ProtoBuf.loadProtoFile("./js/protocol.proto").build("protocol");
+        this.game = game;
 
-    var connect = this;
+        //        var ProtoBuf = dcodeIO.ProtoBuf;
+        //        var builder = ProtoBuf.loadProtoFile("./js/protocol.proto");
+        //        var Proto = builder.build("protocol");
+        this.proto = dcodeIO.ProtoBuf.loadProtoFile("./js/protocol.proto").build("protocol");
 
-    this.ws = new WebSocket("ws://" + window.location.host + "/ws");
-    this.ws.binaryType = 'arraybuffer';
+        var connect = this;
 
-    this.ws.onopen = function () {
-        log.appendText("[WS] Соединение установлено.");
-    };
+        this.ws = new WebSocket("ws://" + window.location.host + "/ws");
+        this.ws.binaryType = 'arraybuffer';
 
-    this.ws.onerror = function (error) {
-        log.appendText("[WS] Ошибка: " + error.message);
-    };
+        this.ws.onopen = function () {
+            log.appendText("[WS] Соединение установлено.");
+        };
 
-    this.ws.onclose = function (event) {
-        var text = "[WS] ";
-        if (event.wasClean) {
-            text += 'Соединение закрыто чисто.';
-        } else {
-            text += 'Обрыв соединения.';
-        }
-        // http://stackoverflow.com/questions/18803971/websocket-onerror-how-to-read-error-description
-        text += ' Код: ' + event.code;
-        log.appendText(text);
-    };
+        this.ws.onerror = function (error) {
+            log.appendText("[WS] Ошибка: " + error.message);
+        };
 
-    this.ws.onmessage = function (event) {
-        // Преобразуем полученные данные в контейнер
-        try {
-            var msgContainer = connect.proto.MessageContainer.decode(event.data);
-        } catch (err) {
-            log.appendText("[proto read]: " + err);
-            return;
-        }
+        this.ws.onclose = function (event) {
+            let text = "[WS] ";
+            if (event.wasClean) {
+                text += 'Соединение закрыто чисто.';
+            } else {
+                text += 'Обрыв соединения.';
+            }
+            // http://stackoverflow.com/questions/18803971/websocket-onerror-how-to-read-error-description
+            text += ' Код: ' + event.code;
+            log.appendText(text);
+        };
 
-        // Обходим сообщения в контейнере
-        msgContainer.Messages.forEach(function (message) {
+        this.ws.onmessage = function (event) {
+            // Преобразуем полученные данные в контейнер
+            try {
+                var msgContainer = connect.proto.MessageContainer.decode(event.data);
+            } catch (err) {
+                log.appendText("[proto read]: " + err);
+                return;
+            }
 
-            switch (message.Type) {
+            // Обходим сообщения в контейнере
+            msgContainer.Messages.forEach(function (message) {
 
-                // PlayerPosition
-                case connect.proto.MessageType.MsgPlayerPosition:
+                switch (message.Type) {
 
-                    try {
-                        // Декодируем сообщение
-                        var msgPlayerPosition = connect.proto.PlayerPosition.decode(message.Body);
+                    // PlayerPosition
+                    case connect.proto.MessageType.MsgPlayerPosition:
 
-                    } catch (err) {
-                        log.appendText("[proto read]: " + err);
+                        try {
+                            // Декодируем сообщение
+                            var msgPlayerPosition = connect.proto.PlayerPosition.decode(message.Body);
+                        } catch (err) {
+                            log.appendText("[proto read]: " + err);
+                            break
+                        };
+
+                        // Запускаем обработчик
+                        connect.game.handlePlayerPositionMessage(msgPlayerPosition);
                         break
-                    };
 
-                    // Запускаем обработчик
-                    game.handlePlayerPositionMessage(msgPlayerPosition);
+                    // Terrain
+                    case connect.proto.MessageType.MsgTerrain:
 
-                    break
+                        try {
+                            // Декодируем сообщение
+                            var msgTerrain = connect.proto.Terrain.decode(message.Body);
+                        } catch (err) {
+                            log.appendText("[proto read]: " + err);
+                            break
+                        };
 
-                // Terrain
-                case connect.proto.MessageType.MsgTerrain:
-
-                    try {
-                        // Декодируем сообщение
-                        var msgTerrain = connect.proto.Terrain.decode(message.Body);
-                    } catch (err) {
-                        log.appendText("[proto read]: " + err);
+                        // Запускаем обработчик
+                        connect.game.handleTerrainMessage(msgTerrain);
                         break
-                    };
 
-                    // Запускаем обработчик
-                    game.handleTerrainMessage(msgTerrain);
+                    // Chunk
+                    case connect.proto.MessageType.MsgChunk:
 
-                    break
+                        try {
+                            // Декодируем сообщение
+                            var msgChunk = connect.proto.Chunk.decode(message.Body);
+                        } catch (err) {
+                            log.appendText("[proto read]: " + err);
+                            break
+                        };
 
-                // Chunk
-                case connect.proto.MessageType.MsgChunk:
-
-                    try {
-                        // Декодируем сообщение
-                        var msgChunk = connect.proto.Chunk.decode(message.Body);
-                    } catch (err) {
-                        log.appendText("[proto read]: " + err);
+                        // Запускаем обработчик
+                        connect.game.handleChunkMessage(msgChunk);
                         break
-                    };
 
-                    // Запускаем обработчик
-                    game.handleChunkMessage(msgChunk);
+                    default:
+                        log.appendText("[proto read]: не известное сообщение");
+                        break
+                };
 
-                    break
+            });
+        };
+    }
 
-                default:
-                    log.appendText("[proto read]: не известное сообщение");
-                    break
-            };
-
-        });
-    };
-};
-
-Connect.prototype = {
-
-    constructor: Connect,
-
-    sendMessage: function (msg) {
+    sendMessage(msg) {
         if (this.ws.readyState == WebSocket.OPEN) {
 
             // Создаем контейнер и добавляем в него сообщение
-            var msgContainer = new this.proto.MessageContainer;
+            let msgContainer = new this.proto.MessageContainer;
             msgContainer.Messages.push(msg);
 
             // Отправляем сообщение
             this.ws.send(msgContainer.toArrayBuffer());
 
         }
-    },
+    }
 
-    sendController: function (controller) {
+    sendController(controller) {
+        
         // Формируем сообщение
-        var msg = new this.proto.Controller(
+        let msg = new this.proto.Controller(
             controller.moveForward,
             controller.moveBackward,
             controller.moveLeft,
@@ -141,38 +135,35 @@ Connect.prototype = {
         );
 
         // Упаковываем сообщение в элемент контейнера
-        var msgItem = new this.proto.MessageItem(
+        let msgItem = new this.proto.MessageItem(
             this.proto.MessageType.MsgController,
             msg.encode()
         );
 
+        // Отправляем сообщение
         this.sendMessage(msgItem);
 
-    },
+    }
 
-    sendChanksRequest: function (chunksIndecies) {
+    sendChanksRequest(chunksIndecies) {
         if (chunksIndecies.length > 0) {
 
             // Формируем сообщение
-            var msg = new this.proto.ChunkRequest();
+            let msg = new this.proto.ChunkRequest();
             msg.Chunks = chunksIndecies;
 
-            //            console.log(msg);
-
             // Упаковываем сообщение в элемент контейнера
-            var msgItem = new this.proto.MessageItem(
+            let msgItem = new this.proto.MessageItem(
                 this.proto.MessageType.MsgChunkRequest,
                 msg.encode()
             );
 
+            // Отправляем сообщение
             this.sendMessage(msgItem);
 
         }
-
     }
 
-
-}
+};
 
 export { Connect };
-

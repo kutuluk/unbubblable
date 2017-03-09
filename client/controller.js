@@ -1,39 +1,37 @@
-function Controller(dom) {
+class Controller {
 
-    this.dom = dom;
+    constructor(dom) {
 
-    this.moveForward = false;
-    this.moveBackward = false;
+        this.dom = dom;
 
-    this.moveLeft = false;
-    this.moveRight = false;
+        this.moveForward = false;
+        this.moveBackward = false;
 
-    this.rotateLeft = false;
-    this.rotateRight = false;
+        this.moveLeft = false;
+        this.moveRight = false;
 
-    this.zoomIn = false;
-    this.zoomOut = false;
+        this.rotateLeft = false;
+        this.rotateRight = false;
 
-    this.modifiers = { shift: false, ctrl: false, alt: false, meta: false };
+        this.zoomIn = false;
+        this.zoomOut = false;
 
-    function contextmenu(event) {
-        event.preventDefault();
+        this.modifiers = { shift: false, ctrl: false, alt: false, meta: false };
+
+        function contextmenu(event) {
+            event.preventDefault();
+        }
+
+        var controller = this;
+        var _onKeyDown = function (event) { controller.onKeyChange(event, true); };
+        var _onKeyUp = function (event) { controller.onKeyChange(event, false); };
+
+        this.dom.addEventListener('contextmenu', contextmenu, false);
+        window.addEventListener('keydown', _onKeyDown, false);
+        window.addEventListener('keyup', _onKeyUp, false);
     }
 
-    var controller = this;
-    var _onKeyDown = function (event) { controller.onKeyChange(event, true); };
-    var _onKeyUp = function (event) { controller.onKeyChange(event, false); };
-
-    this.dom.addEventListener('contextmenu', contextmenu, false);
-    window.addEventListener('keydown', _onKeyDown, false);
-    window.addEventListener('keyup', _onKeyUp, false);
-}
-
-Controller.prototype = {
-
-    constructor: Controller,
-
-    onKeyChange: function (event, pressed) {
+    onKeyChange(event, pressed) {
 
         switch (event.keyCode) {
 
@@ -58,9 +56,9 @@ Controller.prototype = {
         this.modifiers.alt = event.altKey;
         this.modifiers.meta = event.metaKey;
 
-    },
+    }
 
-    dispose: function () {
+    dispose() {
         this.dom.removeEventListener('contextmenu', contextmenu, false);
         window.removeEventListener('keydown', _onKeyDown, false);
         window.removeEventListener('keyup', _onKeyUp, false);
