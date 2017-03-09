@@ -1,3 +1,5 @@
+import { log } from './log';
+
 class Atlas {
 
 	constructor(cols, rows, resolution, src) {
@@ -7,6 +9,7 @@ class Atlas {
 		this.cols = cols;
 		this.rows = rows;
 		this.resolution = resolution;
+		this.src = src;
 
 		// Рассчитываем UV-размеры 1 пиксела 
 		let uOff = 1 / this.cols / (this.resolution + 2);
@@ -26,7 +29,7 @@ class Atlas {
 
 		let img = new Image();
 
-		// Создание новой текстуры начнется после успешной загрузки исходной
+		// Создание новой текстуры начнется после успешной загрузки избежания исходной текстуры
 		img.onload = function () {
 
 			// Во избежание появления артефактов на границах тайлов
@@ -70,8 +73,13 @@ class Atlas {
 
 		};
 
+		// Обработчик ошибки загрузки исходного изображения текстуры
+		img.onerror = function () {
+			log.appendText(`[IMG] Ошибка загрузки файла: ${atlas.src}`);
+		};
+
 		// Загружаем исходную текстуру
-		img.src = src;
+		img.src = this.src;
 
 		this.tiles = [];
 
@@ -115,7 +123,7 @@ class Atlas {
 				new THREE.Vector2((u + 1) / this.cols - uOff, v / this.rows + vOff),
 			];
 
-			// faces - 4 набора uv-координат, определяющих разные повороты текстуры 
+			// 4 набора uv-координат, определяющих разные повороты текстуры 
 			tile.faces = [];
 
 

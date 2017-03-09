@@ -46,7 +46,7 @@ Loop.prototype = {
 
 		// Передвигаем эхо
 		if (this.game.echo.next) {
-			this.game.echo.set(new THREE.Vector3().copy(this.game.echo.next.position), new THREE.Vector3().copy(this.game.echo.next.motion), this.game.echo.next.angle, this.game.echo.next.slew);
+			this.game.echo.current.set(new THREE.Vector3().copy(this.game.echo.next.position), new THREE.Vector3().copy(this.game.echo.next.motion), this.game.echo.next.angle, this.game.echo.next.slew);
 			this.game.echo.next = undefined;
 		}
 

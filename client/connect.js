@@ -9,31 +9,31 @@ class Connect {
         //        var ProtoBuf = dcodeIO.ProtoBuf;
         //        var builder = ProtoBuf.loadProtoFile("./js/protocol.proto");
         //        var Proto = builder.build("protocol");
-        this.proto = dcodeIO.ProtoBuf.loadProtoFile("./js/protocol.proto").build("protocol");
+        this.proto = dcodeIO.ProtoBuf.loadProtoFile('./js/protocol.proto').build('protocol');
 
-        var connect = this;
+        let connect = this;
 
-        this.ws = new WebSocket("ws://" + window.location.host + "/ws");
+        this.ws = new WebSocket(`ws://${window.location.host}/ws`);
         this.ws.binaryType = 'arraybuffer';
 
         this.ws.onopen = function () {
-            log.appendText("[WS] Соединение установлено.");
+            log.appendText('[WS] Соединение установлено.');
         };
 
         this.ws.onerror = function (error) {
-            log.appendText("[WS] Ошибка: " + error.message);
+            log.appendText(`[WS] Ошибка: ${error.message}`);
         };
 
         this.ws.onclose = function (event) {
-            let text = "[WS] ";
+
             if (event.wasClean) {
-                text += 'Соединение закрыто чисто.';
+                var text = 'Соединение закрыто чисто.';
             } else {
-                text += 'Обрыв соединения.';
+                var text = 'Обрыв соединения.';
             }
             // http://stackoverflow.com/questions/18803971/websocket-onerror-how-to-read-error-description
-            text += ' Код: ' + event.code;
-            log.appendText(text);
+            log.appendText(`[WS] ${text} Код: ${event.code}`);
+
         };
 
         this.ws.onmessage = function (event) {
@@ -41,7 +41,7 @@ class Connect {
             try {
                 var msgContainer = connect.proto.MessageContainer.decode(event.data);
             } catch (err) {
-                log.appendText("[proto read]: " + err);
+                log.appendText(`[proto read]: ${err}`);
                 return;
             }
 
@@ -57,7 +57,7 @@ class Connect {
                             // Декодируем сообщение
                             var msgPlayerPosition = connect.proto.PlayerPosition.decode(message.Body);
                         } catch (err) {
-                            log.appendText("[proto read]: " + err);
+                            log.appendText(`[proto read]: ${err}`);
                             break
                         };
 
@@ -72,7 +72,7 @@ class Connect {
                             // Декодируем сообщение
                             var msgTerrain = connect.proto.Terrain.decode(message.Body);
                         } catch (err) {
-                            log.appendText("[proto read]: " + err);
+                            log.appendText(`[proto read]: ${err}`);
                             break
                         };
 
@@ -87,7 +87,7 @@ class Connect {
                             // Декодируем сообщение
                             var msgChunk = connect.proto.Chunk.decode(message.Body);
                         } catch (err) {
-                            log.appendText("[proto read]: " + err);
+                            log.appendText(`[proto read]: ${err}`);
                             break
                         };
 
@@ -96,7 +96,7 @@ class Connect {
                         break
 
                     default:
-                        log.appendText("[proto read]: не известное сообщение");
+                        log.appendText('[proto read]: неизвестное сообщение');
                         break
                 };
 
@@ -118,7 +118,7 @@ class Connect {
     }
 
     sendController(controller) {
-        
+
         // Формируем сообщение
         let msg = new this.proto.Controller(
             controller.moveForward,
