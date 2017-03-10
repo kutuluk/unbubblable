@@ -2,8 +2,6 @@ class Controller {
 
     constructor(dom) {
 
-        this.dom = dom;
-
         this.moveForward = false;
         this.moveBackward = false;
 
@@ -18,18 +16,33 @@ class Controller {
 
         this.modifiers = { shift: false, ctrl: false, alt: false, meta: false };
 
-        function contextmenu(event) {
-            event.preventDefault();
-        }
+        dom.addEventListener('contextmenu', event => event.preventDefault(), false);
+        window.addEventListener('keydown', event => this.onKeyChange(event, true), false);
+        window.addEventListener('keyup', event => this.onKeyChange(event, false), false);
 
-        var controller = this;
-        var _onKeyDown = function (event) { controller.onKeyChange(event, true); };
-        var _onKeyUp = function (event) { controller.onKeyChange(event, false); };
+        /*
+                // Если потом необходимо очищать обработчики с помощью dispose()
 
-        this.dom.addEventListener('contextmenu', contextmenu, false);
-        window.addEventListener('keydown', _onKeyDown, false);
-        window.addEventListener('keyup', _onKeyUp, false);
+                this.dom = dom;
+
+                this._contextmenu = event => event.preventDefault();
+                this._onKeyDown = event => this.onKeyChange(event, true);
+                this._onKeyUp = event => this.onKeyChange(event, false);
+        
+                this.dom.addEventListener('contextmenu', this._contextmenu, false);
+                window.addEventListener('keydown', this._onKeyDown, false);
+                window.addEventListener('keyup', this._onKeyUp, false);
+        */
+
     }
+
+    /*
+        dispose() {
+            this.dom.removeEventListener('contextmenu', this._contextmenu, false);
+            window.removeEventListener('keydown', this._onKeyDown, false);
+            window.removeEventListener('keyup', this._onKeyUp, false);
+        }
+    */
 
     onKeyChange(event, pressed) {
 
@@ -56,12 +69,6 @@ class Controller {
         this.modifiers.alt = event.altKey;
         this.modifiers.meta = event.metaKey;
 
-    }
-
-    dispose() {
-        this.dom.removeEventListener('contextmenu', contextmenu, false);
-        window.removeEventListener('keydown', _onKeyDown, false);
-        window.removeEventListener('keyup', _onKeyUp, false);
     }
 
 };

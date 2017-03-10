@@ -1,31 +1,18 @@
-function Loop(game, amplitude) {
+class Loop {
 
-	this.game = game;
-	this.current = 0;
-	this.time = new Date().getTime();
-	this.amplitude = amplitude;
-	this.interval = 1000 / this.amplitude;
-	this.updating = false;
+	constructor(game, amplitude) {
 
-	var loop = this;
+		this.game = game;
+		this.current = 0;
+		this.time = new Date().getTime();
+		this.amplitude = amplitude;
+		this.interval = 1000 / this.amplitude;
+		this.updating = false;
+		this.tickerId = setInterval(this.tick.bind(this), this.interval);
 
-	var _tick = bind(this, this.tick);
-	this.tickerId = setInterval(_tick, this.interval);
+	}
 
-	function bind(scope, fn) {
-		return function () {
-			fn.apply(scope, arguments);
-		};
-	};
-
-
-}
-
-Loop.prototype = {
-
-	constructor: Loop,
-
-	tick: function () {
+	tick() {
 
 		this.updating = true;
 
@@ -35,13 +22,13 @@ Loop.prototype = {
 		this.time = new Date().getTime();
 
 		// Изменяем параметры в соответствии с приращениями прошлого тика
-		this.game.player.position.add(this.game.player.motion);
-		this.game.player.angle += this.game.player.slew;
+		this.game.player.unit.current.position.add(this.game.player.unit.current.motion);
+		this.game.player.unit.current.angle += this.game.player.unit.current.slew;
 		this.game.player.camHeight += this.game.player.camMotion;
 
 		// Обнуляем приращения
-		this.game.player.motion.set(0, 0, 0);
-		this.game.player.slew = 0;
+		this.game.player.unit.current.motion.set(0, 0, 0);
+		this.game.player.unit.current.slew = 0;
 		this.game.player.camMotion = 0;
 
 		// Передвигаем эхо
@@ -51,35 +38,35 @@ Loop.prototype = {
 		}
 
 		// Рассчитываем единичный вектор движения прямо
-		var forwardDirection = new THREE.Vector3(0, 1, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), this.game.player.angle);
+		let forwardDirection = new THREE.Vector3(0, 1, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), this.game.player.unit.current.angle);
 
 		// Расчитываем единичный вектор стрейфа направо 
-		var rightDirection = new THREE.Vector3().copy(forwardDirection);
+		let rightDirection = new THREE.Vector3().copy(forwardDirection);
 		rightDirection.applyAxisAngle(new THREE.Vector3(0, 0, -1), Math.PI / 2);
 
 		// Обрабатываем показания контроллера и задаем приращения текущего тика
 		if (this.game.controller.rotateLeft) {
-			this.game.player.slew += this.game.player.speed / (Math.PI * 2) / this.amplitude;
+			this.game.player.unit.current.slew += this.game.player.speed / (Math.PI * 2) / this.amplitude;
 		}
 
 		if (this.game.controller.rotateRight) {
-			this.game.player.slew -= this.game.player.speed / (Math.PI * 2) / this.amplitude;
+			this.game.player.unit.current.slew -= this.game.player.speed / (Math.PI * 2) / this.amplitude;
 		}
 
 		if (this.game.controller.moveRight) {
-			this.game.player.motion.add(rightDirection);
+			this.game.player.unit.current.motion.add(rightDirection);
 		}
 
 		if (this.game.controller.moveLeft) {
-			this.game.player.motion.sub(rightDirection);
+			this.game.player.unit.current.motion.sub(rightDirection);
 		}
 
 		if (this.game.controller.moveForward) {
-			this.game.player.motion.add(forwardDirection);
+			this.game.player.unit.current.motion.add(forwardDirection);
 		};
 
 		if (this.game.controller.moveBackward) {
-			this.game.player.motion.sub(forwardDirection);
+			this.game.player.unit.current.motion.sub(forwardDirection);
 		}
 
 		if (this.game.controller.zoomIn) {
@@ -91,11 +78,11 @@ Loop.prototype = {
 		}
 
 		// Формируем вектор движения
-		this.game.player.motion.normalize();
-		this.game.player.motion.multiplyScalar(this.game.player.speed / this.amplitude);
+		this.game.player.unit.current.motion.normalize();
+		this.game.player.unit.current.motion.multiplyScalar(this.game.player.speed / this.amplitude);
 
 		if (this.game.controller.modifiers.shift) {
-			this.game.player.motion.multiplyScalar(0.25);
+			this.game.player.unit.current.motion.multiplyScalar(0.25);
 			this.game.player.slew *= 0.25;
 			this.game.player.camMotion *= 0.25;
 		}
@@ -106,14 +93,14 @@ Loop.prototype = {
 
 
 		if (!(this.game.terrain === undefined || this.game.terrain === null)) {
-			var chunksIndecies = [];
-			var cx = Math.floor(this.game.player.position.x / this.game.terrain.chunkSize);
-			var cy = Math.floor(this.game.player.position.y / this.game.terrain.chunkSize);
-			for (var yy = cy - 1; yy < cy + 2; yy++) {
-				for (var xx = cx - 1; xx < cx + 2; xx++) {
+			let chunksIndecies = [];
+			let cx = Math.floor(this.game.player.unit.current.position.x / this.game.terrain.chunkSize);
+			let cy = Math.floor(this.game.player.unit.current.position.y / this.game.terrain.chunkSize);
+			for (let y = cy - 1; y < cy + 2; y++) {
+				for (let x = cx - 1; x < cx + 2; x++) {
 
-					//				if (!((yy < 0) || (yy > this.game.terrain.chunkedHeight - 1) || (xx < 0) || (xx > this.game.terrain.chunkedWidth - 1))) {
-					var index = yy * this.game.terrain.chunkedWidth + xx;
+					//				if (!((y < 0) || (y > this.game.terrain.chunkedHeight - 1) || (x < 0) || (x > this.game.terrain.chunkedWidth - 1))) {
+					let index = y * this.game.terrain.chunkedWidth + x;
 					if (this.game.terrain.chunks[index] == undefined) {
 						chunksIndecies.push(index);
 					}
