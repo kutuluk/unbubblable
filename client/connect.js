@@ -1,4 +1,5 @@
 import { log } from './log';
+import * as protobuf from 'protobufjs';
 
 class Connect {
 
@@ -6,10 +7,21 @@ class Connect {
 
         this.game = game;
 
-        //        var ProtoBuf = dcodeIO.ProtoBuf;
-        //        var builder = ProtoBuf.loadProtoFile("./js/protocol.proto");
-        //        var Proto = builder.build("protocol");
         this.proto = dcodeIO.ProtoBuf.loadProtoFile('./js/protocol.proto').build('protocol');
+
+        protobuf.load('js/protocol.proto', (err, root) => {
+            if (err) throw err;
+            this.protobuf = root;
+
+            this.protobuf = root.lookup("protocol");
+            console.log(this.protobuf);
+
+        });
+
+
+        //        var ChunkRequest = this.protobuf.lookup("protocol.ChunkRequest");
+        //        var message = ChunkRequest.create();
+        //        console.log(message);
 
         this.ws = new WebSocket(`ws://${window.location.host}/ws`);
         this.ws.binaryType = 'arraybuffer';
@@ -44,7 +56,7 @@ class Connect {
             }
 
             // Обходим сообщения в контейнере
-            msgContainer.Messages.forEach( message => {
+            msgContainer.Messages.forEach(message => {
 
                 switch (message.Type) {
 
@@ -112,6 +124,32 @@ class Connect {
             // Отправляем сообщение
             this.ws.send(msgContainer.toArrayBuffer());
 
+            // ------------------
+
+            let msgContainerM = this.protobuf.lookup("MessageContainer");
+            let msgContainer2 = msgContainerM.create({ Messages: [msg] });
+
+            //            var errMsg = msgContainerM.verify(msgContainer2);
+            //            if (errMsg)
+            //                throw Error(errMsg);
+
+            let buffer = msgContainerM.encode(msgContainer2).finish();
+
+            //            let msgContainer2 = this.protobuf.MessageContainer.create({ Messages: [msg] });
+            //            let buffer = this.protobuf.MessageContainer.encode(msgContainer2).finish();
+            //            console.log(msgContainer2);
+
+
+            //            this.ws.send(buffer);
+
+            //            let msgContainer3 = this.protobuf.lookup("MessageContainer");
+            //            let msgContainer4 = new msgContainer3;
+            //            msgContainer4.Messages.push(msg);
+
+            //            msgContainer2.Messages.push([msg]);
+
+            // ------------------
+
         }
     }
 
@@ -140,6 +178,30 @@ class Connect {
 
         // Отправляем сообщение
         this.sendMessage(msgItem);
+
+        let msg2M = this.protobuf.lookup("Controller");
+        let msg2 = msg2M.create({
+            MoveForward: controller.moveForward,
+            MoveBackward: controller.moveBackward,
+            MoveLeft: controller.moveLeft,
+            MoveRight: controller.moveRight,
+            RotateLeft: controller.rotateLeft,
+            RotateRight: controller.rotateRight,
+            Modifiers: {
+                Shift: controller.modifiers.shift,
+                Ctrl: controller.modifiers.ctrl,
+                Alt: controller.modifiers.alt,
+                Meta: controller.modifiers.meta
+            }
+        });
+
+        console.log(msg2);
+
+
+        let msgItemM = this.protobuf.lookup("MessageItem");
+        let msgItem2 = msgItemM.create(msg2);
+
+//        console.log(msgItem2);
 
     }
 
