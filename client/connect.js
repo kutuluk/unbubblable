@@ -126,14 +126,14 @@ class Connect {
 
             // ------------------
 
-            let msgContainerM = this.protobuf.lookup("MessageContainer");
-            let msgContainer2 = msgContainerM.create({ Messages: [msg] });
 
-            //            var errMsg = msgContainerM.verify(msgContainer2);
-            //            if (errMsg)
-            //                throw Error(errMsg);
+            /*
+                        let msgContainer2 = this.protobuf.MessageContainer.create({ Messages: [msg] });
+            
+                        let buffer = this.protobuf.MessageContainer.encode(msgContainer2).finish();
+            */
 
-            let buffer = msgContainerM.encode(msgContainer2).finish();
+            //this.ws.send(buffer);
 
             //            let msgContainer2 = this.protobuf.MessageContainer.create({ Messages: [msg] });
             //            let buffer = this.protobuf.MessageContainer.encode(msgContainer2).finish();
@@ -179,30 +179,78 @@ class Connect {
         // Отправляем сообщение
         this.sendMessage(msgItem);
 
-        let msg2M = this.protobuf.lookup("Controller");
-        let msg2 = msg2M.create({
-            MoveForward: controller.moveForward,
-            MoveBackward: controller.moveBackward,
-            MoveLeft: controller.moveLeft,
-            MoveRight: controller.moveRight,
-            RotateLeft: controller.rotateLeft,
-            RotateRight: controller.rotateRight,
-            Modifiers: {
-                Shift: controller.modifiers.shift,
-                Ctrl: controller.modifiers.ctrl,
-                Alt: controller.modifiers.alt,
-                Meta: controller.modifiers.meta
+
+        //        let msg2M = this.protobuf.lookup("Controller");
+        /*
+                let msg2 = this.protobuf.Controller.create(
+                    {
+                        MoveForward: controller.moveForward,
+                        MoveBackward: controller.moveBackward,
+                        MoveLeft: controller.moveLeft,
+                        MoveRight: controller.moveRight,
+                        RotateLeft: controller.rotateLeft,
+                        RotateRight: controller.rotateRight,
+                        Mods: this.protobuf.Controller.Modifiers.create(
+                            {
+                                Shift: controller.modifiers.shift,
+                                Ctrl: controller.modifiers.ctrl,
+                                Alt: controller.modifiers.alt,
+                                Meta: controller.modifiers.meta
+                            }
+                        )
+                    }
+                );
+        */
+
+        let msg2 = this.protobuf.Controller.create(
+            {
+                MoveForward2: true,
+                MoveBackward2: true,
+                MoveLeft2: true,
+                MoveRight2: false,
+                RotateLeft2: false,
+                RotateRight: false,
+                Mods: this.protobuf.Controller.Modifiers.create(
+                    {
+                        Shift2: true,
+                        Ctrl2: true,
+                        Alt2: false,
+                        Meta: false
+                    }
+                )
             }
-        });
+        );
+
+        msg2.MoveLeft = true;
 
         console.log(msg2);
+        let m = this.protobuf.Controller.encode(msg2).finish();
+        console.log(m);
+
+        let msgM = this.protobuf.lookup("Controller");
+
+        var message = msgM.decode(m);
+        console.log(message);
+        var errMsg = this.protobuf.Controller.verify(msg2);
+        if (errMsg)
+            throw Error(errMsg);
 
 
-        let msgItemM = this.protobuf.lookup("MessageItem");
-        let msgItem2 = msgItemM.create(msg2);
-
-//        console.log(msgItem2);
-
+        /*
+                let msgItem2 = this.protobuf.MessageItem.create(
+                    {
+                        Type: this.protobuf.MessageType.MsgController,
+                        Body: this.protobuf.Controller.encode(msg2).finish()
+                    }
+                );
+        
+                console.log(msg2);
+                console.log(m.buffer);
+        
+                var errMsg = this.protobuf.Controller.verify(m);
+                if (errMsg)
+                    throw Error(errMsg);
+        */
     }
 
     sendChanksRequest(chunksIndecies) {

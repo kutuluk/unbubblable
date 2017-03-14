@@ -92,7 +92,8 @@ func (p *Player) Update() {
 		p.Motion = p.Motion.Mul(p.Speed / LoopAmplitude)
 
 		// Уменьшаем приращения в 4 раза при нажатом шифте
-		if controller.Modifiers.Shift {
+		//		if controller.Modifiers.Shift {
+		if controller.Mods.Shift {
 			p.Motion = p.Motion.Mul(0.25)
 			p.Slew *= 0.25
 		}

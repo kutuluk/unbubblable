@@ -120,11 +120,14 @@ class Game {
 
         this.terrain = new Terrain(msgTerrain.Width, msgTerrain.Height, msgTerrain.ChunkSize, this.atlas);
 
+        // Сетка карты
+        /*
         var geoGrid = new THREE.PlaneGeometry(msgTerrain.Width, msgTerrain.Height, msgTerrain.Width / msgTerrain.ChunkSize, msgTerrain.Height / msgTerrain.ChunkSize);
         var material = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, side: THREE.DoubleSide });
         var grid = new THREE.Mesh(geoGrid, material);
         grid.position.set(msgTerrain.Width / 2, msgTerrain.Height / 2, 0.03);
         this.scene.add(grid);
+        */
 
     }
 

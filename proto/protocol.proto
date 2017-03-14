@@ -42,7 +42,7 @@ message Controller {
        	bool Meta = 4;
 	}
 	
-    Modifiers modifiers = 7;
+    Modifiers Mods = 7;
 }
 
 message Vec3 {
