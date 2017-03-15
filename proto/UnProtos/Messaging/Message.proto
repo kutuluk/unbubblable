@@ -1,0 +1,9 @@
+syntax = "proto3";
+package UnProtos.Messaging;
+
+import "UnProtos/Messaging/MessageType.proto";
+
+message Message {
+	.UnProtos.Messaging.MessageType type = 1;
+	bytes body = 2;
+}

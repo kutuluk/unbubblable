@@ -1,0 +1,6 @@
+syntax = "proto3";
+package UnProtos.Messaging.Requests;
+
+// GetTerrainRequest запрашивает карту
+message	GetTerrainRequest {
+}

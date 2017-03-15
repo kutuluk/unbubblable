@@ -1,0 +1,11 @@
+syntax = "proto3";
+package UnProtos.Messaging;
+
+// R = Response
+// M = Message
+
+enum MessageType {
+	APPLY_CONTROLLER = 0;
+	GET_TERRAIN = 2;
+	GET_CHUNK = 4;
+}

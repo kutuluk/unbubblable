@@ -1,0 +1,20 @@
+syntax = "proto3";
+package UnProtos.Messaging.Responses;
+
+// GetTerrainResponse определяет карту
+message GetTerrainResponse {
+    Result result = 1;
+	enum Result {
+		UNSET = 0;
+		SUCCESS = 1;
+	}    
+
+	// Width определяет ширину
+	int32 width = 2;
+	// Height определяет высоту
+	int32 height = 3;
+	// Seed определяет зерно генератора
+	int64 seed = 4;
+	// ChunkSize определяет размер чанка
+	int32 chunkSize = 5;
+}

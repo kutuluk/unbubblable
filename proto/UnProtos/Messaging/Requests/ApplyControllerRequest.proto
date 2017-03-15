@@ -1,0 +1,23 @@
+syntax = "proto3";
+package UnProtos.Messaging.Requests;
+
+// ApplyControllerRequest определяет нажатые клавиши управления
+message ApplyControllerRequest {
+	// клавиши управления
+	bool move_forward = 1;
+	bool move_backward = 2;
+	bool move_left = 3;
+	bool move_right = 4;
+	bool rotate_left = 5;
+	bool rotate_right = 6;
+
+	// клавиши-модификаторы
+    Modifiers mods = 7;
+
+	message Modifiers {
+       	bool shift = 1;
+       	bool ctrl = 2;
+       	bool alt = 3;
+       	bool meta = 4;
+	}
+}

@@ -1,0 +1,24 @@
+syntax = "proto3";
+package UnProtos.Messaging.Responses;
+
+// GetChunkResponse определяет чанк карты
+message	GetChunkResponse {
+    Result result = 1;
+	enum Result {
+		UNSET = 0;
+		SUCCESS = 1;
+	}    
+
+	// index определяет индекс чанка
+	int32 index = 2;
+
+	// Tile определяет один тайл карты
+	message Tile {
+		int32 ground = 1;
+		int32 block = 2;
+		int32 detail = 3;
+	}
+
+	// tiles определяет тайлы чанка
+    repeated Tile tiles = 3;
+}
