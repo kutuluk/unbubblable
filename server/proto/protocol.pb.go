@@ -77,6 +77,20 @@ func (m *MessageItem) String() string            { return proto.CompactTextStrin
 func (*MessageItem) ProtoMessage()               {}
 func (*MessageItem) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *MessageItem) GetType() MessageType {
+	if m != nil {
+		return m.Type
+	}
+	return MessageType_MsgController
+}
+
+func (m *MessageItem) GetBody() []byte {
+	if m != nil {
+		return m.Body
+	}
+	return nil
+}
+
 // MessageContainer определяет несколько сообщений
 type MessageContainer struct {
 	Messages []*MessageItem `protobuf:"bytes,1,rep,name=Messages" json:"Messages,omitempty"`
@@ -110,6 +124,48 @@ func (m *Controller) String() string            { return proto.CompactTextString
 func (*Controller) ProtoMessage()               {}
 func (*Controller) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
+func (m *Controller) GetMoveForward() bool {
+	if m != nil {
+		return m.MoveForward
+	}
+	return false
+}
+
+func (m *Controller) GetMoveBackward() bool {
+	if m != nil {
+		return m.MoveBackward
+	}
+	return false
+}
+
+func (m *Controller) GetMoveLeft() bool {
+	if m != nil {
+		return m.MoveLeft
+	}
+	return false
+}
+
+func (m *Controller) GetMoveRight() bool {
+	if m != nil {
+		return m.MoveRight
+	}
+	return false
+}
+
+func (m *Controller) GetRotateLeft() bool {
+	if m != nil {
+		return m.RotateLeft
+	}
+	return false
+}
+
+func (m *Controller) GetRotateRight() bool {
+	if m != nil {
+		return m.RotateRight
+	}
+	return false
+}
+
 func (m *Controller) GetMods() *Controller_Modifiers {
 	if m != nil {
 		return m.Mods
@@ -130,6 +186,34 @@ func (m *Controller_Modifiers) String() string            { return proto.Compact
 func (*Controller_Modifiers) ProtoMessage()               {}
 func (*Controller_Modifiers) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2, 0} }
 
+func (m *Controller_Modifiers) GetShift() bool {
+	if m != nil {
+		return m.Shift
+	}
+	return false
+}
+
+func (m *Controller_Modifiers) GetCtrl() bool {
+	if m != nil {
+		return m.Ctrl
+	}
+	return false
+}
+
+func (m *Controller_Modifiers) GetAlt() bool {
+	if m != nil {
+		return m.Alt
+	}
+	return false
+}
+
+func (m *Controller_Modifiers) GetMeta() bool {
+	if m != nil {
+		return m.Meta
+	}
+	return false
+}
+
 type Vec3 struct {
 	X float64 `protobuf:"fixed64,1,opt,name=X" json:"X,omitempty"`
 	Y float64 `protobuf:"fixed64,2,opt,name=Y" json:"Y,omitempty"`
@@ -140,6 +224,27 @@ func (m *Vec3) Reset()                    { *m = Vec3{} }
 func (m *Vec3) String() string            { return proto.CompactTextString(m) }
 func (*Vec3) ProtoMessage()               {}
 func (*Vec3) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+
+func (m *Vec3) GetX() float64 {
+	if m != nil {
+		return m.X
+	}
+	return 0
+}
+
+func (m *Vec3) GetY() float64 {
+	if m != nil {
+		return m.Y
+	}
+	return 0
+}
+
+func (m *Vec3) GetZ() float64 {
+	if m != nil {
+		return m.Z
+	}
+	return 0
+}
 
 // PlayerPosition определяет позицию и движение игрока
 type PlayerPosition struct {
@@ -172,6 +277,20 @@ func (m *PlayerPosition) GetMotion() *Vec3 {
 	return nil
 }
 
+func (m *PlayerPosition) GetAngle() float64 {
+	if m != nil {
+		return m.Angle
+	}
+	return 0
+}
+
+func (m *PlayerPosition) GetSlew() float64 {
+	if m != nil {
+		return m.Slew
+	}
+	return 0
+}
+
 // Terrain определяет карту
 type Terrain struct {
 	// Width определяет ширину
@@ -189,6 +308,34 @@ func (m *Terrain) String() string            { return proto.CompactTextString(m)
 func (*Terrain) ProtoMessage()               {}
 func (*Terrain) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
 
+func (m *Terrain) GetWidth() int32 {
+	if m != nil {
+		return m.Width
+	}
+	return 0
+}
+
+func (m *Terrain) GetHeight() int32 {
+	if m != nil {
+		return m.Height
+	}
+	return 0
+}
+
+func (m *Terrain) GetSeed() int64 {
+	if m != nil {
+		return m.Seed
+	}
+	return 0
+}
+
+func (m *Terrain) GetChunkSize() int32 {
+	if m != nil {
+		return m.ChunkSize
+	}
+	return 0
+}
+
 // Chunk определяет чанк карты
 type Chunk struct {
 	// Index определяет индекс чанка
@@ -201,6 +348,13 @@ func (m *Chunk) Reset()                    { *m = Chunk{} }
 func (m *Chunk) String() string            { return proto.CompactTextString(m) }
 func (*Chunk) ProtoMessage()               {}
 func (*Chunk) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
+
+func (m *Chunk) GetIndex() int32 {
+	if m != nil {
+		return m.Index
+	}
+	return 0
+}
 
 func (m *Chunk) GetMap() []*Chunk_Tile {
 	if m != nil {
@@ -221,6 +375,27 @@ func (m *Chunk_Tile) String() string            { return proto.CompactTextString
 func (*Chunk_Tile) ProtoMessage()               {}
 func (*Chunk_Tile) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6, 0} }
 
+func (m *Chunk_Tile) GetGround() int32 {
+	if m != nil {
+		return m.Ground
+	}
+	return 0
+}
+
+func (m *Chunk_Tile) GetBlock() int32 {
+	if m != nil {
+		return m.Block
+	}
+	return 0
+}
+
+func (m *Chunk_Tile) GetDetail() int32 {
+	if m != nil {
+		return m.Detail
+	}
+	return 0
+}
+
 // ChunkRequest определяет список необходимых чанков
 type ChunkRequest struct {
 	Chunks []int32 `protobuf:"varint,1,rep,packed,name=Chunks" json:"Chunks,omitempty"`
@@ -230,6 +405,13 @@ func (m *ChunkRequest) Reset()                    { *m = ChunkRequest{} }
 func (m *ChunkRequest) String() string            { return proto.CompactTextString(m) }
 func (*ChunkRequest) ProtoMessage()               {}
 func (*ChunkRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{7} }
+
+func (m *ChunkRequest) GetChunks() []int32 {
+	if m != nil {
+		return m.Chunks
+	}
+	return nil
+}
 
 func init() {
 	proto.RegisterType((*MessageItem)(nil), "protocol.MessageItem")
@@ -249,7 +431,7 @@ func init() { proto.RegisterFile("proto/protocol.proto", fileDescriptor0) }
 
 var fileDescriptor0 = []byte{
 	// 599 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x6c, 0x53, 0xcd, 0x4e, 0xdb, 0x40,
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x53, 0xcd, 0x4e, 0xdb, 0x40,
 	0x10, 0xee, 0x3a, 0x76, 0x48, 0x27, 0x69, 0x6a, 0xb6, 0x50, 0x59, 0xa8, 0x42, 0x91, 0x0f, 0x28,
 	0xe5, 0x90, 0xb6, 0xe1, 0x09, 0x80, 0xfe, 0x21, 0x61, 0x09, 0x2d, 0xa8, 0x05, 0x7a, 0x72, 0xe3,
 	0x21, 0xd9, 0xe2, 0x7a, 0xa9, 0xbd, 0x94, 0xa6, 0x0f, 0xd1, 0x4b, 0x1f, 0xb0, 0xaf, 0x52, 0xcd,

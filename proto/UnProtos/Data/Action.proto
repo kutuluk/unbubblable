@@ -5,9 +5,9 @@ import "UnProtos/Data/Vec3.proto";
 
 message Action {
 	// position определяет положение
-	.UnProtos.Data.Vec3 position = 1;
+	UnProtos.Data.Vec3 position = 1;
 	// motion определяет движение
-	.UnProtos.Data.Vec3 motion = 2;
+	UnProtos.Data.Vec3 motion = 2;
 	// angle определяет направление (угол между положительным направленим оси Y и направлением по часовой стрелке)
 	double angle = 3;
 	// slew определяет поворот (угол по часовой стрелке)

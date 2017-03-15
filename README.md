@@ -7,9 +7,17 @@
 
 ##Установка
 
-Загрузить репозиторий
+Установить Google Protobuf (скопировать protoc в директорию %GOPATH%/bin)
+```
+https://github.com/google/protobuf/releases/latest
+```
+
+Загрузить репозитории
 ```
 go get github.com/kutuluk/unbubblable
+
+go get -u github.com/golang/protobuf/proto
+go get -u github.com/golang/protobuf/protoc-gen-go
 ```
 
 Установить [node.js](https://nodejs.org)

@@ -1,0 +1,238 @@
+{
+  "nested": {
+    "UnProtos": {
+      "nested": {
+        "Data": {
+          "nested": {
+            "Action": {
+              "fields": {
+                "position": {
+                  "type": "UnProtos.Data.Vec3",
+                  "id": 1
+                },
+                "motion": {
+                  "type": "UnProtos.Data.Vec3",
+                  "id": 2
+                },
+                "angle": {
+                  "type": "double",
+                  "id": 3
+                },
+                "slew": {
+                  "type": "double",
+                  "id": 4
+                }
+              }
+            },
+            "Vec3": {
+              "fields": {
+                "x": {
+                  "type": "double",
+                  "id": 1
+                },
+                "y": {
+                  "type": "double",
+                  "id": 2
+                },
+                "z": {
+                  "type": "double",
+                  "id": 3
+                }
+              }
+            }
+          }
+        },
+        "Messaging": {
+          "nested": {
+            "Message": {
+              "fields": {
+                "type": {
+                  "type": ".UnProtos.Messaging.MessageType",
+                  "id": 1
+                },
+                "body": {
+                  "type": "bytes",
+                  "id": 2
+                }
+              }
+            },
+            "MessageType": {
+              "values": {
+                "APPLY_CONTROLLER": 0,
+                "GET_TERRAIN": 2,
+                "GET_CHUNK": 4
+              }
+            },
+            "Requests": {
+              "nested": {
+                "ApplyControllerRequest": {
+                  "fields": {
+                    "moveForward": {
+                      "type": "bool",
+                      "id": 1
+                    },
+                    "moveBackward": {
+                      "type": "bool",
+                      "id": 2
+                    },
+                    "moveLeft": {
+                      "type": "bool",
+                      "id": 3
+                    },
+                    "moveRight": {
+                      "type": "bool",
+                      "id": 4
+                    },
+                    "rotateLeft": {
+                      "type": "bool",
+                      "id": 5
+                    },
+                    "rotateRight": {
+                      "type": "bool",
+                      "id": 6
+                    },
+                    "mods": {
+                      "type": "Modifiers",
+                      "id": 7
+                    }
+                  },
+                  "nested": {
+                    "Modifiers": {
+                      "fields": {
+                        "shift": {
+                          "type": "bool",
+                          "id": 1
+                        },
+                        "ctrl": {
+                          "type": "bool",
+                          "id": 2
+                        },
+                        "alt": {
+                          "type": "bool",
+                          "id": 3
+                        },
+                        "meta": {
+                          "type": "bool",
+                          "id": 4
+                        }
+                      }
+                    }
+                  }
+                },
+                "GetChunkRequest": {
+                  "fields": {
+                    "chunks": {
+                      "rule": "repeated",
+                      "type": "int32",
+                      "id": 1
+                    }
+                  }
+                },
+                "GetTerrainRequest": {
+                  "fields": {}
+                }
+              }
+            },
+            "Responses": {
+              "nested": {
+                "ApplyControllerResponse": {
+                  "fields": {
+                    "result": {
+                      "type": "Result",
+                      "id": 1
+                    },
+                    "action": {
+                      "type": ".UnProtos.Data.Action",
+                      "id": 2
+                    }
+                  },
+                  "nested": {
+                    "Result": {
+                      "values": {
+                        "UNSET": 0,
+                        "SUCCESS": 1
+                      }
+                    }
+                  }
+                },
+                "GetChunkResponse": {
+                  "fields": {
+                    "result": {
+                      "type": "Result",
+                      "id": 1
+                    },
+                    "index": {
+                      "type": "int32",
+                      "id": 2
+                    },
+                    "tiles": {
+                      "rule": "repeated",
+                      "type": "Tile",
+                      "id": 3
+                    }
+                  },
+                  "nested": {
+                    "Result": {
+                      "values": {
+                        "UNSET": 0,
+                        "SUCCESS": 1
+                      }
+                    },
+                    "Tile": {
+                      "fields": {
+                        "ground": {
+                          "type": "int32",
+                          "id": 1
+                        },
+                        "block": {
+                          "type": "int32",
+                          "id": 2
+                        },
+                        "detail": {
+                          "type": "int32",
+                          "id": 3
+                        }
+                      }
+                    }
+                  }
+                },
+                "GetTerrainResponse": {
+                  "fields": {
+                    "result": {
+                      "type": "Result",
+                      "id": 1
+                    },
+                    "width": {
+                      "type": "int32",
+                      "id": 2
+                    },
+                    "height": {
+                      "type": "int32",
+                      "id": 3
+                    },
+                    "seed": {
+                      "type": "int64",
+                      "id": 4
+                    },
+                    "chunkSize": {
+                      "type": "int32",
+                      "id": 5
+                    }
+                  },
+                  "nested": {
+                    "Result": {
+                      "values": {
+                        "UNSET": 0,
+                        "SUCCESS": 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
