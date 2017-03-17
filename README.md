@@ -25,6 +25,7 @@ go get -u github.com/golang/protobuf/protoc-gen-go
 Запустить в корневой папке:
 
 ```
+npm install protobufjs -g
 npm install --global browserify
 npm install --save-dev babel-cli babel-preset-es2015 babelify
 ```

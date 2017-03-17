@@ -108,6 +108,8 @@ class Game {
 
     handlePlayerPositionMessage(msgPlayerPosition) {
 
+        console.log(msgPlayerPosition);
+
         this.echo.next = new Action();
         this.echo.next.position.set(msgPlayerPosition.Position.X, msgPlayerPosition.Position.Y, msgPlayerPosition.Position.Z);
         this.echo.next.motion.set(msgPlayerPosition.Motion.X, msgPlayerPosition.Motion.Y, msgPlayerPosition.Motion.Z);

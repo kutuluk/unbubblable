@@ -63,6 +63,7 @@ class Connect {
                     // PlayerPosition
                     case this.proto.MessageType.MsgPlayerPosition:
 
+/*
                         try {
                             // Декодируем сообщение
                             var msgPlayerPosition = this.proto.PlayerPosition.decode(message.Body);
@@ -73,6 +74,13 @@ class Connect {
 
                         // Запускаем обработчик
                         this.game.handlePlayerPositionMessage(msgPlayerPosition);
+                        break
+*/
+// -----
+console.log(message);
+                        let msgPlayerPosition = this.protobuf.PlayerPosition.decode(message.Body.buffer);
+                        // Запускаем обработчик
+                        this.game.handlePlayerPositionMessage(msgPlayerPosition.toObject());
                         break
 
                     // Terrain
@@ -124,65 +132,33 @@ class Connect {
             // Отправляем сообщение
             this.ws.send(msgContainer.toArrayBuffer());
 
-            // ------------------
+        }
+    }
 
+    sendMessage2(msg) {
+        if (this.ws.readyState == WebSocket.OPEN) {
 
-            /*
-                        let msgContainer2 = this.protobuf.MessageContainer.create({ Messages: [msg] });
-            
-                        let buffer = this.protobuf.MessageContainer.encode(msgContainer2).finish();
-            */
+            // Создаем контейнер и добавляем в него сообщение
+            let msgContainer = this.protobuf.MessageContainer.create(
+                {
+                    Messages: [msg]
+                }
+            );
 
-            //this.ws.send(buffer);
-
-            //            let msgContainer2 = this.protobuf.MessageContainer.create({ Messages: [msg] });
-            //            let buffer = this.protobuf.MessageContainer.encode(msgContainer2).finish();
-            //            console.log(msgContainer2);
-
-
-            //            this.ws.send(buffer);
-
-            //            let msgContainer3 = this.protobuf.lookup("MessageContainer");
-            //            let msgContainer4 = new msgContainer3;
-            //            msgContainer4.Messages.push(msg);
-
-            //            msgContainer2.Messages.push([msg]);
-
-            // ------------------
+            // Отправляем сообщение
+            this.ws.send(this.protobuf.MessageContainer.encode(msgContainer).finish());
 
         }
     }
 
+
     sendController(controller) {
 
-        // Формируем сообщение
-        let msg = new this.proto.Controller(
-            controller.moveForward,
-            controller.moveBackward,
-            controller.moveLeft,
-            controller.moveRight,
-            controller.rotateLeft,
-            controller.rotateRight,
-            new this.proto.Controller.Modifiers(
-                controller.modifiers.shift,
-                controller.modifiers.ctrl,
-                controller.modifiers.alt,
-                controller.modifiers.meta)
-        );
 
-        // Упаковываем сообщение в элемент контейнера
-        let msgItem = new this.proto.MessageItem(
-            this.proto.MessageType.MsgController,
-            msg.encode()
-        );
-
-        // Отправляем сообщение
-        this.sendMessage(msgItem);
-
-
-        //        let msg2M = this.protobuf.lookup("Controller");
-        /*
-                let msg2 = this.protobuf.Controller.create(
+        /* Старое API
+        
+                // Формируем сообщение
+                let msg = new this.proto.Controller(
                     {
                         MoveForward: controller.moveForward,
                         MoveBackward: controller.moveBackward,
@@ -190,7 +166,7 @@ class Connect {
                         MoveRight: controller.moveRight,
                         RotateLeft: controller.rotateLeft,
                         RotateRight: controller.rotateRight,
-                        Mods: this.protobuf.Controller.Modifiers.create(
+                        Mods: new this.proto.Controller.Modifiers(
                             {
                                 Shift: controller.modifiers.shift,
                                 Ctrl: controller.modifiers.ctrl,
@@ -200,74 +176,86 @@ class Connect {
                         )
                     }
                 );
+        
+                // Упаковываем сообщение в элемент контейнера
+                let msgItem = new this.proto.MessageItem(
+                    this.proto.MessageType.MsgController,
+                    msg.encode()
+                );
+        
+                // Отправляем сообщение
+                this.sendMessage(msgItem);
+        
         */
-
-        let msg2 = this.protobuf.Controller.create(
+        // Формируем сообщение
+        let msg = this.protobuf.Controller.create(
             {
-                MoveForward2: true,
-                MoveBackward2: true,
-                MoveLeft2: true,
-                MoveRight2: false,
-                RotateLeft2: false,
-                RotateRight: false,
+                MoveForward: controller.moveForward,
+                MoveBackward: controller.moveBackward,
+                MoveLeft: controller.moveLeft,
+                MoveRight: controller.moveRight,
+                RotateLeft: controller.rotateLeft,
+                RotateRight: controller.rotateRight,
                 Mods: this.protobuf.Controller.Modifiers.create(
                     {
-                        Shift2: true,
-                        Ctrl2: true,
-                        Alt2: false,
-                        Meta: false
+                        Shift: controller.modifiers.shift,
+                        Ctrl: controller.modifiers.ctrl,
+                        Alt: controller.modifiers.alt,
+                        Meta: controller.modifiers.meta
                     }
                 )
             }
         );
 
-        msg2.MoveLeft = true;
+        // Упаковываем сообщение в элемент контейнера
+        let msgItem = this.protobuf.MessageItem.create(
+            {
+                Type: this.protobuf.MessageType.MsgController,
+                Body: this.protobuf.Controller.encode(msg).finish()
+            }
+        );
 
-        console.log(msg2);
-        let m = this.protobuf.Controller.encode(msg2).finish();
-        console.log(m);
+        // Отправляем сообщение
+        this.sendMessage2(msgItem);
 
-        let msgM = this.protobuf.lookup("Controller");
-
-        var message = msgM.decode(m);
-        console.log(message);
-        var errMsg = this.protobuf.Controller.verify(msg2);
-        if (errMsg)
-            throw Error(errMsg);
-
-
-        /*
-                let msgItem2 = this.protobuf.MessageItem.create(
-                    {
-                        Type: this.protobuf.MessageType.MsgController,
-                        Body: this.protobuf.Controller.encode(msg2).finish()
-                    }
-                );
-        
-                console.log(msg2);
-                console.log(m.buffer);
-        
-                var errMsg = this.protobuf.Controller.verify(m);
-                if (errMsg)
-                    throw Error(errMsg);
-        */
     }
 
     sendChanksRequest(chunksIndecies) {
         if (chunksIndecies.length > 0) {
 
+            /* Старое API
+    
+                // Формируем сообщение
+                let msg = new this.proto.ChunkRequest();
+                msg.Chunks = chunksIndecies;
+    
+                // Упаковываем сообщение в элемент контейнера
+                let msgItem = new this.proto.MessageItem(
+                    this.proto.MessageType.MsgChunkRequest,
+                    msg.encode()
+                );
+    
+                // Отправляем сообщение
+                this.sendMessage(msgItem);
+    */
+
             // Формируем сообщение
-            let msg = new this.proto.ChunkRequest();
-            msg.Chunks = chunksIndecies;
+            let msg = this.protobuf.ChunkRequest.create(
+                {
+                    Chunks: [chunksIndecies]
+                }
+            );
 
             // Упаковываем сообщение в элемент контейнера
-            let msgItem = new this.proto.MessageItem(
-                this.proto.MessageType.MsgChunkRequest,
-                msg.encode()
+            let msgItem = this.protobuf.MessageItem.create(
+                {
+                    Type: this.protobuf.MessageType.MsgChunkRequest,
+                    Body: this.protobuf.ChunkRequest.encode(msg).finish()
+                }
             );
 
             // Отправляем сообщение
-            this.sendMessage(msgItem);
+            this.sendMessage2(msgItem);
 
         }
     }
