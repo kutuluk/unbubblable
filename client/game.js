@@ -26,11 +26,13 @@ class Game {
             return
         };
 
-        // Проверяем поддержку Protocol Buffers
-        if (typeof dcodeIO === 'undefined' || !dcodeIO.ProtoBuf) {
-            log.appendText('[PROTO] Не обнаружена поддержка Protocol Buffers.');
-            return
-        };
+        /*
+                // Проверяем поддержку Protocol Buffers
+                if (typeof dcodeIO === 'undefined' || !dcodeIO.ProtoBuf) {
+                    log.appendText('[PROTO] Не обнаружена поддержка Protocol Buffers.');
+                    return
+                };
+        */
 
         this.playable = true;
 
@@ -108,8 +110,6 @@ class Game {
 
     handlePlayerPositionMessage(msgPlayerPosition) {
 
-        console.log(msgPlayerPosition);
-
         this.echo.next = new Action();
         this.echo.next.position.set(msgPlayerPosition.Position.X, msgPlayerPosition.Position.Y, msgPlayerPosition.Position.Z);
         this.echo.next.motion.set(msgPlayerPosition.Motion.X, msgPlayerPosition.Motion.Y, msgPlayerPosition.Motion.Z);
@@ -123,13 +123,11 @@ class Game {
         this.terrain = new Terrain(msgTerrain.Width, msgTerrain.Height, msgTerrain.ChunkSize, this.atlas);
 
         // Сетка карты
-        /*
         var geoGrid = new THREE.PlaneGeometry(msgTerrain.Width, msgTerrain.Height, msgTerrain.Width / msgTerrain.ChunkSize, msgTerrain.Height / msgTerrain.ChunkSize);
         var material = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, side: THREE.DoubleSide });
         var grid = new THREE.Mesh(geoGrid, material);
         grid.position.set(msgTerrain.Width / 2, msgTerrain.Height / 2, 0.03);
         this.scene.add(grid);
-        */
 
     }
 

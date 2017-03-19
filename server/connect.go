@@ -166,7 +166,7 @@ func (c *Connect) receiver() {
 				for _, index := range msgChunkRequest.Chunks {
 
 					// Проверяем на соответсвие диапазону
-					if !((index < 0) || (int(index) > c.Hub.Terrain.ChunkedWidth*c.Hub.Terrain.ChunkedHeight-1)) {
+					if (index >= 0) && (int(index) < c.Hub.Terrain.ChunkedWidth*c.Hub.Terrain.ChunkedHeight) {
 						cx, cy := c.Hub.Terrain.GetChankCoord(int(index))
 						px := math.Floor(c.Player.Position.X() / float64(c.Hub.Terrain.ChunkSize))
 						py := math.Floor(c.Player.Position.Y() / float64(c.Hub.Terrain.ChunkSize))

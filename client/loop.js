@@ -94,18 +94,21 @@ class Loop {
 
 		if (!(this.game.terrain === undefined || this.game.terrain === null)) {
 			let chunksIndecies = [];
-			let cx = Math.floor(this.game.player.unit.current.position.x / this.game.terrain.chunkSize);
-			let cy = Math.floor(this.game.player.unit.current.position.y / this.game.terrain.chunkSize);
+//			let cx = Math.floor(this.game.player.unit.current.position.x / this.game.terrain.chunkSize);
+//			let cy = Math.floor(this.game.player.unit.current.position.y / this.game.terrain.chunkSize);
+			let cx = Math.floor(this.game.echo.current.position.x / this.game.terrain.chunkSize);
+			let cy = Math.floor(this.game.echo.current.position.y / this.game.terrain.chunkSize);
+			// Перебор 9 смежных чанков
 			for (let y = cy - 1; y < cy + 2; y++) {
 				for (let x = cx - 1; x < cx + 2; x++) {
-
-					//				if (!((y < 0) || (y > this.game.terrain.chunkedHeight - 1) || (x < 0) || (x > this.game.terrain.chunkedWidth - 1))) {
-					let index = y * this.game.terrain.chunkedWidth + x;
-					if (this.game.terrain.chunks[index] == undefined) {
-						chunksIndecies.push(index);
+					// Проверка на допустимый диапазон
+					if ((y >= 0) && (y < this.game.terrain.chunkedHeight) && (x >= 0) && (x < this.game.terrain.chunkedWidth)) {
+						let index = y * this.game.terrain.chunkedWidth + x;
+						// Добавление индекса чанка в список запроса в случае его отсутствия
+						if (this.game.terrain.chunks[index] == undefined) {
+							chunksIndecies.push(index);
+						}
 					}
-					//				}
-
 				}
 			}
 
