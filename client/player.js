@@ -11,18 +11,18 @@ class Player {
 		this.camMotion = 0;
 
 		this.unit = new Unit();
-		this.unit.current.set(new THREE.Vector3(0, 0, 0.02), new THREE.Vector3(), 0, 0);
+		this.unit.movement.set(new THREE.Vector3(0, 0, 0.02), new THREE.Vector3(), 0, 0);
 		this.unit.setMesh(mesh);
 
 	}
 
 	animate(scalar) {
 		// Рассчитываем позицию игрока в этом фрейме
-		var motion = new THREE.Vector3().copy(this.unit.current.motion);
+		var motion = new THREE.Vector3().copy(this.unit.movement.motion);
 		motion.multiplyScalar(scalar);
-		var position = new THREE.Vector3().copy(this.unit.current.position).add(motion);
+		var position = new THREE.Vector3().copy(this.unit.movement.position).add(motion);
 		// Рассчитываем угол направления в этом фрейме
-		var rotation = this.unit.current.angle + this.unit.current.slew * scalar;
+		var rotation = this.unit.movement.angle + this.unit.movement.slew * scalar;
 		// Рассчитываем вектор направления в этом фрейме
 		var direction = new THREE.Vector3(0, 1, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), rotation);
 

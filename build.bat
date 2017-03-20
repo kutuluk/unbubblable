@@ -17,3 +17,8 @@ cd ..
 ::copy .\proto\protocol.proto .\public\js\protocol.proto
 call pbjs -t static-module -w es6 ./proto/protocol.proto -o ./client/protocol.js
 call browserify ./client/main.js -o ./public/js/app.js
+
+cd server
+start server.exe
+::start http://localhost:8080
+cd ..

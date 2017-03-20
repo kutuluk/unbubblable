@@ -25,7 +25,7 @@ $root.protocol = (function() {
      * @memberof protocol
      * @enum {number}
      * @property {number} MsgController=0 MsgController value
-     * @property {number} MsgPlayerPosition=1 MsgPlayerPosition value
+     * @property {number} MsgMovement=1 MsgMovement value
      * @property {number} MsgTerrain=2 MsgTerrain value
      * @property {number} MsgChunk=3 MsgChunk value
      * @property {number} MsgChunkRequest=4 MsgChunkRequest value
@@ -33,7 +33,7 @@ $root.protocol = (function() {
     protocol.MessageType = (function() {
         const valuesById = {}, values = Object.create(valuesById);
         values["MsgController"] = 0;
-        values["MsgPlayerPosition"] = 1;
+        values["MsgMovement"] = 1;
         values["MsgTerrain"] = 2;
         values["MsgChunk"] = 3;
         values["MsgChunkRequest"] = 4;
@@ -183,7 +183,7 @@ $root.protocol = (function() {
             case 0:
                 message.Type = 0;
                 break;
-            case "MsgPlayerPosition":
+            case "MsgMovement":
             case 1:
                 message.Type = 1;
                 break;
@@ -1153,43 +1153,43 @@ $root.protocol = (function() {
         return Vec3;
     })();
 
-    protocol.PlayerPosition = (function() {
+    protocol.Movement = (function() {
 
         /**
-         * Constructs a new PlayerPosition.
-         * @exports protocol.PlayerPosition
+         * Constructs a new Movement.
+         * @exports protocol.Movement
          * @constructor
          * @param {Object} [properties] Properties to set
          */
-        function PlayerPosition(properties) {
+        function Movement(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     this[keys[i]] = properties[keys[i]];
         }
 
         /**
-         * PlayerPosition Position.
+         * Movement Position.
          * @type {protocol.Vec3|undefined}
          */
-        PlayerPosition.prototype.Position = null;
+        Movement.prototype.Position = null;
 
         /**
-         * PlayerPosition Motion.
+         * Movement Motion.
          * @type {protocol.Vec3|undefined}
          */
-        PlayerPosition.prototype.Motion = null;
+        Movement.prototype.Motion = null;
 
         /**
-         * PlayerPosition Angle.
+         * Movement Angle.
          * @type {number|undefined}
          */
-        PlayerPosition.prototype.Angle = 0;
+        Movement.prototype.Angle = 0;
 
         /**
-         * PlayerPosition Slew.
+         * Movement Slew.
          * @type {number|undefined}
          */
-        PlayerPosition.prototype.Slew = 0;
+        Movement.prototype.Slew = 0;
 
         // Lazily resolved type references
         const $types = {
@@ -1198,21 +1198,21 @@ $root.protocol = (function() {
         }; $lazyTypes.push($types);
 
         /**
-         * Creates a new PlayerPosition instance using the specified properties.
+         * Creates a new Movement instance using the specified properties.
          * @param {Object} [properties] Properties to set
-         * @returns {protocol.PlayerPosition} PlayerPosition instance
+         * @returns {protocol.Movement} Movement instance
          */
-        PlayerPosition.create = function create(properties) {
-            return new PlayerPosition(properties);
+        Movement.create = function create(properties) {
+            return new Movement(properties);
         };
 
         /**
-         * Encodes the specified PlayerPosition message.
-         * @param {protocol.PlayerPosition|Object} message PlayerPosition message or plain object to encode
+         * Encodes the specified Movement message.
+         * @param {protocol.Movement|Object} message Movement message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        PlayerPosition.encode = function encode(message, writer) {
+        Movement.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
             if (message.Position && message.hasOwnProperty("Position"))
@@ -1227,25 +1227,25 @@ $root.protocol = (function() {
         };
 
         /**
-         * Encodes the specified PlayerPosition message, length delimited.
-         * @param {protocol.PlayerPosition|Object} message PlayerPosition message or plain object to encode
+         * Encodes the specified Movement message, length delimited.
+         * @param {protocol.Movement|Object} message Movement message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        PlayerPosition.encodeDelimited = function encodeDelimited(message, writer) {
+        Movement.encodeDelimited = function encodeDelimited(message, writer) {
             return this.encode(message, writer).ldelim();
         };
 
         /**
-         * Decodes a PlayerPosition message from the specified reader or buffer.
+         * Decodes a Movement message from the specified reader or buffer.
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {protocol.PlayerPosition} PlayerPosition
+         * @returns {protocol.Movement} Movement
          */
-        PlayerPosition.decode = function decode(reader, length) {
+        Movement.decode = function decode(reader, length) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.protocol.PlayerPosition();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.protocol.Movement();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 switch (tag >>> 3) {
@@ -1270,22 +1270,22 @@ $root.protocol = (function() {
         };
 
         /**
-         * Decodes a PlayerPosition message from the specified reader or buffer, length delimited.
+         * Decodes a Movement message from the specified reader or buffer, length delimited.
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {protocol.PlayerPosition} PlayerPosition
+         * @returns {protocol.Movement} Movement
          */
-        PlayerPosition.decodeDelimited = function decodeDelimited(reader) {
+        Movement.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
                 reader = $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
-         * Verifies a PlayerPosition message.
-         * @param {protocol.PlayerPosition|Object} message PlayerPosition message or plain object to verify
+         * Verifies a Movement message.
+         * @param {protocol.Movement|Object} message Movement message or plain object to verify
          * @returns {?string} `null` if valid, otherwise the reason why it is not
          */
-        PlayerPosition.verify = function verify(message) {
+        Movement.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (message.Position !== undefined && message.Position !== null) {
@@ -1308,22 +1308,22 @@ $root.protocol = (function() {
         };
 
         /**
-         * Creates a PlayerPosition message from a plain object. Also converts values to their respective internal types.
+         * Creates a Movement message from a plain object. Also converts values to their respective internal types.
          * @param {Object.<string,*>} object Plain object
-         * @returns {protocol.PlayerPosition} PlayerPosition
+         * @returns {protocol.Movement} Movement
          */
-        PlayerPosition.fromObject = function fromObject(object) {
-            if (object instanceof $root.protocol.PlayerPosition)
+        Movement.fromObject = function fromObject(object) {
+            if (object instanceof $root.protocol.Movement)
                 return object;
-            let message = new $root.protocol.PlayerPosition();
+            let message = new $root.protocol.Movement();
             if (object.Position !== undefined && object.Position !== null) {
                 if (typeof object.Position !== "object")
-                    throw TypeError(".protocol.PlayerPosition.Position: object expected");
+                    throw TypeError(".protocol.Movement.Position: object expected");
                 message.Position = $types[0].fromObject(object.Position);
             }
             if (object.Motion !== undefined && object.Motion !== null) {
                 if (typeof object.Motion !== "object")
-                    throw TypeError(".protocol.PlayerPosition.Motion: object expected");
+                    throw TypeError(".protocol.Movement.Motion: object expected");
                 message.Motion = $types[1].fromObject(object.Motion);
             }
             if (object.Angle !== undefined && object.Angle !== null)
@@ -1334,21 +1334,21 @@ $root.protocol = (function() {
         };
 
         /**
-         * Creates a PlayerPosition message from a plain object. Also converts values to their respective internal types.
-         * This is an alias of {@link protocol.PlayerPosition.fromObject}.
+         * Creates a Movement message from a plain object. Also converts values to their respective internal types.
+         * This is an alias of {@link protocol.Movement.fromObject}.
          * @function
          * @param {Object.<string,*>} object Plain object
-         * @returns {protocol.PlayerPosition} PlayerPosition
+         * @returns {protocol.Movement} Movement
          */
-        PlayerPosition.from = PlayerPosition.fromObject;
+        Movement.from = Movement.fromObject;
 
         /**
-         * Creates a plain object from a PlayerPosition message. Also converts values to other types if specified.
-         * @param {protocol.PlayerPosition} message PlayerPosition
+         * Creates a plain object from a Movement message. Also converts values to other types if specified.
+         * @param {protocol.Movement} message Movement
          * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
-        PlayerPosition.toObject = function toObject(message, options) {
+        Movement.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
             let object = {};
@@ -1370,23 +1370,23 @@ $root.protocol = (function() {
         };
 
         /**
-         * Creates a plain object from this PlayerPosition message. Also converts values to other types if specified.
+         * Creates a plain object from this Movement message. Also converts values to other types if specified.
          * @param {$protobuf.ConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
-        PlayerPosition.prototype.toObject = function toObject(options) {
+        Movement.prototype.toObject = function toObject(options) {
             return this.constructor.toObject(this, options);
         };
 
         /**
-         * Converts this PlayerPosition to JSON.
+         * Converts this Movement to JSON.
          * @returns {Object.<string,*>} JSON object
          */
-        PlayerPosition.prototype.toJSON = function toJSON() {
+        Movement.prototype.toJSON = function toJSON() {
             return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
         };
 
-        return PlayerPosition;
+        return Movement;
     })();
 
     protocol.Terrain = (function() {

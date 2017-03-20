@@ -3,7 +3,7 @@ package UnProtos.Data;
 
 import "UnProtos/Data/Vec3.proto";
 
-message Action {
+message Movement {
 	// position определяет положение
 	UnProtos.Data.Vec3 position = 1;
 	// motion определяет движение

@@ -1,6 +1,6 @@
 import { log } from './log';
 import { Controller } from './controller';
-import { Action, Unit } from './unit';
+import { Movement, Unit } from './unit';
 import { Player } from './player';
 import { Atlas } from './atlas';
 import { Loop } from './loop';
@@ -108,9 +108,9 @@ class Game {
         this.renderer.setSize(this.screen.width, this.screen.height);
     }
 
-    handlePlayerPositionMessage(msgPlayerPosition) {
+    handleMovementMessage(msgMovement) {
 
-        this.echo.next = new Action(msgPlayerPosition);
+        this.echo.next = new Movement(msgMovement);
 
     }
 

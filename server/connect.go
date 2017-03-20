@@ -84,8 +84,8 @@ func (h *Hub) loop() {
 			c.Player.Update()
 
 			// Отправляем сообщение клиенту
-			//			go c.sendPlayerPosition()
-			c.sendPlayerPosition()
+			//			go c.sendMovement()
+			c.sendMovement()
 			//			c.sendChunk(c.Hub.Terrain.GetChank(int(c.Player.Position.X()), int(c.Player.Position.Y())))
 
 		}
@@ -214,24 +214,24 @@ func (c *Connect) sendMessage(m *protocol.MessageItem) {
 
 }
 
-// sendPlayerPosition отправляет клиенту позицию персонажа
-func (c *Connect) sendPlayerPosition() {
+// sendMovement отправляет клиенту позицию персонажа
+func (c *Connect) sendMovement() {
 
 	// Формируем сообщение
-	msgPlayerPosition := new(protocol.PlayerPosition)
-	msgPlayerPosition.Position = new(protocol.Vec3)
-	msgPlayerPosition.Position.X = c.Player.Position.X()
-	msgPlayerPosition.Position.Y = c.Player.Position.Y()
-	msgPlayerPosition.Position.Z = c.Player.Position.Z()
-	msgPlayerPosition.Motion = new(protocol.Vec3)
-	msgPlayerPosition.Motion.X = c.Player.Motion.X()
-	msgPlayerPosition.Motion.Y = c.Player.Motion.Y()
-	msgPlayerPosition.Motion.Z = c.Player.Motion.Z()
-	msgPlayerPosition.Angle = c.Player.Angle
-	msgPlayerPosition.Slew = c.Player.Slew
+	msgMovement := new(protocol.Movement)
+	msgMovement.Position = new(protocol.Vec3)
+	msgMovement.Position.X = c.Player.Position.X()
+	msgMovement.Position.Y = c.Player.Position.Y()
+	msgMovement.Position.Z = c.Player.Position.Z()
+	msgMovement.Motion = new(protocol.Vec3)
+	msgMovement.Motion.X = c.Player.Motion.X()
+	msgMovement.Motion.Y = c.Player.Motion.Y()
+	msgMovement.Motion.Z = c.Player.Motion.Z()
+	msgMovement.Angle = c.Player.Angle
+	msgMovement.Slew = c.Player.Slew
 
 	// Сериализуем сообщение протобафом
-	msgBuffer, err := proto.Marshal(msgPlayerPosition)
+	msgBuffer, err := proto.Marshal(msgMovement)
 	if err != nil {
 		log.Println("[proto send]:", err)
 		return
@@ -239,7 +239,7 @@ func (c *Connect) sendPlayerPosition() {
 
 	// Упаковываем сообщение в элемент контейнера
 	msgItem := new(protocol.MessageItem)
-	msgItem.Type = protocol.MessageType_MsgPlayerPosition
+	msgItem.Type = protocol.MessageType_MsgMovement
 	msgItem.Body = msgBuffer
 
 	// Отправляем сообщение

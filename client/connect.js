@@ -62,12 +62,12 @@ class Connect {
 
                 switch (message.Type) {
 
-                    case this.protobuf.MessageType.MsgPlayerPosition:
+                    case this.protobuf.MessageType.MsgMovement:
 
                         // Декодируем сообщение
-                        let msgPlayerPosition = this.protobuf.PlayerPosition.decode(message.Body).toObject({ defaults: true });
+                        let msgMovement = this.protobuf.Movement.decode(message.Body).toObject({ defaults: true });
                         // Запускаем обработчик
-                        this.game.handlePlayerPositionMessage(msgPlayerPosition);
+                        this.game.handleMovementMessage(msgMovement);
                         break
 
                     case this.protobuf.MessageType.MsgTerrain:

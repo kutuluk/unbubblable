@@ -6,7 +6,7 @@ package protocol;
 enum MessageType
 {
 	MsgController = 0;
-	MsgPlayerPosition = 1;
+	MsgMovement = 1;
 	MsgTerrain = 2;
 	MsgChunk = 3;
 	MsgChunkRequest = 4;
@@ -51,8 +51,8 @@ message Vec3 {
 	double Z = 3;
 }
 
-// PlayerPosition определяет позицию и движение игрока
-message PlayerPosition {
+// Movement определяет позицию и движение игрока
+message Movement {
 	// Position определяет положение игрока
 	Vec3 Position = 1;
 	// Motion определяет движение игрока

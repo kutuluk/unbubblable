@@ -1,13 +1,12 @@
-class Action {
+class Movement {
 
-    constructor(action) {
+    constructor(msgMovement) {
 
-        // action - protobuf.PlayerPosition.toObject();
-        if (action) {
-            this.position = new THREE.Vector3(action.Position.X, action.Position.Y, action.Position.Z);
-            this.motion = new THREE.Vector3(action.Motion.X, action.Motion.Y, action.Motion.Z);
-            this.angle = action.Angle;
-            this.slew = action.Slew;
+        if (msgMovement) {
+            this.position = new THREE.Vector3(msgMovement.Position.X, msgMovement.Position.Y, msgMovement.Position.Z);
+            this.motion = new THREE.Vector3(msgMovement.Motion.X, msgMovement.Motion.Y, msgMovement.Motion.Z);
+            this.angle = msgMovement.Angle;
+            this.slew = msgMovement.Slew;
         }
         else {
             this.position = new THREE.Vector3();
@@ -29,12 +28,12 @@ class Action {
 
     }
 
-    copy(action) {
+    copy(movement) {
 
-        this.position.copy(action.position);
-        this.motion.copy(action.motion);
-        this.angle = action.angle;
-        this.slew = action.slew;
+        this.position.copy(movement.position);
+        this.motion.copy(movement.motion);
+        this.angle = movement.angle;
+        this.slew = movement.slew;
 
         return this;
 
@@ -42,7 +41,7 @@ class Action {
 
     clone() {
 
-        return new Action().set(this.position, this.motion, this.angle, this.slew);
+        return new Movement().set(this.position, this.motion, this.angle, this.slew);
 
     }
 
@@ -53,8 +52,7 @@ class Unit {
     constructor(mesh) {
 
         this.mesh = mesh !== undefined ? mesh : new THREE.Mesh();
-        this.current = new Action();
-        this.next = new Action();
+        this.movement = new Movement();
 
     }
 
@@ -69,13 +67,12 @@ class Unit {
     animate(multiplier) {
 
         // Рассчитываем изменение позициии в этом фрейме
-        let motion = new THREE.Vector3().copy(this.current.motion);
-        motion.multiplyScalar(multiplier);
+        let motion = this.movement.motion.clone().multiplyScalar(multiplier);
         // Перемещаем меш
-        this.mesh.position.copy(new THREE.Vector3().copy(this.current.position).add(motion));
+        this.mesh.position.copy(this.movement.position.clone().add(motion));
 
         // Рассчитываем угол направления в этом фрейме
-        let rotation = this.current.angle + this.current.slew * multiplier;
+        let rotation = this.movement.angle + this.movement.slew * multiplier;
         // Крутим меш
         this.mesh.rotation.setFromVector3(new THREE.Vector3(0, 0, rotation), 'XYZ');
 
@@ -83,4 +80,4 @@ class Unit {
 
 };
 
-export { Action, Unit };
+export { Movement, Unit };
