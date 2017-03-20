@@ -1,11 +1,20 @@
 class Action {
 
-    constructor() {
+    constructor(action) {
 
-        this.position = new THREE.Vector3();
-        this.motion = new THREE.Vector3();
-        this.angle = 0;
-        this.slew = 0;
+        // action - protobuf.PlayerPosition.toObject();
+        if (action) {
+            this.position = new THREE.Vector3(action.Position.X, action.Position.Y, action.Position.Z);
+            this.motion = new THREE.Vector3(action.Motion.X, action.Motion.Y, action.Motion.Z);
+            this.angle = action.Angle;
+            this.slew = action.Slew;
+        }
+        else {
+            this.position = new THREE.Vector3();
+            this.motion = new THREE.Vector3();
+            this.angle = 0;
+            this.slew = 0;
+        }
 
     }
 
@@ -16,6 +25,8 @@ class Action {
         this.angle = angle;
         this.slew = slew;
 
+        return this;
+
     }
 
     copy(action) {
@@ -24,6 +35,8 @@ class Action {
         this.motion.copy(action.motion);
         this.angle = action.angle;
         this.slew = action.slew;
+
+        return this;
 
     }
 

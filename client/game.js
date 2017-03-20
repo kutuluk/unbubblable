@@ -110,11 +110,7 @@ class Game {
 
     handlePlayerPositionMessage(msgPlayerPosition) {
 
-        this.echo.next = new Action();
-        this.echo.next.position.set(msgPlayerPosition.Position.X, msgPlayerPosition.Position.Y, msgPlayerPosition.Position.Z);
-        this.echo.next.motion.set(msgPlayerPosition.Motion.X, msgPlayerPosition.Motion.Y, msgPlayerPosition.Motion.Z);
-        this.echo.next.angle = msgPlayerPosition.Angle;
-        this.echo.next.slew = msgPlayerPosition.Slew;
+        this.echo.next = new Action(msgPlayerPosition);
 
     }
 
