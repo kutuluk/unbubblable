@@ -1,6 +1,6 @@
 node_modules/
 *.exe
 public/js/app.js
-server/proto
+server/proto/*
 client/protocol.js
 *~
