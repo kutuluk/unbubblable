@@ -26,17 +26,13 @@ go get -u github.com/golang/protobuf/protoc-gen-go
 
 ```
 npm install protobufjs -g
-npm install --global browserify
-npm install --save-dev babel-cli babel-preset-es2015 babelify
+npm install browserify -g
+npm install protobufjs --save-dev
+npm install babel-preset-es2015 babelify --save-dev
 ```
 
 Сборка из корня:
 
 ```
-protoc --go_out=./server ./proto/*.proto
-cd server
-go build
-cd ..
-copy .\proto\protocol.proto .\public\js\protocol.proto
-browserify ./client/main.js -o ./public/js/app.js
+build.bat
 ```

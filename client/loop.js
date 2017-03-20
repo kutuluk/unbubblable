@@ -83,7 +83,7 @@ class Loop {
 
 		if (this.game.controller.modifiers.shift) {
 			this.game.player.unit.current.motion.multiplyScalar(0.25);
-			this.game.player.slew *= 0.25;
+			this.game.player.unit.current.slew *= 0.25;
 			this.game.player.camMotion *= 0.25;
 		}
 
