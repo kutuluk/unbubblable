@@ -3,10 +3,10 @@ class Movement {
     constructor(msgMovement) {
 
         if (msgMovement) {
-            this.position = new THREE.Vector3(msgMovement.Position.X, msgMovement.Position.Y, msgMovement.Position.Z);
-            this.motion = new THREE.Vector3(msgMovement.Motion.X, msgMovement.Motion.Y, msgMovement.Motion.Z);
-            this.angle = msgMovement.Angle;
-            this.slew = msgMovement.Slew;
+            this.position = new THREE.Vector3(msgMovement.position.x, msgMovement.position.y, msgMovement.position.z);
+            this.motion = new THREE.Vector3(msgMovement.motion.x, msgMovement.motion.y, msgMovement.motion.z);
+            this.angle = msgMovement.angle;
+            this.slew = msgMovement.slew;
         }
         else {
             this.position = new THREE.Vector3();

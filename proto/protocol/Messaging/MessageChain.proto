@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package protocol.Messaging;
+
+import "protocol/Messaging/Message.proto";
+
+// MessageChain определяет цепочку сообщений
+message MessageChain
+{
+    repeated protocol.Messaging.Message chain = 1;
+}

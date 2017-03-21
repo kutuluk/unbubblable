@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package protocol.Messaging;
+
+// R = Response
+// M = Message
+
+// MessageType определяет типы сообщений
+enum MessageType {
+	MsgController = 0;
+	MsgMovement = 1;
+	MsgTerrain = 2;
+	MsgChunk = 3;
+	MsgChunkRequest = 4;
+}

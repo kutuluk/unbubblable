@@ -6,7 +6,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/kutuluk/unbubblable/server/protocol"
-	protocol_Data "github.com/kutuluk/unbubblable/server/protocol/Data"
 
 	"math"
 
@@ -149,13 +148,24 @@ func (c *Connect) receiver() {
 				}
 				// Применяем сообщение
 				c.Player.Controller = msgController
+				/*
+					// ChunkRequest
+					case protocol.MessageType_MsgChunkRequest:
 
+						msgChunkRequest := new(protocol.ChunkRequest)
+						// Декодируем сообщение
+						err = proto.Unmarshal(message.Body, msgChunkRequest)
+						if err != nil {
+							log.Println("[proto read]:", err)
+							break
+						}
+				*/
 			// ChunkRequest
 			case protocol.MessageType_MsgChunkRequest:
 
-				msgChunkRequest := new(protocol.ChunkRequest)
+				msgChunksRequest := new(protocol.GetChunksRequest)
 				// Декодируем сообщение
-				err = proto.Unmarshal(message.Body, msgChunkRequest)
+				err = proto.Unmarshal(message.Body, msgChunksRequest)
 				if err != nil {
 					log.Println("[proto read]:", err)
 					break
@@ -164,7 +174,7 @@ func (c *Connect) receiver() {
 				// Применяем сообщение
 
 				// Обходим все запрашиваемые индексы чанков
-				for _, index := range msgChunkRequest.Chunks {
+				for _, index := range msgChunksRequest.Chunks {
 
 					// Проверяем на соответсвие диапазону
 					if (index >= 0) && (int(index) < c.Hub.Terrain.ChunkedWidth*c.Hub.Terrain.ChunkedHeight) {
@@ -220,18 +230,16 @@ func (c *Connect) sendMovement() {
 
 	// Формируем сообщение
 	msgMovement := new(protocol.Movement)
-	msgMovement.Position = new(protocol_Data.Vec3)
+	msgMovement.Position = new(protocol.Vec3)
 	msgMovement.Position.X = c.Player.Position.X()
 	msgMovement.Position.Y = c.Player.Position.Y()
 	msgMovement.Position.Z = c.Player.Position.Z()
-	msgMovement.Motion = new(protocol_Data.Vec3)
+	msgMovement.Motion = new(protocol.Vec3)
 	msgMovement.Motion.X = c.Player.Motion.X()
 	msgMovement.Motion.Y = c.Player.Motion.Y()
 	msgMovement.Motion.Z = c.Player.Motion.Z()
 	msgMovement.Angle = c.Player.Angle
 	msgMovement.Slew = c.Player.Slew
-
-	log.Println(msgMovement)
 
 	// Сериализуем сообщение протобафом
 	msgBuffer, err := proto.Marshal(msgMovement)

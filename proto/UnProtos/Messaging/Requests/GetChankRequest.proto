@@ -1,7 +1,0 @@
-syntax = "proto3";
-package UnProtos.Messaging.Requests;
-
-// GetChunkRequest определяет список необходимых чанков
-message	GetChunkRequest {
-    repeated int32 chunks = 1;
-}

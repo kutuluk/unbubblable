@@ -1,25 +1,16 @@
 syntax = "proto3";
 
-option go_package = "protocol";
+//option go_package = "protocol";
 
 package protocol;
 
 import "protocol/Data/Vec3.proto";
-
-// MessageType определяет типы сообщений
-enum MessageType
-{
-	MsgController = 0;
-	MsgMovement = 1;
-	MsgTerrain = 2;
-	MsgChunk = 3;
-	MsgChunkRequest = 4;
-}
+import "protocol/Messaging/MessageType.proto";
 
 // MessageItem определяет одно сообщение
 message MessageItem
 {
-    MessageType Type = 1;
+    protocol.Messaging.MessageType Type = 1;
     bytes Body = 2;
 }
 
@@ -49,24 +40,16 @@ message Controller {
     Modifiers Mods = 7;
 }
 
-/*
-message Vec3 {
-	double X = 1;
-	double Y = 2;
-	double Z = 3;
-}
-*/
-
 // Movement определяет позицию и движение игрока
 message Movement {
 	// Position определяет положение игрока
-	protocol.Data.Vec3 Position = 1;
+	protocol.Data.Vec3 position = 1;
 	// Motion определяет движение игрока
-	protocol.Data.Vec3 Motion = 2;
+	protocol.Data.Vec3 motion = 2;
 	// Angle определяет направление игрока (угол между положительным направленим оси Y и направлением игрока по часовой стрелке)
-	double Angle = 3;
+	double angle = 3;
 	// Slew определяет поворот игрока
-	double Slew = 4;
+	double slew = 4;
 }
 
 // Terrain определяет карту
@@ -95,9 +78,4 @@ message Chunk {
 
 	// Map определяет карту
     repeated Tile Map = 2;
-}
-
-// ChunkRequest определяет список необходимых чанков
-message	ChunkRequest {
-    repeated int32 Chunks = 1;
 }

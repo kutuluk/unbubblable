@@ -1,12 +1,10 @@
 syntax = "proto3";
 
-option go_package = "protocol";
-
 package protocol.Data;
 
 // Vec3 определяет 3-мерный вектор
 message Vec3 {
-	double X = 1;
-	double Y = 2;
-	double Z = 3;
+	double x = 1;
+	double y = 2;
+	double z = 3;
 }

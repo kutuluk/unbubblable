@@ -63,26 +63,23 @@ class Connect {
 
                 switch (message.Type) {
 
-                    case this.protobuf.MessageType.MsgMovement:
+                    case this.protobuf.Messaging.MessageType.MsgMovement:
 
                         // Декодируем сообщение
                         let msgMovement = this.protobuf.Movement.decode(message.Body).toObject({ defaults: true });
-        console.log(msgMovement);
                         // Запускаем обработчик
                         this.game.handleMovementMessage(msgMovement);
                         break
 
-                    case this.protobuf.MessageType.MsgTerrain:
+                    case this.protobuf.Messaging.MessageType.MsgTerrain:
 
                         // Декодируем сообщение
                         let msgTerrain = this.protobuf.Terrain.decode(message.Body).toObject({ defaults: true });
-        console.log(msgTerrain);
                         // Запускаем обработчик
                         this.game.handleTerrainMessage(msgTerrain);
                         break
 
-                    case this.protobuf.MessageType.MsgChunk:
-        console.log(msgChunk);
+                    case this.protobuf.Messaging.MessageType.MsgChunk:
 
                         // Декодируем сообщение
                         let msgChunk = this.protobuf.Chunk.decode(message.Body).toObject({ defaults: true });
@@ -142,7 +139,7 @@ class Connect {
         // Упаковываем сообщение в элемент контейнера
         let msgItem = this.protobuf.MessageItem.create(
             {
-                Type: this.protobuf.MessageType.MsgController,
+                Type: this.protobuf.Messaging.MessageType.MsgController,
                 Body: this.protobuf.Controller.encode(msg).finish()
             }
         );
@@ -156,17 +153,17 @@ class Connect {
         if (chunksIndecies.length > 0) {
 
             // Формируем сообщение
-            let msg = this.protobuf.ChunkRequest.create(
+            let msg = this.protobuf.Messaging.Request.GetChunksRequest.create(
                 {
-                    Chunks: chunksIndecies
+                    chunks: chunksIndecies
                 }
             );
 
             // Упаковываем сообщение в элемент контейнера
             let msgItem = this.protobuf.MessageItem.create(
                 {
-                    Type: this.protobuf.MessageType.MsgChunkRequest,
-                    Body: this.protobuf.ChunkRequest.encode(msg).finish()
+                    Type: this.protobuf.Messaging.MessageType.MsgChunkRequest,
+                    Body: this.protobuf.Messaging.Request.GetChunksRequest.encode(msg).finish()
                 }
             );
 

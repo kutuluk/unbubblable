@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package protocol.Messaging;
+
+import "protocol/Messaging/MessageType.proto";
+
+// Message определяет сообщение
+message Message {
+	protocol.Messaging.MessageType type = 1;
+	bytes body = 2;
+}

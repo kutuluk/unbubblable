@@ -1,9 +1,0 @@
-syntax = "proto3";
-package UnProtos.Data;
-
-// Vec3 определяет 3-мерный вектор
-message Vec3 {
-	double x = 1;
-	double y = 2;
-	double z = 3;
-}

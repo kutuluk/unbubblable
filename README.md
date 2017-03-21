@@ -27,7 +27,6 @@ go get -u github.com/golang/protobuf/protoc-gen-go
 ```
 npm install protobufjs -g
 npm install browserify -g
-npm install replace-in-file -g
 npm install protobufjs --save-dev
 npm install babel-preset-es2015 babelify --save-dev
 ```
