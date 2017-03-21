@@ -3,7 +3,7 @@ package main
 import (
 	"math"
 
-	"github.com/kutuluk/unbubblable/server/proto"
+	"github.com/kutuluk/unbubblable/server/protocol"
 
 	mathgl "github.com/go-gl/mathgl/mgl64"
 )

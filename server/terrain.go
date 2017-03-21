@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/kutuluk/unbubblable/server/proto"
+	"github.com/kutuluk/unbubblable/server/protocol"
 )
 
 // Ground определяет тайл поверхности

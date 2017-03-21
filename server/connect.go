@@ -5,7 +5,8 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/kutuluk/unbubblable/server/proto"
+	"github.com/kutuluk/unbubblable/server/protocol"
+	protocol_Data "github.com/kutuluk/unbubblable/server/protocol/Data"
 
 	"math"
 
@@ -219,16 +220,18 @@ func (c *Connect) sendMovement() {
 
 	// Формируем сообщение
 	msgMovement := new(protocol.Movement)
-	msgMovement.Position = new(protocol.Vec3)
+	msgMovement.Position = new(protocol_Data.Vec3)
 	msgMovement.Position.X = c.Player.Position.X()
 	msgMovement.Position.Y = c.Player.Position.Y()
 	msgMovement.Position.Z = c.Player.Position.Z()
-	msgMovement.Motion = new(protocol.Vec3)
+	msgMovement.Motion = new(protocol_Data.Vec3)
 	msgMovement.Motion.X = c.Player.Motion.X()
 	msgMovement.Motion.Y = c.Player.Motion.Y()
 	msgMovement.Motion.Z = c.Player.Motion.Z()
 	msgMovement.Angle = c.Player.Angle
 	msgMovement.Slew = c.Player.Slew
+
+	log.Println(msgMovement)
 
 	// Сериализуем сообщение протобафом
 	msgBuffer, err := proto.Marshal(msgMovement)

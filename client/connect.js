@@ -19,6 +19,7 @@ class Connect {
         */
 
         this.protobuf = proto.default.protocol;
+        console.log(this.protobuf);
 
         this.ws = new WebSocket(`ws://${window.location.host}/ws`);
         this.ws.binaryType = 'arraybuffer';
@@ -66,6 +67,7 @@ class Connect {
 
                         // Декодируем сообщение
                         let msgMovement = this.protobuf.Movement.decode(message.Body).toObject({ defaults: true });
+        console.log(msgMovement);
                         // Запускаем обработчик
                         this.game.handleMovementMessage(msgMovement);
                         break
@@ -74,11 +76,13 @@ class Connect {
 
                         // Декодируем сообщение
                         let msgTerrain = this.protobuf.Terrain.decode(message.Body).toObject({ defaults: true });
+        console.log(msgTerrain);
                         // Запускаем обработчик
                         this.game.handleTerrainMessage(msgTerrain);
                         break
 
                     case this.protobuf.MessageType.MsgChunk:
+        console.log(msgChunk);
 
                         // Декодируем сообщение
                         let msgChunk = this.protobuf.Chunk.decode(message.Body).toObject({ defaults: true });
@@ -96,6 +100,7 @@ class Connect {
     }
 
     sendMessage(msg) {
+
         if (this.ws.readyState == WebSocket.OPEN) {
 
             // Создаем контейнер и добавляем в него сообщение
