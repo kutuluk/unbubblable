@@ -1,8 +1,6 @@
 rd server\protocol /q /s
 
-cd proto
-protoc --go_out=import_path=protocol:../server ./protocol/*.proto ./protocol/*/*.proto ./protocol/*/*/*.proto
-cd ..
+protoc --go_out=import_path=protocol:./server ./protocol/*/*.proto ./protocol/*/*/*.proto
 
 cd server
 
@@ -16,7 +14,7 @@ go build
 
 cd ..
 
-call pbjs -t static-module -w es6 ./proto/protocol/Messaging/*.proto ./proto/protocol/Messaging/Messages/*.proto ./proto/protocol/Messaging/Response/*.proto ./proto/protocol/Messaging/Request/*.proto ./proto/protocol/Data/*.proto ./proto/protocol/protocol.proto -o ./client/protocol.js
+call pbjs -t static-module -w es6 ./protocol/Messaging/*.proto ./protocol/Messaging/Messages/*.proto ./protocol/Messaging/Response/*.proto ./protocol/Messaging/Request/*.proto ./protocol/Data/*.proto -o ./client/protocol.js
 call browserify ./client/main.js -o ./public/js/app.js
 
 cd server

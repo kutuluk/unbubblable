@@ -35,9 +35,6 @@ class Connect {
 
         this.ws.onmessage = event => {
 
-            // Преобразуем полученные данные в контейнер
-            let msgContainer = this.protobuf.MessageContainer.decode(new Uint8Array(event.data)).toObject({ defaults: true });
-
             /*
             try {
                 var msgContainer = this.protobuf.MessageContainer.decode(new Uint8Array(event.data)).toObject({ defaults: true });
@@ -47,45 +44,57 @@ class Connect {
             }
             */
 
-            // Обходим сообщения в контейнере
-            msgContainer.Messages.forEach(message => {
-
-                switch (message.Type) {
-
-                    case this.protobuf.Messaging.MessageType.MsgMovement:
-
-                        // Декодируем сообщение
-                        let msgMovement = this.protobuf.Messaging.Messages.Movement.decode(message.Body).toObject({ defaults: true });
-                        // Запускаем обработчик
-                        this.game.handleMovementMessage(msgMovement);
-                        break
-
-                    case this.protobuf.Messaging.MessageType.MsgTerrain:
-
-                        // Декодируем сообщение
-                        let msgTerrain = this.protobuf.Messaging.Messages.Terrain.decode(message.Body).toObject({ defaults: true });
-                        // Запускаем обработчик
-                        this.game.handleTerrainMessage(msgTerrain);
-                        break
-
-                    case this.protobuf.Messaging.MessageType.MsgChunk:
-
-                        // Декодируем сообщение
-                        let msgChunk = this.protobuf.Messaging.Response.GetChunksResponse.decode(message.Body).toObject({ defaults: true });
-                        // Запускаем обработчик
-                        this.game.handleChunkMessage(msgChunk);
-                        break
-
-                    default:
-                        log.appendText('[proto read]: неизвестное сообщение');
-                        break
-                };
-
-            });
+            // Декодируем сообщение
+            let message = this.protobuf.Messaging.Message.decode(new Uint8Array(event.data)).toObject({ defaults: true });
+            // Обрабатываем сообщение
+            this.handleMessage(message);
         };
     }
 
-    sendMessage(msg) {
+    handleMessage(message) {
+
+        switch (message.type) {
+
+            case this.protobuf.Messaging.MessageType.MsgChain:
+
+                // Декодируем сообщение
+                let msgChain = this.protobuf.Messaging.MessageChain.decode(message.body).toObject({ defaults: true });
+                // Обходим все сообщения в цепочке
+                msgChain.chain.forEach(message => this.handleMessage(message));
+                break
+
+            case this.protobuf.Messaging.MessageType.MsgMovement:
+
+                // Декодируем сообщение
+                let msgMovement = this.protobuf.Messaging.Messages.Movement.decode(message.body).toObject({ defaults: true });
+                // Запускаем обработчик
+                this.game.handleMovementMessage(msgMovement);
+                break
+
+            case this.protobuf.Messaging.MessageType.MsgTerrain:
+
+                // Декодируем сообщение
+                let msgTerrain = this.protobuf.Messaging.Messages.Terrain.decode(message.body).toObject({ defaults: true });
+                // Запускаем обработчик
+                this.game.handleTerrainMessage(msgTerrain);
+                break
+
+            case this.protobuf.Messaging.MessageType.MsgChunk:
+
+                // Декодируем сообщение
+                let msgChunk = this.protobuf.Messaging.Response.GetChunksResponse.decode(message.body).toObject({ defaults: true });
+                // Запускаем обработчик
+                this.game.handleChunkMessage(msgChunk);
+                break
+
+            default:
+                log.appendText('[proto read]: неизвестное сообщение');
+                break
+        };
+
+    }
+
+    sendChain(msg) {
 
         if (this.ws.readyState == WebSocket.OPEN) {
 
@@ -102,6 +111,23 @@ class Connect {
         }
     }
 
+    sendMessage(type, body) {
+
+        if (this.ws.readyState == WebSocket.OPEN) {
+
+            // Упаковываем данные в сообщение
+            let message = this.protobuf.Messaging.Message.create(
+                {
+                    type: type,
+                    body: body
+                }
+            );
+
+            // Отправляем сообщение
+            this.ws.send(this.protobuf.Messaging.Message.encode(message).finish());
+
+        }
+    }
 
     sendController(controller) {
 
@@ -125,16 +151,8 @@ class Connect {
             }
         );
 
-        // Упаковываем сообщение в элемент контейнера
-        let msgItem = this.protobuf.MessageItem.create(
-            {
-                Type: this.protobuf.Messaging.MessageType.MsgController,
-                Body: this.protobuf.Messaging.Messages.ApplyControllerMessage.encode(msg).finish()
-            }
-        );
-
         // Отправляем сообщение
-        this.sendMessage(msgItem);
+        this.sendMessage(this.protobuf.Messaging.MessageType.MsgController, this.protobuf.Messaging.Messages.ApplyControllerMessage.encode(msg).finish());
 
     }
 
@@ -148,16 +166,8 @@ class Connect {
                 }
             );
 
-            // Упаковываем сообщение в элемент контейнера
-            let msgItem = this.protobuf.MessageItem.create(
-                {
-                    Type: this.protobuf.Messaging.MessageType.MsgChunkRequest,
-                    Body: this.protobuf.Messaging.Request.GetChunksRequest.encode(msg).finish()
-                }
-            );
-
             // Отправляем сообщение
-            this.sendMessage(msgItem);
+            this.sendMessage(this.protobuf.Messaging.MessageType.MsgChunkRequest, this.protobuf.Messaging.Request.GetChunksRequest.encode(msg).finish());
 
         }
     }

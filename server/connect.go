@@ -103,6 +103,76 @@ type Connect struct {
 	Sent     int
 }
 
+func (c *Connect) handler(message *protocol.Message) {
+
+	var err error
+
+	switch message.Type {
+
+	// Chain
+	case protocol.MessageType_MsgChain:
+
+		// Декодируем сообщение
+		msgChain := new(protocol.MessageChain)
+		err = proto.Unmarshal(message.Body, msgChain)
+		if err != nil {
+			log.Println("[proto read]:", err)
+			break
+		}
+
+		// Обходим все сообщения в цепочке
+		for _, message := range msgChain.Chain {
+			c.handler(message)
+		}
+
+	// Controller
+	case protocol.MessageType_MsgController:
+
+		msgController := new(protocol.ApplyControllerMessage)
+		// Декодируем сообщение
+		err = proto.Unmarshal(message.Body, msgController)
+		if err != nil {
+			log.Println("[proto read]:", err)
+			break
+		}
+		// Применяем сообщение
+		c.Player.Controller = msgController
+
+	// ChunkRequest
+	case protocol.MessageType_MsgChunkRequest:
+
+		msgChunksRequest := new(protocol.GetChunksRequest)
+		// Декодируем сообщение
+		err = proto.Unmarshal(message.Body, msgChunksRequest)
+		if err != nil {
+			log.Println("[proto read]:", err)
+			break
+		}
+
+		// Применяем сообщение
+
+		// Обходим все запрашиваемые индексы чанков
+		for _, index := range msgChunksRequest.Chunks {
+
+			// Проверяем на соответсвие диапазону
+			if (index >= 0) && (int(index) < c.Hub.Terrain.ChunkedWidth*c.Hub.Terrain.ChunkedHeight) {
+				cx, cy := c.Hub.Terrain.GetChankCoord(int(index))
+				px := math.Floor(c.Player.Position.X() / float64(c.Hub.Terrain.ChunkSize))
+				py := math.Floor(c.Player.Position.Y() / float64(c.Hub.Terrain.ChunkSize))
+				dx := math.Abs(px - float64(cx))
+				dy := math.Abs(py - float64(cy))
+				// Проверяем смежность запрашиваемого чанка с координатами персонажа
+				if (dx <= 1) && (dy <= 1) {
+					c.sendChunk(int(index))
+				}
+			}
+		}
+
+	default:
+		log.Println("[proto read]: не известное сообщение")
+	}
+}
+
 // receiver обрабатывает входящие сообщения
 func (c *Connect) receiver() {
 	for {
@@ -122,79 +192,32 @@ func (c *Connect) receiver() {
 			break
 		}
 
-		// Преобразуем полученные данные в контейнер
-		msgContainer := new(protocol.MessageContainer)
-		err = proto.Unmarshal(messageData, msgContainer)
+		// Декодируем сообщение
+		msg := new(protocol.Message)
+		err = proto.Unmarshal(messageData, msg)
 		if err != nil {
 			log.Println("[proto read]:", err)
 			break
 		}
 
-		// Обходим сообщения в контейнере
-		for _, message := range msgContainer.Messages {
-			switch message.Type {
+		// Обрабатываем сообщение
+		c.handler(msg)
 
-			// Controller
-			case protocol.MessageType_MsgController:
-
-				msgController := new(protocol.ApplyControllerMessage)
-				// Декодируем сообщение
-				err = proto.Unmarshal(message.Body, msgController)
-				if err != nil {
-					log.Println("[proto read]:", err)
-					break
-				}
-				// Применяем сообщение
-				c.Player.Controller = msgController
-
-			// ChunkRequest
-			case protocol.MessageType_MsgChunkRequest:
-
-				msgChunksRequest := new(protocol.GetChunksRequest)
-				// Декодируем сообщение
-				err = proto.Unmarshal(message.Body, msgChunksRequest)
-				if err != nil {
-					log.Println("[proto read]:", err)
-					break
-				}
-
-				// Применяем сообщение
-
-				// Обходим все запрашиваемые индексы чанков
-				for _, index := range msgChunksRequest.Chunks {
-
-					// Проверяем на соответсвие диапазону
-					if (index >= 0) && (int(index) < c.Hub.Terrain.ChunkedWidth*c.Hub.Terrain.ChunkedHeight) {
-						cx, cy := c.Hub.Terrain.GetChankCoord(int(index))
-						px := math.Floor(c.Player.Position.X() / float64(c.Hub.Terrain.ChunkSize))
-						py := math.Floor(c.Player.Position.Y() / float64(c.Hub.Terrain.ChunkSize))
-						dx := math.Abs(px - float64(cx))
-						dy := math.Abs(py - float64(cy))
-						// Проверяем смежность запрашиваемого чанка с координатами персонажа
-						if (dx <= 1) && (dy <= 1) {
-							c.sendChunk(int(index))
-						}
-					}
-				}
-
-			default:
-				log.Println("[proto read]: не известное сообщение")
-			}
-		}
 	}
 	c.Hub.Leave(c)
 	log.Println("[connect]: ресивер завершился")
 }
 
-// sendMessage упаковывает сообщение в контейнер и отправляет его клиенту
-func (c *Connect) sendMessage(m *protocol.MessageItem) {
+// sendMessage упаковывает данные в сообщение и отправляет его клиенту
+func (c *Connect) sendMessage(msgType protocol.MessageType, msgBody []byte) {
 
-	// Создаем контейнер и добавляем в него сообщение
-	msgContainer := new(protocol.MessageContainer)
-	msgContainer.Messages = append(msgContainer.Messages, m)
+	// Формируем сообщение
+	msg := new(protocol.Message)
+	msg.Type = msgType
+	msg.Body = msgBody
 
-	// Сериализуем контейнер протобафом
-	message, err := proto.Marshal(msgContainer)
+	// Сериализуем сообщение протобафом
+	message, err := proto.Marshal(msg)
 	if err != nil {
 		log.Println("[proto send]:", err)
 		return
@@ -235,38 +258,23 @@ func (c *Connect) sendMovement() {
 		return
 	}
 
-	// Упаковываем сообщение в элемент контейнера
-	msgItem := new(protocol.MessageItem)
-	msgItem.Type = protocol.MessageType_MsgMovement
-	msgItem.Body = msgBuffer
-
 	// Отправляем сообщение
-	c.sendMessage(msgItem)
+	c.sendMessage(protocol.MessageType_MsgMovement, msgBuffer)
 
 }
 
 // sendMap отправляет клиенту карту
 func (c *Connect) sendTerrain() {
 
-	// Упаковываем сообщение в элемент контейнера
-	msgItem := new(protocol.MessageItem)
-	msgItem.Type = protocol.MessageType_MsgTerrain
-	msgItem.Body = c.Hub.Terrain.Proto
-
 	// Отправляем сообщение
-	c.sendMessage(msgItem)
+	c.sendMessage(protocol.MessageType_MsgTerrain, c.Hub.Terrain.Proto)
 
 }
 
 // sendChunk отправляет клиенту чанк по индексу
 func (c *Connect) sendChunk(i int) {
 
-	// Упаковываем сообщение в элемент контейнера
-	msgItem := new(protocol.MessageItem)
-	msgItem.Type = protocol.MessageType_MsgChunk
-	msgItem.Body = c.Hub.Terrain.Chunks[i].Proto
-
 	// Отправляем сообщение
-	c.sendMessage(msgItem)
+	c.sendMessage(protocol.MessageType_MsgChunk, c.Hub.Terrain.Chunks[i].Proto)
 
 }
