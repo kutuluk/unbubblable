@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package protocol.Messaging.Messages;
+
+// Terrain определяет карту
+message Terrain {
+	// width определяет ширину
+	int32 width = 2;
+	// height определяет высоту
+	int32 height = 3;
+	// seed определяет зерно генератора
+	int64 seed = 4;
+	// chunk_size определяет размер чанка
+	int32 chunk_size = 5;
+}

@@ -4,7 +4,6 @@ syntax = "proto3";
 
 package protocol;
 
-import "protocol/Data/Vec3.proto";
 import "protocol/Messaging/MessageType.proto";
 
 // MessageItem определяет одно сообщение
@@ -18,64 +17,4 @@ message MessageItem
 message MessageContainer
 {
     repeated MessageItem Messages = 1;
-}
-
-// Controller определяет клавиши управления
-message Controller {
-	bool MoveForward = 1;
-	bool MoveBackward = 2;
-	bool MoveLeft = 3;
-	bool MoveRight = 4;
-	bool RotateLeft = 5;
-	bool RotateRight = 6;
-
-	// Modifiers определяет клавиши-модификаторы
-	message Modifiers {
-       	bool Shift = 1; 
-       	bool Ctrl = 2;
-       	bool Alt = 3;
-       	bool Meta = 4;
-	}
-	
-    Modifiers Mods = 7;
-}
-
-// Movement определяет позицию и движение игрока
-message Movement {
-	// Position определяет положение игрока
-	protocol.Data.Vec3 position = 1;
-	// Motion определяет движение игрока
-	protocol.Data.Vec3 motion = 2;
-	// Angle определяет направление игрока (угол между положительным направленим оси Y и направлением игрока по часовой стрелке)
-	double angle = 3;
-	// Slew определяет поворот игрока
-	double slew = 4;
-}
-
-// Terrain определяет карту
-message Terrain {
-	// Width определяет ширину
-	int32 Width = 1;
-	// Height определяет высоту
-	int32 Height = 2;
-	// Seed определяет зерно генератора
-	int64 Seed = 3;
-	// ChunkSize определяет размер чанка
-	int32 ChunkSize = 4;
-}
-
-// Chunk определяет чанк карты
-message Chunk {
-	// Index определяет индекс чанка
-	int32 Index = 1;
-
-	// Tile определяет тайл карты
-	message Tile {
-		int32 Ground = 1;
-		int32 Block = 2;
-		int32 Detail = 3;
-	}
-
-	// Map определяет карту
-    repeated Tile Map = 2;
 }

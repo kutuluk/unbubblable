@@ -1,8 +1,9 @@
 syntax = "proto3";
-package UnProtos.Messaging.Requests;
 
-// ApplyControllerRequest определяет нажатые клавиши управления
-message ApplyControllerRequest {
+package protocol.Messaging.Messages;
+
+// ApplyControllerMessage определяет нажатые клавиши управления
+message ApplyControllerMessage {
 	// клавиши управления
 	bool move_forward = 1;
 	bool move_backward = 2;

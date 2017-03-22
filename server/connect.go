@@ -86,8 +86,6 @@ func (h *Hub) loop() {
 			// Отправляем сообщение клиенту
 			//			go c.sendMovement()
 			c.sendMovement()
-			//			c.sendChunk(c.Hub.Terrain.GetChank(int(c.Player.Position.X()), int(c.Player.Position.Y())))
-
 		}
 	}
 
@@ -139,7 +137,7 @@ func (c *Connect) receiver() {
 			// Controller
 			case protocol.MessageType_MsgController:
 
-				msgController := new(protocol.Controller)
+				msgController := new(protocol.ApplyControllerMessage)
 				// Декодируем сообщение
 				err = proto.Unmarshal(message.Body, msgController)
 				if err != nil {
@@ -148,18 +146,7 @@ func (c *Connect) receiver() {
 				}
 				// Применяем сообщение
 				c.Player.Controller = msgController
-				/*
-					// ChunkRequest
-					case protocol.MessageType_MsgChunkRequest:
 
-						msgChunkRequest := new(protocol.ChunkRequest)
-						// Декодируем сообщение
-						err = proto.Unmarshal(message.Body, msgChunkRequest)
-						if err != nil {
-							log.Println("[proto read]:", err)
-							break
-						}
-				*/
 			// ChunkRequest
 			case protocol.MessageType_MsgChunkRequest:
 

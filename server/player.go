@@ -25,7 +25,8 @@ type Player struct {
 
 	// Controller определяет слайс состояний контроллера игрока
 	//	Controller []MessageController
-	Controller *protocol.Controller
+
+	Controller *protocol.ApplyControllerMessage
 }
 
 // NewPlayer инициализирует нового игрока

@@ -18,12 +18,6 @@ class Tile {
 
     }
 
-    clone() {
-
-        return new Tile(this.ground, this.block, this.detail);
-
-    }
-
     copy(tile) {
 
         this.ground = tile.ground;
@@ -31,6 +25,12 @@ class Tile {
         this.detail = tile.detail;
 
         return this;
+
+    }
+
+    clone() {
+
+        return new Tile(this.ground, this.block, this.detail);
 
     }
 
@@ -44,8 +44,8 @@ class Chunk {
 
         let chunkedWidth = Math.ceil(terrain.width / terrain.chunkSize);
 
-        let y = Math.floor(msgChunk.Index / chunkedWidth)
-        let x = msgChunk.Index - (y * chunkedWidth)
+        let y = Math.floor(msgChunk.index / chunkedWidth)
+        let x = msgChunk.index - (y * chunkedWidth)
 
         this.meshX = x * terrain.chunkSize;
         this.meshY = y * terrain.chunkSize;
@@ -54,7 +54,7 @@ class Chunk {
         let size = terrain.chunkSize * terrain.chunkSize;
         this.tiles = new Array(size);
         for (let i = 0; i < size; i++) {
-            this.tiles[i] = new Tile(msgChunk.Map[i].Ground, msgChunk.Map[i].Block, msgChunk.Map[i].Detail);
+            this.tiles[i] = new Tile(msgChunk.tiles[i].ground, msgChunk.tiles[i].block, msgChunk.tiles[i].detail);
         }
 
         this.calcMesh();
@@ -211,7 +211,7 @@ class Terrain {
 
     setChunk(msgChunk) {
 
-        this.chunks[msgChunk.Index] = new Chunk(this, msgChunk);
+        this.chunks[msgChunk.index] = new Chunk(this, msgChunk);
 
     }
 

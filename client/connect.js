@@ -1,5 +1,4 @@
 import { log } from './log';
-//import * as protobuf from 'protobufjs';
 import * as proto from './protocol.js';
 
 class Connect {
@@ -7,16 +6,6 @@ class Connect {
     constructor(game) {
 
         this.game = game;
-
-        /*
-        protobuf.load('js/protocol.proto', (err, root) => {
-            if (err) throw err;
-            this.protobuf = root.lookup("protocol");
-        });
-        // Убрать эту тупую задержку в 1 секунду на загрузку js/protocol.proto
-        let ms = 1000 + new Date().getTime();
-        while (new Date() < ms) { }
-        */
 
         this.protobuf = proto.default.protocol;
         console.log(this.protobuf);
@@ -66,7 +55,7 @@ class Connect {
                     case this.protobuf.Messaging.MessageType.MsgMovement:
 
                         // Декодируем сообщение
-                        let msgMovement = this.protobuf.Movement.decode(message.Body).toObject({ defaults: true });
+                        let msgMovement = this.protobuf.Messaging.Messages.Movement.decode(message.Body).toObject({ defaults: true });
                         // Запускаем обработчик
                         this.game.handleMovementMessage(msgMovement);
                         break
@@ -74,7 +63,7 @@ class Connect {
                     case this.protobuf.Messaging.MessageType.MsgTerrain:
 
                         // Декодируем сообщение
-                        let msgTerrain = this.protobuf.Terrain.decode(message.Body).toObject({ defaults: true });
+                        let msgTerrain = this.protobuf.Messaging.Messages.Terrain.decode(message.Body).toObject({ defaults: true });
                         // Запускаем обработчик
                         this.game.handleTerrainMessage(msgTerrain);
                         break
@@ -82,7 +71,7 @@ class Connect {
                     case this.protobuf.Messaging.MessageType.MsgChunk:
 
                         // Декодируем сообщение
-                        let msgChunk = this.protobuf.Chunk.decode(message.Body).toObject({ defaults: true });
+                        let msgChunk = this.protobuf.Messaging.Response.GetChunksResponse.decode(message.Body).toObject({ defaults: true });
                         // Запускаем обработчик
                         this.game.handleChunkMessage(msgChunk);
                         break
@@ -117,20 +106,20 @@ class Connect {
     sendController(controller) {
 
         // Формируем сообщение
-        let msg = this.protobuf.Controller.create(
+        let msg = this.protobuf.Messaging.Messages.ApplyControllerMessage.create(
             {
-                MoveForward: controller.moveForward,
-                MoveBackward: controller.moveBackward,
-                MoveLeft: controller.moveLeft,
-                MoveRight: controller.moveRight,
-                RotateLeft: controller.rotateLeft,
-                RotateRight: controller.rotateRight,
-                Mods: this.protobuf.Controller.Modifiers.create(
+                moveForward: controller.moveForward,
+                moveBackward: controller.moveBackward,
+                moveLeft: controller.moveLeft,
+                moveRight: controller.moveRight,
+                rotateLeft: controller.rotateLeft,
+                rotateRight: controller.rotateRight,
+                mods: this.protobuf.Messaging.Messages.ApplyControllerMessage.Modifiers.create(
                     {
-                        Shift: controller.modifiers.shift,
-                        Ctrl: controller.modifiers.ctrl,
-                        Alt: controller.modifiers.alt,
-                        Meta: controller.modifiers.meta
+                        shift: controller.modifiers.shift,
+                        ctrl: controller.modifiers.ctrl,
+                        alt: controller.modifiers.alt,
+                        meta: controller.modifiers.meta
                     }
                 )
             }
@@ -140,7 +129,7 @@ class Connect {
         let msgItem = this.protobuf.MessageItem.create(
             {
                 Type: this.protobuf.Messaging.MessageType.MsgController,
-                Body: this.protobuf.Controller.encode(msg).finish()
+                Body: this.protobuf.Messaging.Messages.ApplyControllerMessage.encode(msg).finish()
             }
         );
 

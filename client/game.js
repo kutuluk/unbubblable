@@ -116,23 +116,23 @@ class Game {
 
     handleTerrainMessage(msgTerrain) {
 
-        this.terrain = new Terrain(msgTerrain.Width, msgTerrain.Height, msgTerrain.ChunkSize, this.atlas);
+        this.terrain = new Terrain(msgTerrain.width, msgTerrain.height, msgTerrain.chunkSize, this.atlas);
 
         // Сетка карты
-        var geoGrid = new THREE.PlaneGeometry(msgTerrain.Width, msgTerrain.Height, msgTerrain.Width / msgTerrain.ChunkSize, msgTerrain.Height / msgTerrain.ChunkSize);
+        var geoGrid = new THREE.PlaneGeometry(msgTerrain.width, msgTerrain.height, msgTerrain.width / msgTerrain.chunkSize, msgTerrain.height / msgTerrain.chunkSize);
         var material = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, side: THREE.DoubleSide });
         var grid = new THREE.Mesh(geoGrid, material);
-        grid.position.set(msgTerrain.Width / 2, msgTerrain.Height / 2, 0.03);
+        grid.position.set(msgTerrain.width / 2, msgTerrain.height / 2, 0.03);
         this.scene.add(grid);
 
     }
 
     handleChunkMessage(msgChunk) {
-        if (this.terrain.chunks[msgChunk.Index] == undefined) {
+        if (this.terrain.chunks[msgChunk.index] == undefined) {
 
             this.terrain.setChunk(msgChunk);
-            this.scene.add(this.terrain.chunks[msgChunk.Index].meshLandscape);
-            this.scene.add(this.terrain.chunks[msgChunk.Index].meshDetails);
+            this.scene.add(this.terrain.chunks[msgChunk.index].meshLandscape);
+            this.scene.add(this.terrain.chunks[msgChunk.index].meshDetails);
 
         }
     }

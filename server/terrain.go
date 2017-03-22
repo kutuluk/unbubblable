@@ -133,19 +133,20 @@ func (t Terrain) NewChank(i int) *Chunk {
 	}
 
 	// Подготовливаем данные для сериализации
-	msgChunk := new(protocol.Chunk)
+	msgChunk := new(protocol.GetChunksResponse)
 
 	msgChunk.Index = int32(i)
-	msgChunk.Map = make([]*protocol.Chunk_Tile, t.ChunkSize*t.ChunkSize)
+	msgChunk.Tiles = make([]*protocol.GetChunksResponse_Tile, t.ChunkSize*t.ChunkSize)
+	msgChunk.Result = protocol.GetChunksResponse_SUCCESS
 
 	// ToDo: Перенести в верхний цикл и избавиться от промежуточного слайса m
 	for i := 0; i < t.ChunkSize*t.ChunkSize; i++ {
-		msgChunkTile := new(protocol.Chunk_Tile)
+		msgChunkTile := new(protocol.GetChunksResponse_Tile)
 		msgChunkTile.Ground = int32(m[i].Ground)
 		msgChunkTile.Block = int32(m[i].Block)
 		msgChunkTile.Detail = int32(m[i].Detail)
 
-		msgChunk.Map[i] = msgChunkTile
+		msgChunk.Tiles[i] = msgChunkTile
 	}
 
 	// Сериализуем данные протобафом

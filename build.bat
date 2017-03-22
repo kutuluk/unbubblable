@@ -10,12 +10,13 @@ copy protocol\Data\*.* protocol\
 copy protocol\Messaging\*.* protocol\
 copy protocol\Messaging\Request\*.* protocol\
 copy protocol\Messaging\Response\*.* protocol\
+copy protocol\Messaging\Messages\*.* protocol\
 
 go build
 
 cd ..
 
-call pbjs -t static-module -w es6 ./proto/protocol/Messaging/*.proto ./proto/protocol/Messaging/Response/*.proto ./proto/protocol/Messaging/Request/*.proto ./proto/protocol/Data/*.proto ./proto/protocol/protocol.proto -o ./client/protocol.js
+call pbjs -t static-module -w es6 ./proto/protocol/Messaging/*.proto ./proto/protocol/Messaging/Messages/*.proto ./proto/protocol/Messaging/Response/*.proto ./proto/protocol/Messaging/Request/*.proto ./proto/protocol/Data/*.proto ./proto/protocol/protocol.proto -o ./client/protocol.js
 call browserify ./client/main.js -o ./public/js/app.js
 
 cd server
