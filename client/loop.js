@@ -33,7 +33,6 @@ class Loop {
 
 		// Передвигаем эхо
 		if (this.game.echo.next) {
-//			this.game.echo.movement.set(new THREE.Vector3().copy(this.game.echo.next.position), new THREE.Vector3().copy(this.game.echo.next.motion), this.game.echo.next.angle, this.game.echo.next.slew);
 			this.game.echo.movement = this.game.echo.next;
 			this.game.echo.next = undefined;
 		}
@@ -42,7 +41,7 @@ class Loop {
 		let forwardDirection = new THREE.Vector3(0, 1, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), this.game.player.unit.movement.angle);
 
 		// Расчитываем единичный вектор стрейфа направо 
-		let rightDirection = new THREE.Vector3().copy(forwardDirection);
+		let rightDirection = forwardDirection.clone();
 		rightDirection.applyAxisAngle(new THREE.Vector3(0, 0, -1), Math.PI / 2);
 
 		// Обрабатываем показания контроллера и задаем приращения текущего тика

@@ -18,9 +18,9 @@ class Player {
 
 	animate(scalar) {
 		// Рассчитываем позицию игрока в этом фрейме
-		var motion = new THREE.Vector3().copy(this.unit.movement.motion);
+		var motion = this.unit.movement.motion.clone();
 		motion.multiplyScalar(scalar);
-		var position = new THREE.Vector3().copy(this.unit.movement.position).add(motion);
+		var position = this.unit.movement.position.clone().add(motion);
 		// Рассчитываем угол направления в этом фрейме
 		var rotation = this.unit.movement.angle + this.unit.movement.slew * scalar;
 		// Рассчитываем вектор направления в этом фрейме

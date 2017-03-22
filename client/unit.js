@@ -1,12 +1,13 @@
 class Movement {
 
-    constructor(msgMovement) {
+    // movement - Movement или protocol.Messaging.Messages.Movement.toObject()
+    constructor(movement) {
 
-        if (msgMovement) {
-            this.position = new THREE.Vector3(msgMovement.position.x, msgMovement.position.y, msgMovement.position.z);
-            this.motion = new THREE.Vector3(msgMovement.motion.x, msgMovement.motion.y, msgMovement.motion.z);
-            this.angle = msgMovement.angle;
-            this.slew = msgMovement.slew;
+        if (movement) {
+            this.position = new THREE.Vector3(movement.position.x, movement.position.y, movement.position.z);
+            this.motion = new THREE.Vector3(movement.motion.x, movement.motion.y, movement.motion.z);
+            this.angle = movement.angle;
+            this.slew = movement.slew;
         }
         else {
             this.position = new THREE.Vector3();

@@ -208,6 +208,30 @@ func (c *Connect) receiver() {
 	log.Println("[connect]: ресивер завершился")
 }
 
+// sendMessage упаковывает данные в цепочку из одного сообщения и отправляет его
+func (c *Connect) sendChain(msgType protocol.MessageType, msgBody []byte) {
+
+	// Формируем сообщение
+	message := new(protocol.Message)
+	message.Type = msgType
+	message.Body = msgBody
+
+	// Упаковываем сообщение в цепочку
+	chain := new(protocol.MessageChain)
+	chain.Chain = append(chain.Chain, message)
+
+	// Сериализуем сообщение протобафом
+	body, err := proto.Marshal(chain)
+	if err != nil {
+		log.Println("[proto send]:", err)
+		return
+	}
+
+	// Отправляем сообщение
+	c.sendMessage(protocol.MessageType_MsgChain, body)
+
+}
+
 // sendMessage упаковывает данные в сообщение и отправляет его клиенту
 func (c *Connect) sendMessage(msgType protocol.MessageType, msgBody []byte) {
 

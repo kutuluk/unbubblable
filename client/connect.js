@@ -59,7 +59,7 @@ class Connect {
 
                 // Декодируем сообщение
                 let msgChain = this.protobuf.Messaging.MessageChain.decode(message.body).toObject({ defaults: true });
-                // Обходим все сообщения в цепочке
+                // Запускаем обработчик для всех сообщений в цепочке
                 msgChain.chain.forEach(message => this.handleMessage(message));
                 break
 
@@ -94,19 +94,28 @@ class Connect {
 
     }
 
-    sendChain(msg) {
+    // Отправляет одно сообщение, упакованное в цепочку
+    sendChain(type, body) {
 
         if (this.ws.readyState == WebSocket.OPEN) {
 
-            // Создаем контейнер и добавляем в него сообщение
-            let msgContainer = this.protobuf.MessageContainer.create(
+            // Упаковываем данные в сообщение
+            let message = this.protobuf.Messaging.Message.create(
                 {
-                    Messages: [msg]
+                    type: type,
+                    body: body
+                }
+            );
+
+            // Создаем контейнер и добавляем в него сообщение
+            let chain = this.protobuf.Messaging.MessageChain.create(
+                {
+                    chain: [message]
                 }
             );
 
             // Отправляем сообщение
-            this.ws.send(this.protobuf.MessageContainer.encode(msgContainer).finish());
+            this.sendMessage(this.protobuf.Messaging.MessageType.MessageChain, this.protobuf.Messaging.MessageChain.encode(chain).finish());
 
         }
     }

@@ -13,26 +13,16 @@ class Game {
 
         this.playable = false;
 
-        // Проверяем поддержку WebGL
         if (!Detector.webgl) {
             Detector.addGetWebGLMessage();
-            log.appendText('[RENDERER] Браузер не поддерживает WebGL.');
+            log.appendText('[ERROR] Браузер не поддерживает WebGL.');
             return
         };
 
-        // Проверяем поддержку WebSockets
         if (!window['WebSocket']) {
-            log.appendText('[WS] Браузер не поддерживает WebSockets.');
+            log.appendText('[ERROR] Браузер не поддерживает WebSockets.');
             return
         };
-
-        /*
-                // Проверяем поддержку Protocol Buffers
-                if (typeof dcodeIO === 'undefined' || !dcodeIO.ProtoBuf) {
-                    log.appendText('[PROTO] Не обнаружена поддержка Protocol Buffers.');
-                    return
-                };
-        */
 
         this.playable = true;
 
@@ -120,9 +110,9 @@ class Game {
 
         // Сетка карты
         var geoGrid = new THREE.PlaneGeometry(msgTerrain.width, msgTerrain.height, msgTerrain.width / msgTerrain.chunkSize, msgTerrain.height / msgTerrain.chunkSize);
-        var material = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, side: THREE.DoubleSide });
+        var material = new THREE.MeshBasicMaterial({ color: 0x4c981f, wireframe: true, side: THREE.DoubleSide });
         var grid = new THREE.Mesh(geoGrid, material);
-        grid.position.set(msgTerrain.width / 2, msgTerrain.height / 2, 0.03);
+        grid.position.set(msgTerrain.width / 2, msgTerrain.height / 2, 0.005);
         this.scene.add(grid);
 
     }
@@ -157,7 +147,6 @@ class Game {
             this.echo.mesh.position.z = 0.01;
 
             //	console.log(camera.position);
-            //	log.appendText(JSON.stringify(this.rotation));
 
             this.renderer.render(this.scene, this.camera);
 
