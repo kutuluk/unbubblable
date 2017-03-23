@@ -140,7 +140,7 @@ class Chunk {
 
                 // Поверхность
                 if (this.tiles[index].ground != 0) {
-                    quad(geoLandscape, this.terrain.atlas, this.terrain.grounds[this.tiles[index].ground], i0, i1, i2, i3);
+                    quad(geoLandscape, this.terrain.atlas, this.terrain.grounds[this.tiles[index].ground].texture, i0, i1, i2, i3);
                 }
 
                 // Деталь
@@ -178,34 +178,35 @@ class Chunk {
 
 class Terrain {
 
-    constructor(width, height, chunkSize, atlas) {
+    constructor(msgTerrain, atlas) {
 
-        this.width = width;
-        this.height = height;
-        this.chunkSize = chunkSize;
+        this.width = msgTerrain.width;
+        this.height = msgTerrain.height;
+        this.chunkSize = msgTerrain.chunkSize;
+        this.grounds = msgTerrain.grounds;
 
-        this.chunkedWidth = Math.ceil(width / chunkSize);
-        this.chunkedHeight = Math.ceil(height / chunkSize);
+        this.chunkedWidth = Math.ceil(this.width / this.chunkSize);
+        this.chunkedHeight = Math.ceil(this.height / this.chunkSize);
 
         this.atlas = atlas;
 
         this.chunks = [];
 
-        this.grounds = [0, 1, 2, 201, 16, 17, 142, 19, 203, 202];
+//        this.grounds = [0, 1, 2, 201, 16, 17, 142, 19, 203, 202];
         this.blocks = [[0, 0], [20, 21], [116, 21], [117, 21]];
         this.details = [0, 39, 200, 55];
 
         // Заполняем общий вершинный буфер для чанков
         this.verticesBuffer = [];
         for (let z = 0; z < 2; z++) {
-            for (let y = 0; y < chunkSize + 1; y++) {
-                for (let x = 0; x < chunkSize + 1; x++) {
+            for (let y = 0; y < this.chunkSize + 1; y++) {
+                for (let x = 0; x < this.chunkSize + 1; x++) {
                     this.verticesBuffer.push(new THREE.Vector3(x, y, z));
                 }
             }
         }
         // Смещение индексов верхних вершин в буфере
-        this.verticesTopOffset = (chunkSize + 1) * (chunkSize + 1);
+        this.verticesTopOffset = (this.chunkSize + 1) * (this.chunkSize + 1);
 
     }
 

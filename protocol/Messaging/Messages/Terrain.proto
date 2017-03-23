@@ -2,7 +2,9 @@ syntax = "proto3";
 
 package protocol.Messaging.Messages;
 
-// Terrain определяет карту
+import "protocol/Data/TileGround.proto";
+
+// Terrain определяет ландшафт
 message Terrain {
 	// width определяет ширину
 	int32 width = 2;
@@ -10,6 +12,8 @@ message Terrain {
 	int32 height = 3;
 	// seed определяет зерно генератора
 	int64 seed = 4;
-	// chunk_size определяет размер чанка
+	// chunk_size определяет размер чанка 
 	int32 chunk_size = 5;
+	// grounds определяет набор поверхностей
+	repeated protocol.Data.TileGround grounds = 6;
 }

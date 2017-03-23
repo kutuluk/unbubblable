@@ -48,6 +48,7 @@ class Connect {
             let message = this.protobuf.Messaging.Message.decode(new Uint8Array(event.data)).toObject({ defaults: true });
             // Обрабатываем сообщение
             this.handleMessage(message);
+
         };
     }
 
@@ -97,29 +98,27 @@ class Connect {
     // Отправляет одно сообщение, упакованное в цепочку
     sendChain(type, body) {
 
-        if (this.ws.readyState == WebSocket.OPEN) {
+        // Упаковываем данные в сообщение
+        let message = this.protobuf.Messaging.Message.create(
+            {
+                type: type,
+                body: body
+            }
+        );
 
-            // Упаковываем данные в сообщение
-            let message = this.protobuf.Messaging.Message.create(
-                {
-                    type: type,
-                    body: body
-                }
-            );
+        // Создаем контейнер и добавляем в него сообщение
+        let chain = this.protobuf.Messaging.MessageChain.create(
+            {
+                chain: [message]
+            }
+        );
 
-            // Создаем контейнер и добавляем в него сообщение
-            let chain = this.protobuf.Messaging.MessageChain.create(
-                {
-                    chain: [message]
-                }
-            );
+        // Отправляем сообщение
+        this.sendMessage(this.protobuf.Messaging.MessageType.MessageChain, this.protobuf.Messaging.MessageChain.encode(chain).finish());
 
-            // Отправляем сообщение
-            this.sendMessage(this.protobuf.Messaging.MessageType.MessageChain, this.protobuf.Messaging.MessageChain.encode(chain).finish());
-
-        }
     }
 
+    // Отправляет одно сообщение
     sendMessage(type, body) {
 
         if (this.ws.readyState == WebSocket.OPEN) {
@@ -136,6 +135,7 @@ class Connect {
             this.ws.send(this.protobuf.Messaging.Message.encode(message).finish());
 
         }
+
     }
 
     sendController(controller) {
@@ -166,6 +166,7 @@ class Connect {
     }
 
     sendChanksRequest(chunksIndecies) {
+
         if (chunksIndecies.length > 0) {
 
             // Формируем сообщение
@@ -177,8 +178,8 @@ class Connect {
 
             // Отправляем сообщение
             this.sendMessage(this.protobuf.Messaging.MessageType.MsgChunkRequest, this.protobuf.Messaging.Request.GetChunksRequest.encode(msg).finish());
-
         }
+
     }
 
 };

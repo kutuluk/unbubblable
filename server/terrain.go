@@ -9,11 +9,9 @@ import (
 	"github.com/kutuluk/unbubblable/server/protocol"
 )
 
-// Ground определяет тайл поверхности
-type Ground struct {
-	// Type определяет тип тайла
-	Type int
-	// Name определяет имя тайла
+// TileGround определяет тайл поверхности
+type TileGround struct {
+	// Name определяет название тайла
 	Name string
 	// Speed определяет коэффициент скорости движения по тайлу
 	Speed float64
@@ -21,18 +19,39 @@ type Ground struct {
 	Texture int
 }
 
+// TileGrounds определяет набор тайлов поверхности
+type TileGrounds []TileGround
+
+// GetID возвращает индекс тайла по названию или 0, если название не найдено
+func (t TileGrounds) GetID(name string) int {
+	for i, tile := range t {
+		if tile.Name == name {
+			return i
+		}
+	}
+	return 0
+}
+
+// Proto возвращает "протокольную" версию набора
+func (t TileGrounds) Proto() (p []*protocol.TileGround) {
+	for _, tile := range t {
+		p = append(p, &protocol.TileGround{Name: tile.Name, Speed: tile.Speed, Texture: int32(tile.Texture)})
+	}
+	return
+}
+
 // Grounds определяет виды тайлов поверхности
-var Grounds = []Ground{
-	{0, "Empty", 0, 0},            // Пустой тайл
-	{1, "Grass", 1.0, 1},          // Трава
-	{2, "Stone", 1.0, 2},          // Камень
-	{3, "Dirt", 1.0, 201},         // Земля
-	{4, "Cobblestone", 1.0, 16},   // Булыжник
-	{5, "Blackrock", 1.0, 17},     // Черный камень
-	{6, "Sand", 1.0, 142},         // Песок
-	{7, "Gravel", 1.0, 19},        // Гравий
-	{8, "Thick grass", 1.0, 203},  // Густая трава
-	{9, "Tundra grass", 1.0, 202}, // Тудровая трава
+var Grounds = TileGrounds{
+	{"Empty", 0, 0},            // Пустой тайл
+	{"Grass", 1.0, 1},          // Трава
+	{"Stone", 1.0, 2},          // Камень
+	{"Dirt", 1.0, 201},         // Земля
+	{"Cobblestone", 1.0, 16},   // Булыжник
+	{"Blackrock", 1.0, 17},     // Скальная порода
+	{"Sand", 1.0, 142},         // Песок
+	{"Gravel", 1.0, 19},        // Гравий
+	{"Thick grass", 1.0, 203},  // Густая трава
+	{"Tundra grass", 1.0, 202}, // Тундровая трава
 }
 
 // Block определяет непроходимый блок
@@ -88,7 +107,7 @@ type Chunk struct {
 	Proto []byte
 }
 
-// Terrain определяет карту
+// Terrain определяет ландшафт
 type Terrain struct {
 	// Width определяет ширину
 	Width int
@@ -104,9 +123,9 @@ type Terrain struct {
 	ChunkedWidth int
 	// ChunkedHeight определяет высоту в чанках
 	ChunkedHeight int
-	// Chunk определяет чанки карты
+	// Chunk определяет чанки
 	Chunks []*Chunk
-	// Proto определяет сериализованное сообщение с информацией о карте
+	// Proto определяет сериализованное сообщение с информацией о ландшафте
 	Proto []byte
 }
 
@@ -183,8 +202,17 @@ func NewTerrain(width, height, chunkSize int, seed int64) *Terrain {
 	// Инициализируем рандомизатор зерном
 	random := rand.New(rand.NewSource(seed))
 
+	// Создаем и заполняем веса тайлов
+	g := Grounds.GetID("Grass")
+	g2 := Grounds.GetID("Thick grass")
+	g3 := Grounds.GetID("Tundra grass")
+	d := Grounds.GetID("Dirt")
+	b := Grounds.GetID("Blackrock")
+	s := Grounds.GetID("Sand")
+	r := Grounds.GetID("Gravel")
+	tiles := []int{g, g, g, g, g, g, g, g, g, g, g2, g2, g2, g2, g3, d, d, b, s, r}
+
 	// Заполняем поверхность рандомными тайлами
-	tiles := []int{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 8, 8, 8, 8, 9, 3, 3, 5, 6, 7}
 	for i := 0; i < width*height; i++ {
 		t.Map[i].Ground = tiles[random.Intn(len(tiles))]
 	}
@@ -230,12 +258,13 @@ func NewTerrain(width, height, chunkSize int, seed int64) *Terrain {
 	}
 
 	// Подготовливаем данные для сериализации
-	msgTerrain := new(protocol.Terrain)
-
-	msgTerrain.Width = int32(t.Width)
-	msgTerrain.Height = int32(t.Height)
-	msgTerrain.ChunkSize = int32(t.ChunkSize)
-	msgTerrain.Seed = int64(t.Seed)
+	msgTerrain := &protocol.Terrain{
+		Width:     int32(t.Width),
+		Height:    int32(t.Height),
+		ChunkSize: int32(t.ChunkSize),
+		Seed:      int64(t.Seed),
+		Grounds:   Grounds.Proto(),
+	}
 
 	// Сериализуем данные протобафом
 	buffer, err := proto.Marshal(msgTerrain)

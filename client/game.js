@@ -5,7 +5,7 @@ import { Player } from './player';
 import { Atlas } from './atlas';
 import { Loop } from './loop';
 import { Connect } from './connect';
-import { Terrain } from './map';
+import { Terrain } from './terrain';
 
 class Game {
 
@@ -106,7 +106,8 @@ class Game {
 
     handleTerrainMessage(msgTerrain) {
 
-        this.terrain = new Terrain(msgTerrain.width, msgTerrain.height, msgTerrain.chunkSize, this.atlas);
+        console.log(msgTerrain);
+        this.terrain = new Terrain(msgTerrain, this.atlas);
 
         // Сетка карты
         var geoGrid = new THREE.PlaneGeometry(msgTerrain.width, msgTerrain.height, msgTerrain.width / msgTerrain.chunkSize, msgTerrain.height / msgTerrain.chunkSize);
