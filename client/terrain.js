@@ -145,7 +145,7 @@ class Chunk {
 
                 // Деталь
                 if (this.tiles[index].detail != 0) {
-                    detail(geoDetails, this.terrain.atlas, this.terrain.details[this.tiles[index].detail], x, y);
+                    detail(geoDetails, this.terrain.atlas, this.terrain.details[this.tiles[index].detail].texture, x, y);
                 };
 
 
@@ -153,15 +153,16 @@ class Chunk {
                 if (this.tiles[index].block != 0) {
 
                     // Южная сторона
-                    quad(geoLandscape, this.terrain.atlas, this.terrain.blocks[this.tiles[index].block][0], i2 + offset, i3 + offset, i2, i3);
+                    quad(geoLandscape, this.terrain.atlas, this.terrain.blocks[this.tiles[index].block].textureWall, i2 + offset, i3 + offset, i2, i3);
                     // Восточная сторона
-                    quad(geoLandscape, this.terrain.atlas, this.terrain.blocks[this.tiles[index].block][0], i3 + offset, i1 + offset, i3, i1);
+                    quad(geoLandscape, this.terrain.atlas, this.terrain.blocks[this.tiles[index].block].textureWall, i3 + offset, i1 + offset, i3, i1);
                     // Северная сторона
-                    quad(geoLandscape, this.terrain.atlas, this.terrain.blocks[this.tiles[index].block][0], i1 + offset, i0 + offset, i1, i0);
+                    quad(geoLandscape, this.terrain.atlas, this.terrain.blocks[this.tiles[index].block].textureWall, i1 + offset, i0 + offset, i1, i0);
                     // Западная сторона
-                    quad(geoLandscape, this.terrain.atlas, this.terrain.blocks[this.tiles[index].block][0], i0 + offset, i2 + offset, i0, i2);
+                    quad(geoLandscape, this.terrain.atlas, this.terrain.blocks[this.tiles[index].block].textureWall, i0 + offset, i2 + offset, i0, i2);
                     // Верхушка
-                    quad(geoLandscape, this.terrain.atlas, this.terrain.blocks[this.tiles[index].block][1], i0 + offset, i1 + offset, i2 + offset, i3 + offset);
+                    quad(geoLandscape, this.terrain.atlas, this.terrain.blocks[this.tiles[index].block].textureTop, i0 + offset, i1 + offset, i2 + offset, i3 + offset);
+                    
                 }
             }
         }
@@ -184,17 +185,15 @@ class Terrain {
         this.height = msgTerrain.height;
         this.chunkSize = msgTerrain.chunkSize;
         this.grounds = msgTerrain.grounds;
+        this.blocks = msgTerrain.blocks;
+        this.details = msgTerrain.details;
+
+        this.atlas = atlas;
 
         this.chunkedWidth = Math.ceil(this.width / this.chunkSize);
         this.chunkedHeight = Math.ceil(this.height / this.chunkSize);
 
-        this.atlas = atlas;
-
         this.chunks = [];
-
-//        this.grounds = [0, 1, 2, 201, 16, 17, 142, 19, 203, 202];
-        this.blocks = [[0, 0], [20, 21], [116, 21], [117, 21]];
-        this.details = [0, 39, 200, 55];
 
         // Заполняем общий вершинный буфер для чанков
         this.verticesBuffer = [];

@@ -8,7 +8,6 @@ class Connect {
         this.game = game;
 
         this.protobuf = proto.default.protocol;
-        console.log(this.protobuf);
 
         this.ws = new WebSocket(`ws://${window.location.host}/ws`);
         this.ws.binaryType = 'arraybuffer';
@@ -165,14 +164,14 @@ class Connect {
 
     }
 
-    sendChanksRequest(chunksIndecies) {
+    sendChanksRequest(indecies) {
 
-        if (chunksIndecies.length > 0) {
+        if (indecies.length > 0) {
 
             // Формируем сообщение
             let msg = this.protobuf.Messaging.Request.GetChunksRequest.create(
                 {
-                    chunks: chunksIndecies
+                    chunks: indecies
                 }
             );
 

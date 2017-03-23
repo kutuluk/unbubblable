@@ -93,7 +93,7 @@ class Loop {
 
 
 		if (!(this.game.terrain === undefined || this.game.terrain === null)) {
-			let chunksIndecies = [];
+			let indecies = [];
 //			let cx = Math.floor(this.game.player.unit.movement.position.x / this.game.terrain.chunkSize);
 //			let cy = Math.floor(this.game.player.unit.movement.position.y / this.game.terrain.chunkSize);
 			let cx = Math.floor(this.game.echo.movement.position.x / this.game.terrain.chunkSize);
@@ -106,13 +106,13 @@ class Loop {
 						let index = y * this.game.terrain.chunkedWidth + x;
 						// Добавление индекса чанка в список запроса в случае его отсутствия
 						if (this.game.terrain.chunks[index] == undefined) {
-							chunksIndecies.push(index);
+							indecies.push(index);
 						}
 					}
 				}
 			}
 
-			this.game.connect.sendChanksRequest(chunksIndecies);
+			this.game.connect.sendChanksRequest(indecies);
 		}
 
 	}

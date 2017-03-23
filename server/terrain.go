@@ -16,7 +16,7 @@ type TileGround struct {
 	// Speed определяет коэффициент скорости движения по тайлу
 	Speed float64
 	// Texture определяет номер текстуры тайла в атласе
-	Texture int
+	Texture int32
 }
 
 // TileGrounds определяет набор тайлов поверхности
@@ -35,9 +35,9 @@ func (t TileGrounds) GetID(name string) int {
 // Proto возвращает "протокольную" версию набора
 func (t TileGrounds) Proto() (p []*protocol.TileGround) {
 	for _, tile := range t {
-		p = append(p, &protocol.TileGround{Name: tile.Name, Speed: tile.Speed, Texture: int32(tile.Texture)})
+		p = append(p, &protocol.TileGround{Name: tile.Name, Speed: tile.Speed, Texture: tile.Texture})
 	}
-	return
+	return p
 }
 
 // Grounds определяет виды тайлов поверхности
@@ -54,42 +54,80 @@ var Grounds = TileGrounds{
 	{"Tundra grass", 1.0, 202}, // Тундровая трава
 }
 
-// Block определяет непроходимый блок
-type Block struct {
-	// Type определяет тип блока
-	Type int
-	// Name определяет имя блока
+// TileBlock определяет непроходимый блок
+type TileBlock struct {
+	// Name определяет название блока
 	Name string
 	// TextureWall определяет номер текстуры боковых граней в атласе
-	TextureWall int
+	TextureWall int32
 	// TextureTop определяет номер текстуры верхней грани в атласе
-	TextureTop int
+	TextureTop int32
 }
 
-// Blocks определяет виды блоков
-var Blocks = []Block{
-	{0, "Empty", 0, 0},          // Пустой блок (проходимый)
-	{1, "Oak Tree", 20, 21},     // Дерево дуб
-	{2, "Spruce Tree", 116, 21}, // Дерево ель
-	{3, "Birch Tree", 117, 21},  // Дерево береза
+// TileBlocks определяет набор непроходимых блоков
+type TileBlocks []TileBlock
+
+// GetID возвращает индекс блока по названию или 0, если название не найдено
+func (t TileBlocks) GetID(name string) int {
+	for i, tile := range t {
+		if tile.Name == name {
+			return i
+		}
+	}
+	return 0
 }
 
-// Detail определяет деталь
-type Detail struct {
-	// Type определяет тип детали
-	Type int
-	// Name определяет имя детали
+// Proto возвращает "протокольную" версию набора
+func (t TileBlocks) Proto() (p []*protocol.TileBlock) {
+	for _, tile := range t {
+		p = append(p, &protocol.TileBlock{Name: tile.Name, TextureWall: tile.TextureWall, TextureTop: tile.TextureTop})
+	}
+	return p
+}
+
+// Blocks определяет виды непроходимых блоков
+var Blocks = TileBlocks{
+	{"Empty", 0, 0},          // Пустой блок (проходимый)
+	{"Oak Tree", 20, 21},     // Дерево дуб
+	{"Spruce Tree", 116, 21}, // Дерево ель
+	{"Birch Tree", 117, 21},  // Дерево береза
+}
+
+// TileDetail определяет деталь
+type TileDetail struct {
+	// Name определяет название детали
 	Name string
 	// Texture определяет номер текстуры детали в атласе
-	Texture int
+	Texture int32
+}
+
+// TileDetails определяет набор деталей
+type TileDetails []TileDetail
+
+// GetID возвращает индекс блока по названию или 0, если название не найдено
+func (t TileDetails) GetID(name string) int {
+	for i, tile := range t {
+		if tile.Name == name {
+			return i
+		}
+	}
+	return 0
+}
+
+// Proto возвращает "протокольную" версию набора
+func (t TileDetails) Proto() (p []*protocol.TileDetail) {
+	for _, tile := range t {
+		p = append(p, &protocol.TileDetail{Name: tile.Name, Texture: tile.Texture})
+	}
+	return p
 }
 
 // Details определяет виды деталей
-var Details = []Detail{
-	{0, "Empty", 0},       // Нет детали
-	{1, "Grass", 39},      // Трава
-	{2, "Fern", 200},      // Папоротник
-	{3, "Dead Shrub", 55}, // Сухой куст
+var Details = TileDetails{
+	{"Empty", 0},       // Нет детали
+	{"Grass", 39},      // Трава
+	{"Fern", 200},      // Папоротник
+	{"Dead Shrub", 55}, // Сухой куст
 }
 
 // MapTile определяет тайл карты
@@ -152,11 +190,11 @@ func (t Terrain) NewChank(i int) *Chunk {
 	}
 
 	// Подготовливаем данные для сериализации
-	msgChunk := new(protocol.GetChunksResponse)
-
-	msgChunk.Index = int32(i)
-	msgChunk.Tiles = make([]*protocol.GetChunksResponse_Tile, t.ChunkSize*t.ChunkSize)
-	msgChunk.Result = protocol.GetChunksResponse_SUCCESS
+	msgChunk := &protocol.GetChunksResponse{
+		Index:  int32(i),
+		Tiles:  make([]*protocol.GetChunksResponse_Tile, t.ChunkSize*t.ChunkSize),
+		Result: protocol.GetChunksResponse_SUCCESS,
+	}
 
 	// ToDo: Перенести в верхний цикл и избавиться от промежуточного слайса m
 	for i := 0; i < t.ChunkSize*t.ChunkSize; i++ {
@@ -217,8 +255,13 @@ func NewTerrain(width, height, chunkSize int, seed int64) *Terrain {
 		t.Map[i].Ground = tiles[random.Intn(len(tiles))]
 	}
 
+	// Создаем и заполняем веса пеньков
+	t1 := Blocks.GetID("Oak Tree")
+	t2 := Blocks.GetID("Spruce Tree")
+	t3 := Blocks.GetID("Birch Tree")
+	trees := []int{t1, t2, t3}
+
 	// Рассаживаем пеньки
-	trees := []int{1, 2, 3}
 	treesCount := width * height / 16
 	for i := 0; i < treesCount; i++ {
 		var x, y int
@@ -231,8 +274,10 @@ func NewTerrain(width, height, chunkSize int, seed int64) *Terrain {
 		t.Map[y*width+x].Block = trees[random.Intn(len(trees))]
 	}
 
+	ds := Details.GetID("Dead Shrub")
+	details := []int{ds}
+
 	// Рассаживаем кустики
-	//details := []int{1, 2, 3}
 	detailsCount := width * height / 32
 	for i := 0; i < detailsCount; i++ {
 		var x, y int
@@ -246,11 +291,7 @@ func NewTerrain(width, height, chunkSize int, seed int64) *Terrain {
 			detail = t.Map[y*width+x].Detail
 			ground = t.Map[y*width+x].Ground
 		}
-		//		t.Map[y*height+x].Detail = details[random.Intn(len(details))]
-		if t.Map[y*width+x].Ground != 1 {
-			log.Print("[!]")
-		}
-		t.Map[y*width+x].Detail = 3
+		t.Map[y*width+x].Detail = details[random.Intn(len(details))]
 	}
 
 	for i := 0; i < t.ChunkedWidth*t.ChunkedHeight; i++ {
@@ -264,6 +305,8 @@ func NewTerrain(width, height, chunkSize int, seed int64) *Terrain {
 		ChunkSize: int32(t.ChunkSize),
 		Seed:      int64(t.Seed),
 		Grounds:   Grounds.Proto(),
+		Blocks:    Blocks.Proto(),
+		Details:   Details.Proto(),
 	}
 
 	// Сериализуем данные протобафом

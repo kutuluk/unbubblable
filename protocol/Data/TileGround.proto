@@ -5,9 +5,9 @@ package protocol.Data;
 // TileGround определяет тайл поверхности
 message TileGround {
 	// name определяет название тайла
-	string name = 2;
+	string name = 1;
 	// speed определяет коэффициент скорости движения по тайлу
-	double speed = 3;
+	double speed = 2;
 	// texture определяет номер текстуры тайла в атласе
-	int32 texture = 4;
+	int32 texture = 3;
 }

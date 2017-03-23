@@ -106,7 +106,6 @@ class Game {
 
     handleTerrainMessage(msgTerrain) {
 
-        console.log(msgTerrain);
         this.terrain = new Terrain(msgTerrain, this.atlas);
 
         // Сетка карты

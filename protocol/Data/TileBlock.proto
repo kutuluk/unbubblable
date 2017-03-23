@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package protocol.Data;
+
+// TileBlock определяет непроходимый блок
+message TileBlock {
+	// name определяет название тайла
+	string name = 1;
+	// texture_wall определяет номер текстуры боковых граней в атласе
+	int32 texture_wall = 2;
+	// texture_top определяет номер текстуры верхней грани в атласе
+	int32 texture_top = 3;
+}

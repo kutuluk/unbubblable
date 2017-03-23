@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package protocol.Data;
+
+// TileDetail определяет деталь
+message TileDetail {
+	// name определяет название детали
+	string name = 1;
+	// texture определяет номер текстуры детали в атласе
+	int32 texture = 2;
+}
