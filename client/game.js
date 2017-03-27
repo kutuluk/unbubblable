@@ -98,6 +98,13 @@ class Game {
         this.renderer.setSize(this.screen.width, this.screen.height);
     }
 
+    handlePingRequest(msgPingRequest) {
+
+        this.connect.sendPingResponse();
+        log.appendText(`[ping]: ${msgPingRequest.ping}`);
+
+    }
+
     handleMovementMessage(msgMovement) {
 
         this.echo.next = new Movement(msgMovement);
@@ -151,7 +158,7 @@ class Game {
             this.renderer.render(this.scene, this.camera);
 
             // статистика рендера
-            //				const { render, memory } = renderer.info
+            //				const { render, memory } = this.renderer.info
             //				stats.textContent = `
             //				calls: ${render.calls}
             //				faces: ${render.faces}

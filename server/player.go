@@ -40,7 +40,8 @@ func NewPlayer() *Player {
 }
 
 // Update пересчитывает параметры игрока в каждом тике
-func (p *Player) Update() {
+// FixMe: tick используется для дебага
+func (p *Player) Update(tick int64) {
 	// Изменяем параметры игрока в соответствии с приращениями прошлого тика
 	p.Position = p.Position.Add(p.Motion)
 	p.Angle += p.Slew
@@ -100,7 +101,7 @@ func (p *Player) Update() {
 			p.Slew *= 0.25
 		}
 	} else {
-		log.Println("[player]: не получено сообщение контроллера")
+		log.Println("[player]:", tick, "- не получено сообщение контроллера")
 	}
 	//		p.Controller = p.Controller[1:]
 	//	}

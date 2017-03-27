@@ -90,17 +90,23 @@ func (h *Hub) loop() {
 		for c := range h.connections {
 
 			// Осуществляем перерасчет
-			c.Player.Update()
+			c.Player.Update(h.Tick)
 
 			// Отправляем сообщение клиенту
 			//			go c.sendMovement()
 			c.sendMovement()
+			c.sendPingRequest()
+
 		}
 	}
 
 	// Останавливаем тикер (по идее программа ни когда не должна исполнить этот код)
 	h.ticker.Stop() // вызов не закрывает канал
 	log.Println("[hub]: луп завершился")
+}
+
+type PingRequest struct {
+	Time time.Time
 }
 
 // Connect связывает коннект с персонажем
@@ -110,6 +116,9 @@ type Connect struct {
 	Player   *Player
 	Received int
 	Sent     int
+	Ping     time.Duration
+	BestPing int
+	PingTime time.Time
 }
 
 func (c *Connect) handler(message *protocol.Message) {
@@ -133,6 +142,33 @@ func (c *Connect) handler(message *protocol.Message) {
 		for _, message := range msgChain.Chain {
 			c.handler(message)
 		}
+
+	// PingRequest
+	case protocol.MessageType_MsgPingRequest:
+
+		timeNow := time.Now()
+
+		msgPingRequest := new(protocol.PingRequest)
+		// Декодируем сообщение
+		err = proto.Unmarshal(message.Body, msgPingRequest)
+		if err != nil {
+			log.Println("[proto read]:", err)
+			break
+		}
+
+		// Применяем сообщение
+		//		timeRequest := time.Unix(msgPingRequest.Time.Seconds, int64(msgPingRequest.Time.Nanos)).UTC()
+		timeRequest := time.Unix(msgPingRequest.Time.Seconds, int64(msgPingRequest.Time.Nanos)).UTC()
+		log.Println("[time client]:", timeRequest)
+
+		ping := timeNow.Sub(c.PingTime)
+		timeLocal := c.PingTime.Add(ping / 2).UTC()
+		log.Println("[time server]:", timeLocal)
+		timeOffset := timeLocal.Sub(timeRequest)
+		log.Println("[time offset]:", timeOffset)
+
+		//		c.Ping = int(ping.Nanoseconds() / 1000000)
+		c.Ping = ping
 
 	// Controller
 	case protocol.MessageType_MsgController:
@@ -265,6 +301,38 @@ func (c *Connect) sendMessage(msgType protocol.MessageType, msgBody []byte) {
 
 	// Увеличиваем счетчик отправленных байт
 	c.Sent += len(message)
+
+}
+
+// sendPingRequest
+func (c *Connect) sendPingRequest() {
+
+	// Формируем сообщение
+	t := time.Now()
+	seconds := t.Unix()
+	nanos := int32(t.Sub(time.Unix(seconds, 0)))
+
+	msgTime := &protocol.Timestamp{
+		Seconds: seconds,
+		Nanos:   nanos,
+	}
+
+	msgPingRequest := &protocol.PingRequest{
+		Time: msgTime,
+		Ping: int32(c.Ping.Nanoseconds() / 1000000),
+	}
+
+	// Сериализуем сообщение протобафом
+	msgBuffer, err := proto.Marshal(msgPingRequest)
+	if err != nil {
+		log.Println("[proto send]:", err)
+		return
+	}
+
+	// Отправляем сообщение
+	c.sendMessage(protocol.MessageType_MsgPingRequest, msgBuffer)
+
+	c.PingTime = t
 
 }
 

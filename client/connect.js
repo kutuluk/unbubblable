@@ -87,6 +87,14 @@ class Connect {
                 this.game.handleChunkMessage(msgChunk);
                 break
 
+            case this.protobuf.Messaging.MessageType.MsgPingRequest:
+
+                // Декодируем сообщение
+                let msgPingRequest = this.protobuf.Messaging.Request.PingRequest.decode(message.body).toObject({ defaults: true });
+                // Запускаем обработчик
+                this.game.handlePingRequest(msgPingRequest);
+                break
+
             default:
                 log.appendText('[proto read]: неизвестное сообщение');
                 break
@@ -181,6 +189,29 @@ class Connect {
 
     }
 
+    sendPingResponse() {
+
+		let now = new Date().getTime();
+        let seconds = Math.floor(now/1000);
+        let milliseconds = now - seconds*1000;
+        let nanos = milliseconds * 1000000;
+
+        // Формируем сообщение
+        let msg = this.protobuf.Messaging.Request.PingRequest.create(
+            {
+                time: this.protobuf.Data.Timestamp.create(
+                    {
+                        seconds: seconds,
+                        nanos: nanos
+                    }
+                )
+            }
+        );
+
+        // Отправляем сообщение
+        this.sendMessage(this.protobuf.Messaging.MessageType.MsgPingRequest, this.protobuf.Messaging.Request.PingRequest.encode(msg).finish());
+
+    }
 };
 
 export { Connect };

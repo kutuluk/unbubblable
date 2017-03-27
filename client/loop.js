@@ -12,7 +12,7 @@ class Loop {
 		this.amplitude = amplitude;
 		this.interval = 1000 / this.amplitude;
 		this.updating = false;
-//		this.tickerId = setInterval(this.tick.bind(this), this.interval);
+		//		this.tickerId = setInterval(this.tick.bind(this), this.interval);
 		this.delta = 0;
 		this.tickerId = setTimeout(this.tick.bind(this), this.interval);
 
@@ -27,17 +27,17 @@ class Loop {
 
 		let now = new Date().getTime();
 		let duration = now - this.time;
-		this.delta = this.delta + this.interval - duration;
-/*
-		if (duration < 45 || duration > 55) {
-			log.appendText(`[Tick]: ${duration}`);
-		}
-*/
-		log.appendText(`[Tick]: duration: ${duration}, delta ${this.delta}`);
 
+		this.delta = this.delta + this.interval - duration;
+//		this.delta = this.delta - (this.delta / this.interval |0) * this.interval;
 		this.tickerId = setTimeout(this.tick.bind(this), this.interval + this.delta);
+
 		// Обновляем момент начала текущего тика
 		this.time = now;
+
+		if (duration < 45 || duration > 55) {
+			log.appendText(`[Tick]: duration: ${duration}, delta ${this.delta}`);
+		}
 
 		// Изменяем параметры в соответствии с приращениями прошлого тика
 		this.game.player.unit.movement.position.add(this.game.player.unit.movement.motion);
