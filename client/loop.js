@@ -1,3 +1,7 @@
+import {
+	log
+} from './log';
+
 class Loop {
 
 	constructor(game, amplitude) {
@@ -8,7 +12,9 @@ class Loop {
 		this.amplitude = amplitude;
 		this.interval = 1000 / this.amplitude;
 		this.updating = false;
-		this.tickerId = setInterval(this.tick.bind(this), this.interval);
+//		this.tickerId = setInterval(this.tick.bind(this), this.interval);
+		this.delta = 0;
+		this.tickerId = setTimeout(this.tick.bind(this), this.interval);
 
 	}
 
@@ -18,8 +24,20 @@ class Loop {
 
 		// Увеличиваем номер текущего тика
 		this.current += 1;
+
+		let now = new Date().getTime();
+		let duration = now - this.time;
+		this.delta = this.delta + this.interval - duration;
+/*
+		if (duration < 45 || duration > 55) {
+			log.appendText(`[Tick]: ${duration}`);
+		}
+*/
+		log.appendText(`[Tick]: duration: ${duration}, delta ${this.delta}`);
+
+		this.tickerId = setTimeout(this.tick.bind(this), this.interval + this.delta);
 		// Обновляем момент начала текущего тика
-		this.time = new Date().getTime();
+		this.time = now;
 
 		// Изменяем параметры в соответствии с приращениями прошлого тика
 		this.game.player.unit.movement.position.add(this.game.player.unit.movement.motion);
@@ -94,8 +112,8 @@ class Loop {
 
 		if (!(this.game.terrain === undefined || this.game.terrain === null)) {
 			let indecies = [];
-//			let cx = Math.floor(this.game.player.unit.movement.position.x / this.game.terrain.chunkSize);
-//			let cy = Math.floor(this.game.player.unit.movement.position.y / this.game.terrain.chunkSize);
+			//			let cx = Math.floor(this.game.player.unit.movement.position.x / this.game.terrain.chunkSize);
+			//			let cy = Math.floor(this.game.player.unit.movement.position.y / this.game.terrain.chunkSize);
 			let cx = Math.floor(this.game.echo.movement.position.x / this.game.terrain.chunkSize);
 			let cy = Math.floor(this.game.echo.movement.position.y / this.game.terrain.chunkSize);
 			// Перебор 9 смежных чанков
@@ -119,4 +137,6 @@ class Loop {
 
 };
 
-export { Loop };
+export {
+	Loop
+};

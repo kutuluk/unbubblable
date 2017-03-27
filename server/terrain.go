@@ -58,9 +58,9 @@ var Grounds = TileGrounds{
 type TileBlock struct {
 	// Name определяет название блока
 	Name string
-	// TextureWall определяет номер текстуры боковых граней в атласе
+	// TextureWall определяет номер текстуры боковых граней блока в атласе
 	TextureWall int32
-	// TextureTop определяет номер текстуры верхней грани в атласе
+	// TextureTop определяет номер текстуры верхней грани блока в атласе
 	TextureTop int32
 }
 
@@ -104,7 +104,7 @@ type TileDetail struct {
 // TileDetails определяет набор деталей
 type TileDetails []TileDetail
 
-// GetID возвращает индекс блока по названию или 0, если название не найдено
+// GetID возвращает индекс детали по названию или 0, если название не найдено
 func (t TileDetails) GetID(name string) int {
 	for i, tile := range t {
 		if tile.Name == name {

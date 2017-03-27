@@ -76,7 +76,16 @@ func (h *Hub) loop() {
 	// Ждем следующего тика
 	for range h.ticker.C {
 		h.Tick++
-		h.Time = time.Now().Unix()
+
+		now := time.Now().UnixNano()
+		duration := (now - h.Time) / 1000000
+
+		if duration < 45 || duration > 55 {
+			log.Println("[tick]: ", duration)
+		}
+
+		h.Time = now
+
 		// Перебираем все соединения
 		for c := range h.connections {
 

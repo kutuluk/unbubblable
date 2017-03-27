@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"math"
 
 	"github.com/kutuluk/unbubblable/server/protocol"
@@ -98,6 +99,8 @@ func (p *Player) Update() {
 			p.Motion = p.Motion.Mul(0.25)
 			p.Slew *= 0.25
 		}
+	} else {
+		log.Println("[player]: не получено сообщение контроллера")
 	}
 	//		p.Controller = p.Controller[1:]
 	//	}
