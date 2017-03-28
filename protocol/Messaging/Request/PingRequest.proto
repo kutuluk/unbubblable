@@ -2,10 +2,6 @@ syntax = "proto3";
 
 package protocol.Messaging.Request;
 
-import "protocol/Data/Timestamp.proto";
-
-// PingRequest 
+// PingRequest определяет запрос на пинг
 message	PingRequest {
-    protocol.Data.Timestamp time = 1;
-    int32 ping = 2;
 }

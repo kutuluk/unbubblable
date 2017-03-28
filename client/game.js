@@ -98,13 +98,6 @@ class Game {
         this.renderer.setSize(this.screen.width, this.screen.height);
     }
 
-    handlePingRequest(msgPingRequest) {
-
-        this.connect.sendPingResponse();
-        log.appendText(`[ping]: ${msgPingRequest.ping}`);
-
-    }
-
     handleMovementMessage(msgMovement) {
 
         this.echo.next = new Movement(msgMovement);

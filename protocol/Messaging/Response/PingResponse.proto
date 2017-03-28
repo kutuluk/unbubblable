@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package protocol.Messaging.Response;
+
+import "protocol/Data/Timestamp.proto";
+
+// PingResponse
+message	PingResponse {
+    protocol.Data.Timestamp time = 1;
+}

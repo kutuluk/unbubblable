@@ -14,4 +14,5 @@ enum MessageType {
 	MsgChunk = 4;
 	MsgChunkRequest = 5;
 	MsgPingRequest = 6;
+	MsgPingResponse = 7;
 }

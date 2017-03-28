@@ -89,10 +89,9 @@ class Connect {
 
             case this.protobuf.Messaging.MessageType.MsgPingRequest:
 
-                // Декодируем сообщение
-                let msgPingRequest = this.protobuf.Messaging.Request.PingRequest.decode(message.body).toObject({ defaults: true });
-                // Запускаем обработчик
-                this.game.handlePingRequest(msgPingRequest);
+                // Отвечаем на пинг
+                this.sendPingResponse();
+
                 break
 
             default:
@@ -197,7 +196,7 @@ class Connect {
         let nanos = milliseconds * 1000000;
 
         // Формируем сообщение
-        let msg = this.protobuf.Messaging.Request.PingRequest.create(
+        let msg = this.protobuf.Messaging.Response.PingResponse.create(
             {
                 time: this.protobuf.Data.Timestamp.create(
                     {
@@ -209,7 +208,7 @@ class Connect {
         );
 
         // Отправляем сообщение
-        this.sendMessage(this.protobuf.Messaging.MessageType.MsgPingRequest, this.protobuf.Messaging.Request.PingRequest.encode(msg).finish());
+        this.sendMessage(this.protobuf.Messaging.MessageType.MsgPingResponse, this.protobuf.Messaging.Response.PingResponse.encode(msg).finish());
 
     }
 };

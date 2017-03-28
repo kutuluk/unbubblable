@@ -24,8 +24,9 @@ type Hub struct {
 	// Порядковый номер текущего тика
 	Tick int64
 	// Время начала текущего тика
-	Time   int64
-	ticker *time.Ticker
+	Time time.Time
+	// delta определяет на сколько необходимо ускорить/замедлить следующий тик
+	delta time.Duration
 	// Terrain определяет карту
 	Terrain *Terrain
 }
@@ -34,7 +35,6 @@ type Hub struct {
 func NewHub() *Hub {
 	h := &Hub{
 		connections: make(map[*Connect]bool),
-		ticker:      time.NewTicker(time.Millisecond * LoopInterval),
 		Terrain:     NewTerrain(24*5, 24*5, 24, 3184627059),
 	}
 	go h.loop()
@@ -47,9 +47,10 @@ func NewHub() *Hub {
 func (h *Hub) Join(ws *websocket.Conn) {
 	// Создаем коннект
 	c := &Connect{
-		Hub:    h,
-		ws:     ws,
-		Player: NewPlayer(),
+		Hub:      h,
+		ws:       ws,
+		Player:   NewPlayer(),
+		bestPing: time.Hour,
 	}
 	// Добавляем его в список коннектов
 	h.connections[c] = true
@@ -73,18 +74,21 @@ func (h *Hub) Count() int {
 
 // loop определяет игровой цикл
 func (h *Hub) loop() {
-	// Ждем следующего тика
-	for range h.ticker.C {
+	h.Time = time.Now().Add(-time.Millisecond * 50)
+
+	for {
 		h.Tick++
 
-		now := time.Now().UnixNano()
-		duration := (now - h.Time) / 1000000
+		begin := time.Now()
+		duration := begin.Sub(h.Time)
 
-		if duration < 45 || duration > 55 {
-			log.Println("[tick]: ", duration)
+		if duration < time.Millisecond*45 || duration > time.Millisecond*55 {
+			log.Printf("[tick]: duration %s, delta %s\n", duration, h.delta)
 		}
 
-		h.Time = now
+		h.delta = h.delta + time.Millisecond*50 - duration
+
+		h.Time = begin
 
 		// Перебираем все соединения
 		for c := range h.connections {
@@ -93,32 +97,30 @@ func (h *Hub) loop() {
 			c.Player.Update(h.Tick)
 
 			// Отправляем сообщение клиенту
-			//			go c.sendMovement()
 			c.sendMovement()
 			c.sendPingRequest()
 
 		}
+
+		end := time.Now()
+
+		sleep := time.Millisecond*50 - end.Sub(begin) + h.delta
+		time.Sleep(sleep)
 	}
-
-	// Останавливаем тикер (по идее программа ни когда не должна исполнить этот код)
-	h.ticker.Stop() // вызов не закрывает канал
-	log.Println("[hub]: луп завершился")
-}
-
-type PingRequest struct {
-	Time time.Time
 }
 
 // Connect связывает коннект с персонажем
 type Connect struct {
-	Hub      *Hub
-	ws       *websocket.Conn
-	Player   *Player
-	Received int
-	Sent     int
-	Ping     time.Duration
-	BestPing int
-	PingTime time.Time
+	Hub        *Hub
+	ws         *websocket.Conn
+	Player     *Player
+	Received   int
+	Sent       int
+	Ping       time.Duration
+	bestPing   time.Duration
+	pingTime   time.Time
+	pingToken  int32
+	timeOffset time.Duration
 }
 
 func (c *Connect) handler(message *protocol.Message) {
@@ -143,32 +145,33 @@ func (c *Connect) handler(message *protocol.Message) {
 			c.handler(message)
 		}
 
-	// PingRequest
-	case protocol.MessageType_MsgPingRequest:
+	// PingResponse
+	case protocol.MessageType_MsgPingResponse:
 
 		timeNow := time.Now()
 
-		msgPingRequest := new(protocol.PingRequest)
+		msgPingResponse := new(protocol.PingResponse)
 		// Декодируем сообщение
-		err = proto.Unmarshal(message.Body, msgPingRequest)
+		err = proto.Unmarshal(message.Body, msgPingResponse)
 		if err != nil {
 			log.Println("[proto read]:", err)
 			break
 		}
 
 		// Применяем сообщение
-		//		timeRequest := time.Unix(msgPingRequest.Time.Seconds, int64(msgPingRequest.Time.Nanos)).UTC()
-		timeRequest := time.Unix(msgPingRequest.Time.Seconds, int64(msgPingRequest.Time.Nanos)).UTC()
-		log.Println("[time client]:", timeRequest)
+		timeRequest := time.Unix(msgPingResponse.Time.Seconds, int64(msgPingResponse.Time.Nanos)).UTC()
 
-		ping := timeNow.Sub(c.PingTime)
-		timeLocal := c.PingTime.Add(ping / 2).UTC()
-		log.Println("[time server]:", timeLocal)
-		timeOffset := timeLocal.Sub(timeRequest)
-		log.Println("[time offset]:", timeOffset)
-
-		//		c.Ping = int(ping.Nanoseconds() / 1000000)
+		ping := timeNow.Sub(c.pingTime)
 		c.Ping = ping
+
+		if ping < c.bestPing {
+			c.bestPing = ping
+			timeLocal := c.pingTime.Add(ping / 2).UTC()
+			c.timeOffset = timeLocal.Sub(timeRequest)
+			log.Println("[time]: ping -", ping, "offset -", c.timeOffset)
+		}
+
+		c.pingTime = time.Time{}
 
 	// Controller
 	case protocol.MessageType_MsgController:
@@ -306,34 +309,40 @@ func (c *Connect) sendMessage(msgType protocol.MessageType, msgBody []byte) {
 
 // sendPingRequest
 func (c *Connect) sendPingRequest() {
+	if c.pingTime.IsZero() {
 
-	// Формируем сообщение
-	t := time.Now()
-	seconds := t.Unix()
-	nanos := int32(t.Sub(time.Unix(seconds, 0)))
+		/*
+			t := time.Now()
+			seconds := t.Unix()
+			nanos := int32(t.Sub(time.Unix(seconds, 0)))
 
-	msgTime := &protocol.Timestamp{
-		Seconds: seconds,
-		Nanos:   nanos,
+			msgTime := &protocol.Timestamp{
+				Seconds: seconds,
+				Nanos:   nanos,
+			}
+
+			msgPingRequest := &protocol.PingRequest{
+				Time: msgTime,
+				Ping: int32(c.Ping.Nanoseconds() / 1000000),
+			}
+		*/
+
+		// Формируем сообщение
+		msgPingRequest := &protocol.PingRequest{}
+
+		// Сериализуем сообщение протобафом
+		msgBuffer, err := proto.Marshal(msgPingRequest)
+		if err != nil {
+			log.Println("[proto send]:", err)
+			return
+		}
+
+		c.pingTime = time.Now()
+
+		// Отправляем сообщение
+		c.sendMessage(protocol.MessageType_MsgPingRequest, msgBuffer)
+
 	}
-
-	msgPingRequest := &protocol.PingRequest{
-		Time: msgTime,
-		Ping: int32(c.Ping.Nanoseconds() / 1000000),
-	}
-
-	// Сериализуем сообщение протобафом
-	msgBuffer, err := proto.Marshal(msgPingRequest)
-	if err != nil {
-		log.Println("[proto send]:", err)
-		return
-	}
-
-	// Отправляем сообщение
-	c.sendMessage(protocol.MessageType_MsgPingRequest, msgBuffer)
-
-	c.PingTime = t
-
 }
 
 // sendMovement отправляет клиенту позицию персонажа
