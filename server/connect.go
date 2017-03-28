@@ -15,7 +15,7 @@ import (
 // Амплитуда и интервал тиков
 const (
 	LoopAmplitude = 20
-	LoopInterval  = 1000 / LoopAmplitude
+	LoopInterval  = time.Second / LoopAmplitude
 )
 
 // Hub определяет список коннектов
@@ -23,11 +23,13 @@ type Hub struct {
 	connections map[*Connect]bool
 	// Порядковый номер текущего тика
 	Tick int64
-	// Время начала текущего тика
+	// Time определяет фактическое время начала последнего тика
 	Time time.Time
-	// delta определяет на сколько необходимо ускорить/замедлить следующий тик
+	// delta определяет разницу между фактическим и необходимым временем начала последнего тика
 	delta time.Duration
-	// Terrain определяет карту
+	// busy определяет загруженность игрового цикла в процентах
+	busy int
+	// Terrain определяет ландшафт
 	Terrain *Terrain
 }
 
@@ -74,21 +76,22 @@ func (h *Hub) Count() int {
 
 // loop определяет игровой цикл
 func (h *Hub) loop() {
-	h.Time = time.Now().Add(-time.Millisecond * 50)
+
+	h.Time = time.Now().Add(-LoopInterval)
 
 	for {
-		h.Tick++
-
 		begin := time.Now()
 		duration := begin.Sub(h.Time)
 
-		if duration < time.Millisecond*45 || duration > time.Millisecond*55 {
+		h.delta = h.delta + LoopInterval - duration
+
+		if h.delta < -time.Millisecond*3 || h.delta > time.Millisecond*3 {
 			log.Printf("[tick]: duration %s, delta %s\n", duration, h.delta)
 		}
 
-		h.delta = h.delta + time.Millisecond*50 - duration
-
 		h.Time = begin
+
+		h.Tick++
 
 		// Перебираем все соединения
 		for c := range h.connections {
@@ -103,9 +106,10 @@ func (h *Hub) loop() {
 		}
 
 		end := time.Now()
+		busy := end.Sub(begin)
+		h.busy = int(busy * 100 / LoopInterval)
 
-		sleep := time.Millisecond*50 - end.Sub(begin) + h.delta
-		time.Sleep(sleep)
+		time.Sleep(LoopInterval - busy + h.delta)
 	}
 }
 
