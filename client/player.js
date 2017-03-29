@@ -1,22 +1,20 @@
-import { Unit } from './unit';
+import {
+	Unit
+} from './unit';
 
 class Player {
 
-	constructor(camera, mesh) {
-
-		this.speed = 10;
+	constructor(camera, unit) {
 
 		this.camera = camera;
 		this.camHeight = 14;
 		this.camMotion = 0;
-
-		this.unit = new Unit();
-		this.unit.movement.set(new THREE.Vector3(0, 0, 0.02), new THREE.Vector3(), 0, 0);
-		this.unit.setMesh(mesh);
+		this.unit = unit;
 
 	}
 
 	animate(scalar) {
+
 		// Рассчитываем позицию игрока в этом фрейме
 		var motion = this.unit.movement.motion.clone();
 		motion.multiplyScalar(scalar);
@@ -46,13 +44,9 @@ class Player {
 		// И опускаем немного вниз
 		this.camera.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 5);
 
-		// Скрываем игрока, когда камера приближается к нему слишком близко
-		if (height < 5) {
-			this.unit.mesh.visible = false;
-		} else {
-			this.unit.mesh.visible = true;
-		}
 	}
 };
 
-export { Player };
+export {
+	Player
+};

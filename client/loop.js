@@ -12,7 +12,6 @@ class Loop {
 		this.amplitude = amplitude;
 		this.interval = 1000 / this.amplitude;
 		this.updating = false;
-		//		this.tickerId = setInterval(this.tick.bind(this), this.interval);
 		this.delta = 0;
 		this.tickerId = setTimeout(this.tick.bind(this), this.interval);
 
@@ -29,7 +28,7 @@ class Loop {
 		let duration = now - this.time;
 
 		this.delta = this.delta + this.interval - duration;
-//		this.delta = this.delta - (this.delta / this.interval |0) * this.interval;
+		//		this.delta = this.delta - (this.delta / this.interval |0) * this.interval;
 		this.tickerId = setTimeout(this.tick.bind(this), this.interval + this.delta);
 
 		// Обновляем момент начала текущего тика
@@ -39,52 +38,13 @@ class Loop {
 			log.appendText(`[Tick]: duration: ${duration}, delta ${this.delta}`);
 		}
 
-		// Изменяем параметры в соответствии с приращениями прошлого тика
-		this.game.player.unit.movement.position.add(this.game.player.unit.movement.motion);
-		this.game.player.unit.movement.angle += this.game.player.unit.movement.slew;
 		this.game.player.camHeight += this.game.player.camMotion;
-
-		// Обнуляем приращения
-		this.game.player.unit.movement.motion.set(0, 0, 0);
-		this.game.player.unit.movement.slew = 0;
 		this.game.player.camMotion = 0;
 
-		// Передвигаем эхо
-		if (this.game.echo.next) {
-			this.game.echo.movement = this.game.echo.next;
-			this.game.echo.next = undefined;
-		}
-
-		// Рассчитываем единичный вектор движения прямо
-		let forwardDirection = new THREE.Vector3(0, 1, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), this.game.player.unit.movement.angle);
-
-		// Расчитываем единичный вектор стрейфа направо 
-		let rightDirection = forwardDirection.clone();
-		rightDirection.applyAxisAngle(new THREE.Vector3(0, 0, -1), Math.PI / 2);
-
-		// Обрабатываем показания контроллера и задаем приращения текущего тика
-		if (this.game.controller.rotateLeft) {
-			this.game.player.unit.movement.slew += this.game.player.speed / (Math.PI * 2) / this.amplitude;
-		}
-
-		if (this.game.controller.rotateRight) {
-			this.game.player.unit.movement.slew -= this.game.player.speed / (Math.PI * 2) / this.amplitude;
-		}
-
-		if (this.game.controller.moveRight) {
-			this.game.player.unit.movement.motion.add(rightDirection);
-		}
-
-		if (this.game.controller.moveLeft) {
-			this.game.player.unit.movement.motion.sub(rightDirection);
-		}
-
-		if (this.game.controller.moveForward) {
-			this.game.player.unit.movement.motion.add(forwardDirection);
-		};
-
-		if (this.game.controller.moveBackward) {
-			this.game.player.unit.movement.motion.sub(forwardDirection);
+		// Передвигаем игрока
+		if (this.game.player.unit.next) {
+			this.game.player.unit.movement = this.game.player.unit.next;
+			this.game.player.unit.next = undefined;
 		}
 
 		if (this.game.controller.zoomIn) {
@@ -95,13 +55,7 @@ class Loop {
 			this.game.player.camMotion += 0.5;
 		}
 
-		// Формируем вектор движения
-		this.game.player.unit.movement.motion.normalize();
-		this.game.player.unit.movement.motion.multiplyScalar(this.game.player.speed / this.amplitude);
-
 		if (this.game.controller.modifiers.shift) {
-			this.game.player.unit.movement.motion.multiplyScalar(0.25);
-			this.game.player.unit.movement.slew *= 0.25;
 			this.game.player.camMotion *= 0.25;
 		}
 
@@ -112,10 +66,8 @@ class Loop {
 
 		if (!(this.game.terrain === undefined || this.game.terrain === null)) {
 			let indecies = [];
-			//			let cx = Math.floor(this.game.player.unit.movement.position.x / this.game.terrain.chunkSize);
-			//			let cy = Math.floor(this.game.player.unit.movement.position.y / this.game.terrain.chunkSize);
-			let cx = Math.floor(this.game.echo.movement.position.x / this.game.terrain.chunkSize);
-			let cy = Math.floor(this.game.echo.movement.position.y / this.game.terrain.chunkSize);
+			let cx = Math.floor(this.game.player.unit.movement.position.x / this.game.terrain.chunkSize);
+			let cy = Math.floor(this.game.player.unit.movement.position.y / this.game.terrain.chunkSize);
 			// Перебор 9 смежных чанков
 			for (let y = cy - 1; y < cy + 2; y++) {
 				for (let x = cx - 1; x < cx + 2; x++) {

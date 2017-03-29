@@ -30,7 +30,7 @@ type Loop struct {
 	busy int
 }
 
-// NewLoop создает цикл
+// NewLoop создает и запускает цикл в отдельной горутине
 func NewLoop(a int, t Ticker) Loop {
 	l := Loop{
 		amplitude: a,
@@ -38,7 +38,7 @@ func NewLoop(a int, t Ticker) Loop {
 		interval:  time.Second / time.Duration(a),
 	}
 	go l.Entry()
-	log.Printf("[loop]: цикл симуляции запущен с интервалом %v\n", l.interval)
+	log.Printf("[loop]: цикл запущен с интервалом %v\n", l.interval)
 	return l
 }
 
@@ -53,15 +53,15 @@ func (l *Loop) Entry() {
 	for {
 		start := time.Now()
 		duration := start.Sub(l.start)
-		l.delta = l.delta + l.interval - duration
-
-		if l.delta < -time.Millisecond*3 || l.delta > time.Millisecond*3 {
-			log.Printf("[loop]: tick %d, duration %s, delta %s\n", l.tick, duration, l.delta)
-		}
 
 		l.start = start
+		l.delta = l.delta + l.interval - duration
 		l.tick++
 		l.ticker.Tick(l.tick)
+
+		if l.delta < -time.Millisecond*10 || l.delta > time.Millisecond*10 {
+			log.Printf("[loop]: tick %d, duration %s, delta %s\n", l.tick, duration, l.delta)
+		}
 
 		busy := time.Since(start)
 

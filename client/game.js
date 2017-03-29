@@ -55,8 +55,7 @@ class Game {
         this.screen.container.appendChild(log.domElement);
 
 
-        this.player = new Player(this.camera, this.createCharacter(219));
-        this.echo = new Unit(this.createCharacter(220));
+        this.player = new Player(this.camera, new Unit(this.createCharacter(220))); //219
 
         this.terrain = undefined;
 
@@ -100,7 +99,7 @@ class Game {
 
     handleMovementMessage(msgMovement) {
 
-        this.echo.next = new Movement(msgMovement);
+        this.player.unit.next = new Movement(msgMovement);
 
     }
 
@@ -108,12 +107,14 @@ class Game {
 
         this.terrain = new Terrain(msgTerrain, this.atlas);
 
-        // Сетка карты
+        // Добавление сетки чанков
+        /*
         var geoGrid = new THREE.PlaneGeometry(msgTerrain.width, msgTerrain.height, msgTerrain.width / msgTerrain.chunkSize, msgTerrain.height / msgTerrain.chunkSize);
         var material = new THREE.MeshBasicMaterial({ color: 0x4c981f, wireframe: true, side: THREE.DoubleSide });
         var grid = new THREE.Mesh(geoGrid, material);
         grid.position.set(msgTerrain.width / 2, msgTerrain.height / 2, 0.005);
         this.scene.add(grid);
+        */
 
     }
 
@@ -143,10 +144,7 @@ class Game {
             var frame = delta / this.loop.interval;
 
             this.player.animate(frame);
-            this.echo.animate(frame);
-            this.echo.mesh.position.z = 0.01;
 
-            //	console.log(camera.position);
 
             this.renderer.render(this.scene, this.camera);
 

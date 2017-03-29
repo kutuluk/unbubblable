@@ -4,6 +4,8 @@ protoc --go_out=import_path=protocol:./server ./protocol/*/*.proto ./protocol/*/
 
 cd server
 
+del server.exe
+
 copy protocol\Data\*.* protocol\
 copy protocol\Messaging\*.* protocol\
 copy protocol\Messaging\Request\*.* protocol\

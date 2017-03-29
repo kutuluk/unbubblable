@@ -34,7 +34,7 @@ type Player struct {
 func NewPlayer() *Player {
 	return &Player{
 		Speed:    10.0,
-		Position: mathgl.Vec3{0, 0, 0.5},
+		Position: mathgl.Vec3{0, 0, 0.01},
 		//		Controller: make([]MessageController, 20),
 	}
 }
