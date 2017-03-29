@@ -12,23 +12,9 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// Амплитуда и интервал тиков
-const (
-	LoopAmplitude = 20
-	LoopInterval  = time.Second / LoopAmplitude
-)
-
 // Hub определяет список коннектов
 type Hub struct {
 	connections map[*Connect]bool
-	// Порядковый номер текущего тика
-	Tick int64
-	// Time определяет фактическое время начала последнего тика
-	Time time.Time
-	// delta определяет разницу между фактическим и необходимым временем начала последнего тика
-	delta time.Duration
-	// busy определяет загруженность игрового цикла в процентах
-	busy int
 	// Terrain определяет ландшафт
 	Terrain *Terrain
 }
@@ -39,8 +25,6 @@ func NewHub() *Hub {
 		connections: make(map[*Connect]bool),
 		Terrain:     NewTerrain(24*5, 24*5, 24, 3184627059),
 	}
-	go h.loop()
-	log.Println("[hub]: луп запустился")
 	return h
 }
 
@@ -74,42 +58,18 @@ func (h *Hub) Count() int {
 	return len(hub.connections)
 }
 
-// loop определяет игровой цикл
-func (h *Hub) loop() {
+// Tick определяет обработчик тиков симуляции
+func (h *Hub) Tick(tick uint) {
 
-	h.Time = time.Now().Add(-LoopInterval)
+	// Перебираем все соединения
+	for c := range h.connections {
 
-	for {
-		begin := time.Now()
-		duration := begin.Sub(h.Time)
+		// Осуществляем перерасчет
+		c.Player.Update(tick)
 
-		h.delta = h.delta + LoopInterval - duration
-
-		if h.delta < -time.Millisecond*3 || h.delta > time.Millisecond*3 {
-			log.Printf("[tick]: duration %s, delta %s\n", duration, h.delta)
-		}
-
-		h.Time = begin
-
-		h.Tick++
-
-		// Перебираем все соединения
-		for c := range h.connections {
-
-			// Осуществляем перерасчет
-			c.Player.Update(h.Tick)
-
-			// Отправляем сообщение клиенту
-			c.sendMovement()
-			c.sendPingRequest()
-
-		}
-
-		end := time.Now()
-		busy := end.Sub(begin)
-		h.busy = int(busy * 100 / LoopInterval)
-
-		time.Sleep(LoopInterval - busy + h.delta)
+		// Отправляем сообщение клиенту
+		c.sendMovement()
+		c.sendPingRequest()
 	}
 }
 

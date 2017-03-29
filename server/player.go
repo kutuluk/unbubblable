@@ -41,7 +41,7 @@ func NewPlayer() *Player {
 
 // Update пересчитывает параметры игрока в каждом тике
 // FixMe: tick используется для дебага
-func (p *Player) Update(tick int64) {
+func (p *Player) Update(tick uint) {
 	// Изменяем параметры игрока в соответствии с приращениями прошлого тика
 	p.Position = p.Position.Add(p.Motion)
 	p.Angle += p.Slew

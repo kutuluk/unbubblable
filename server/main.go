@@ -8,8 +8,14 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+const (
+	// LoopAmplitude задает частоту тиков симуляции в секунду
+	LoopAmplitude = 20
+)
+
 var upgrader = websocket.Upgrader{}
 var hub = NewHub()
+var loop = NewLoop(LoopAmplitude, hub)
 
 // Информационная страница о статусе сервера
 func status(w http.ResponseWriter, req *http.Request) {
