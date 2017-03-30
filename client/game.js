@@ -45,7 +45,6 @@ class Game {
 
         this.atlas = new Atlas( 16, 16, 32, 'textures/atlas.png' );
 
-
         this.controller = new Controller( this.renderer.domElement );
 
         this.stats = new Stats();
@@ -63,7 +62,7 @@ class Game {
 
         this.connect = new Connect( this );
 
-        this.loop = new Loop( this, 20 );
+        this.loop = new Loop( 20, () => { this.update(); } );
 
         window.addEventListener( 'resize', this.onWindowResize.bind( this ), false );
 
@@ -121,7 +120,7 @@ class Game {
     }
 
     handleChunkMessage( msgChunk ) {
-        if ( this.terrain.chunks[ msgChunk.index ] == undefined ) {
+        if ( this.terrain.chunks[ msgChunk.index ] === undefined ) {
 
             this.terrain.setChunk( msgChunk );
             this.scene.add( this.terrain.chunks[ msgChunk.index ].meshLandscape );
@@ -136,28 +135,81 @@ class Game {
         this.stats.update();
     }
 
-    render() {
-        //        if (!this.loop.updating) {
-        if ( true ) {
+    update() {
 
-            // Вычисляем время, прошедшее после начала тика
-            var delta = new Date().getTime() - this.loop.time;
-            // Чем больше времени прошло, тем больше множитель (0 -> 1)
-            var frame = delta / this.loop.interval;
-
-            this.player.animate( frame );
-
-
-            this.renderer.render( this.scene, this.camera );
-
-            // статистика рендера
-            //				const { render, memory } = this.renderer.info
-            //				stats.textContent = `
-            //				calls: ${render.calls}
-            //				faces: ${render.faces}
-            //				vertices: ${render.vertices}
-            //				geometries: ${memory.geometries}`
+        // Передвигаем игрока
+        if ( this.player.unit.next ) {
+            this.player.unit.movement = this.player.unit.next;
+            this.player.unit.next = undefined;
+        } else {
+            this.player.unit.movement.position.add( this.player.unit.movement.motion );
+            this.player.unit.movement.motion.set( 0, 0, 0 );
+            this.player.unit.movement.angle += this.player.unit.movement.slew;
+            this.slew = 0;
         }
+
+        // Изменяем высоту камеры
+        this.player.camHeight += this.player.camMotion;
+        this.player.camMotion = 0;
+
+        // Обрабатываем контроллер на изменение высоты камеры
+        if ( this.controller.zoomIn ) {
+            this.player.camMotion -= 0.5;
+        }
+
+        if ( this.controller.zoomOut ) {
+            this.player.camMotion += 0.5;
+        }
+
+        if ( this.controller.modifiers.shift ) {
+            this.player.camMotion *= 0.25;
+        }
+
+        this.connect.sendController( this.controller );
+
+        // Запрашиваем недостающие чанки ландшафта
+        if ( !( this.terrain === undefined || this.terrain === null ) ) {
+            let indecies = [];
+            let cx = Math.floor( this.player.unit.movement.position.x / this.terrain.chunkSize );
+            let cy = Math.floor( this.player.unit.movement.position.y / this.terrain.chunkSize );
+            // Перебор 9 смежных чанков
+            for ( let y = cy - 1; y < cy + 2; y++ ) {
+                for ( let x = cx - 1; x < cx + 2; x++ ) {
+                    // Проверка на допустимый диапазон
+                    if ( ( y >= 0 ) && ( y < this.terrain.chunkedHeight ) && ( x >= 0 ) && ( x < this.terrain.chunkedWidth ) ) {
+                        let index = y * this.terrain.chunkedWidth + x;
+                        // Добавление индекса чанка в список запроса в случае его отсутствия
+                        if ( this.terrain.chunks[ index ] === undefined ) {
+                            indecies.push( index );
+                        }
+                    }
+                }
+            }
+
+            this.connect.sendChanksRequest( indecies );
+        }
+
+    }
+
+    render() {
+
+        // Вычисляем время, прошедшее после начала тика
+        let delta = new Date().getTime() - this.loop.start;
+        // Чем больше времени прошло, тем больше множитель (0 -> 1)
+        let frame = delta / this.loop.duration;
+
+        this.player.animate( frame );
+
+
+        this.renderer.render( this.scene, this.camera );
+
+        // статистика рендера
+        //				const { render, memory } = this.renderer.info
+        //				stats.textContent = `
+        //				calls: ${render.calls}
+        //				faces: ${render.faces}
+        //				vertices: ${render.vertices}
+        //				geometries: ${memory.geometries}`
     }
 
 }

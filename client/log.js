@@ -31,8 +31,13 @@ class Log {
 
     appendText( text ) {
         let item = document.createElement( "div" );
-        item.innerHTML = text;
+        item.innerHTML = ( text ) ? text : '';
         this.appendLog( item );
+    }
+
+    appendTimestamp( text ) {
+        let t = ( text ) ? text : '';
+        this.appendText( `[debug]: ${new Date().getTime()} ${t}` );
     }
 
 }

@@ -9,18 +9,20 @@ class Player {
         this.camMotion = 0;
         this.unit = unit;
 
+        this.oX = new THREE.Vector3( 1, 0, 0 );
+        this.oZ = new THREE.Vector3( 0, 0, 1 );
+
     }
 
     animate( scalar ) {
 
         // Рассчитываем позицию игрока в этом фрейме
-        var motion = this.unit.movement.motion.clone();
-        motion.multiplyScalar( scalar );
-        var position = this.unit.movement.position.clone().add( motion );
+        let motion = this.unit.movement.motion.clone().multiplyScalar( scalar );
+        let position = this.unit.movement.position.clone().add( motion );
         // Рассчитываем угол направления в этом фрейме
-        var rotation = this.unit.movement.angle + this.unit.movement.slew * scalar;
+        let rotation = this.unit.movement.angle + this.unit.movement.slew * scalar;
         // Рассчитываем вектор направления в этом фрейме
-        var direction = new THREE.Vector3( 0, 1, 0 ).applyAxisAngle( new THREE.Vector3( 0, 0, 1 ), rotation );
+        let direction = new THREE.Vector3( 0, 1, 0 ).applyAxisAngle( this.oZ, rotation );
 
         // Перемещаем меш игрока
         this.unit.mesh.position.copy( position );
@@ -29,18 +31,16 @@ class Player {
         this.unit.mesh.rotation.setFromVector3( new THREE.Vector3( 0, 0, rotation ), 'XYZ' );
 
         // Рассчитываем высоту камеры в этом фрейме
-        var height = this.camHeight + this.camMotion * scalar;
+        let height = this.camHeight + this.camMotion * scalar;
 
         // Перемещаем камеру
-        var camDistance = height / -2;
-        var camPos = new THREE.Vector3();
-        camPos.addVectors( position, direction.multiplyScalar( camDistance ) );
+        let camPos = position.clone().add( direction.multiplyScalar( height / -2 ) );
         this.camera.position.set( camPos.x, camPos.y, height );
 
         // Крутим камеру
         this.camera.rotation.setFromVector3( new THREE.Vector3( 0, 0, rotation ), 'XYZ' );
         // И опускаем немного вниз
-        this.camera.rotateOnAxis( new THREE.Vector3( 1, 0, 0 ), Math.PI / 5 );
+        this.camera.rotateOnAxis( this.oX, Math.PI / 5 );
 
     }
 }

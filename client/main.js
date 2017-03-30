@@ -8,7 +8,7 @@ if ( game.playable ) {
 } else {
 
     // Браузер не соответствует требованиям
-    var container = document.getElementById( 'container' );
+    let container = document.getElementById( 'container' );
     container.appendChild( log.domElement );
 
 }

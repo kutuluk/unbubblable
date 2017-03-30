@@ -24,8 +24,6 @@ type Loop struct {
 	tick uint
 	// start определяет фактическое время начала тика
 	start time.Time
-	// delta определяет разницу между фактическим и необходимым временем начала тика
-	delta time.Duration
 	// busy определяет загруженность цикла в процентах
 	busy int
 }
@@ -45,28 +43,21 @@ func NewLoop(a int, t Ticker) Loop {
 // Entry запускает цикл
 func (l *Loop) Entry() {
 
-	// Обрабатываем первый тик
-	l.start = time.Now()
-	l.ticker.Tick(l.tick)
-	time.Sleep(l.interval - time.Since(l.start))
+	entry := time.Now()
 
 	for {
-		start := time.Now()
-		duration := start.Sub(l.start)
+		l.start = time.Now()
+		calc := entry.Add(l.interval * time.Duration(l.tick))
+		delta := calc.Sub(l.start)
 
-		l.start = start
-		l.delta = l.delta + l.interval - duration
-		l.tick++
 		l.ticker.Tick(l.tick)
 
-		if l.delta < -time.Millisecond*10 || l.delta > time.Millisecond*10 {
-			log.Printf("[loop]: tick %d, duration %s, delta %s\n", l.tick, duration, l.delta)
-		}
+		//		log.Printf("[loop]: tick %d, delta %s\n", l.tick, delta)
 
-		busy := time.Since(start)
-
+		busy := time.Since(l.start)
 		l.busy = int(busy * 100 / l.interval)
 
-		time.Sleep(l.interval - busy + l.delta)
+		time.Sleep(l.interval - busy + delta)
+		l.tick++
 	}
 }

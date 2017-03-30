@@ -181,7 +181,7 @@ class Connect {
     sendPingResponse() {
 
         let now = new Date().getTime();
-        let seconds = Math.floor( now / 1000 );
+        let seconds = now / 1000 | 0;
         let milliseconds = now - seconds * 1000;
         let nanos = milliseconds * 1000000;
 
