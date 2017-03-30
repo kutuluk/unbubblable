@@ -9,6 +9,29 @@ import (
 	mathgl "github.com/go-gl/mathgl/mgl64"
 )
 
+type ControllerQueue []*protocol.ApplyControllerMessage
+
+func (q *ControllerQueue) Push(n *protocol.ApplyControllerMessage) {
+	if q.Len() < 1 {
+		*q = append(*q, n)
+	} else {
+		log.Println("[player]: сообщение контроллера не уместилось в очередь")
+	}
+}
+
+func (q *ControllerQueue) Pop() (n *protocol.ApplyControllerMessage) {
+	if q.Len() > 0 {
+		n = (*q)[0]
+		*q = (*q)[1:]
+		return
+	}
+	return nil
+}
+
+func (q *ControllerQueue) Len() int {
+	return len(*q)
+}
+
 // Player определяет игрока
 type Player struct {
 	// Speed определяет скорость движеия и поворота игрока.
@@ -25,17 +48,16 @@ type Player struct {
 	Slew float64
 
 	// Controller определяет слайс состояний контроллера игрока
-	//	Controller []MessageController
-
-	Controller *protocol.ApplyControllerMessage
+	//	Controller *protocol.ApplyControllerMessage
+	ControllerQueue ControllerQueue
 }
 
 // NewPlayer инициализирует нового игрока
 func NewPlayer() *Player {
 	return &Player{
-		Speed:    10.0,
-		Position: mathgl.Vec3{0, 0, 0.01},
-		//		Controller: make([]MessageController, 20),
+		Speed:           10.0,
+		Position:        mathgl.Vec3{0, 0, 0.01},
+		ControllerQueue: make(ControllerQueue, 10),
 	}
 }
 
@@ -50,12 +72,11 @@ func (p *Player) Update(tick uint) {
 	p.Motion = mathgl.Vec3{0, 0, 0}
 	p.Slew = 0
 
-	//	if len(p.Controller) > 0 {
-	//		controller := p.Controller[0]
-	controller := p.Controller
+	//	controller := p.Controller
+	controller := p.ControllerQueue.Pop()
 
 	if controller != nil {
-		p.Controller = nil
+		//		p.Controller = nil
 
 		// Формируем величину поворота
 		if controller.RotateLeft {
@@ -95,7 +116,6 @@ func (p *Player) Update(tick uint) {
 		p.Motion = p.Motion.Mul(p.Speed / LoopAmplitude)
 
 		// Уменьшаем приращения в 4 раза при нажатом шифте
-		//		if controller.Modifiers.Shift {
 		if controller.Mods.Shift {
 			p.Motion = p.Motion.Mul(0.25)
 			p.Slew *= 0.25
@@ -103,6 +123,4 @@ func (p *Player) Update(tick uint) {
 	} else {
 		log.Println("[player]:", tick, "- не получено сообщение контроллера")
 	}
-	//		p.Controller = p.Controller[1:]
-	//	}
 }

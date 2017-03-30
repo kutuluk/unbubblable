@@ -148,7 +148,8 @@ func (c *Connect) handler(message *protocol.Message) {
 			break
 		}
 		// Применяем сообщение
-		c.Player.Controller = msgController
+		//c.Player.Controller = msgController
+		c.Player.ControllerQueue.Push(msgController)
 
 	// ChunkRequest
 	case protocol.MessageType_MsgChunkRequest:

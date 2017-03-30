@@ -1,6 +1,6 @@
 class Controller {
 
-    constructor(dom) {
+    constructor( dom ) {
 
         this.moveForward = false;
         this.moveBackward = false;
@@ -16,9 +16,9 @@ class Controller {
 
         this.modifiers = { shift: false, ctrl: false, alt: false, meta: false };
 
-        dom.addEventListener('contextmenu', event => event.preventDefault(), false);
-        window.addEventListener('keydown', event => this.onKeyChange(event, true), false);
-        window.addEventListener('keyup', event => this.onKeyChange(event, false), false);
+        dom.addEventListener( 'contextmenu', event => event.preventDefault(), false );
+        window.addEventListener( 'keydown', event => this.onKeyChange( event, true ), false );
+        window.addEventListener( 'keyup', event => this.onKeyChange( event, false ), false );
 
         /*
                 // Если потом необходимо очищать обработчики с помощью dispose()
@@ -44,25 +44,41 @@ class Controller {
         }
     */
 
-    onKeyChange(event, pressed) {
+    onKeyChange( event, pressed ) {
 
-        switch (event.keyCode) {
+        switch ( event.keyCode ) {
 
             // https://www.cambiaresearch.com/articles/15/javascript-char-codes-key-codes
 
-            case 87: this.moveForward = pressed; break;     // W
-            case 83: this.moveBackward = pressed; break;    // S
+        case 87:
+            this.moveForward = pressed;
+            break; // W
+        case 83:
+            this.moveBackward = pressed;
+            break; // S
 
-            case 65: this.moveLeft = pressed; break;        // A
-            case 68: this.moveRight = pressed; break;       // D
+        case 65:
+            this.moveLeft = pressed;
+            break; // A
+        case 68:
+            this.moveRight = pressed;
+            break; // D
 
-            case 81: this.rotateLeft = pressed; break;      // Q
-            case 69: this.rotateRight = pressed; break;     // E
+        case 81:
+            this.rotateLeft = pressed;
+            break; // Q
+        case 69:
+            this.rotateRight = pressed;
+            break; // E
 
-            case 33: this.zoomIn = pressed; break;          // PageUp
-            case 34: this.zoomOut = pressed; break;         // PageDown
+        case 33:
+            this.zoomIn = pressed;
+            break; // PageUp
+        case 34:
+            this.zoomOut = pressed;
+            break; // PageDown
 
-        };
+        }
 
         this.modifiers.shift = event.shiftKey;
         this.modifiers.ctrl = event.ctrlKey;
@@ -71,6 +87,6 @@ class Controller {
 
     }
 
-};
+}
 
 export { Controller };

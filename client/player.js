@@ -1,52 +1,48 @@
-import {
-	Unit
-} from './unit';
+import { Unit } from './unit';
 
 class Player {
 
-	constructor(camera, unit) {
+    constructor( camera, unit ) {
 
-		this.camera = camera;
-		this.camHeight = 14;
-		this.camMotion = 0;
-		this.unit = unit;
+        this.camera = camera;
+        this.camHeight = 14;
+        this.camMotion = 0;
+        this.unit = unit;
 
-	}
+    }
 
-	animate(scalar) {
+    animate( scalar ) {
 
-		// Рассчитываем позицию игрока в этом фрейме
-		var motion = this.unit.movement.motion.clone();
-		motion.multiplyScalar(scalar);
-		var position = this.unit.movement.position.clone().add(motion);
-		// Рассчитываем угол направления в этом фрейме
-		var rotation = this.unit.movement.angle + this.unit.movement.slew * scalar;
-		// Рассчитываем вектор направления в этом фрейме
-		var direction = new THREE.Vector3(0, 1, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), rotation);
+        // Рассчитываем позицию игрока в этом фрейме
+        var motion = this.unit.movement.motion.clone();
+        motion.multiplyScalar( scalar );
+        var position = this.unit.movement.position.clone().add( motion );
+        // Рассчитываем угол направления в этом фрейме
+        var rotation = this.unit.movement.angle + this.unit.movement.slew * scalar;
+        // Рассчитываем вектор направления в этом фрейме
+        var direction = new THREE.Vector3( 0, 1, 0 ).applyAxisAngle( new THREE.Vector3( 0, 0, 1 ), rotation );
 
-		// Перемещаем меш игрока
-		this.unit.mesh.position.copy(position);
+        // Перемещаем меш игрока
+        this.unit.mesh.position.copy( position );
 
-		// Крутим игрока
-		this.unit.mesh.rotation.setFromVector3(new THREE.Vector3(0, 0, rotation), 'XYZ');
+        // Крутим игрока
+        this.unit.mesh.rotation.setFromVector3( new THREE.Vector3( 0, 0, rotation ), 'XYZ' );
 
-		// Рассчитываем высоту камеры в этом фрейме
-		var height = this.camHeight + this.camMotion * scalar;
+        // Рассчитываем высоту камеры в этом фрейме
+        var height = this.camHeight + this.camMotion * scalar;
 
-		// Перемещаем камеру
-		var camDistance = height / -2;
-		var camPos = new THREE.Vector3();
-		camPos.addVectors(position, direction.multiplyScalar(camDistance));
-		this.camera.position.set(camPos.x, camPos.y, height);
+        // Перемещаем камеру
+        var camDistance = height / -2;
+        var camPos = new THREE.Vector3();
+        camPos.addVectors( position, direction.multiplyScalar( camDistance ) );
+        this.camera.position.set( camPos.x, camPos.y, height );
 
-		// Крутим камеру
-		this.camera.rotation.setFromVector3(new THREE.Vector3(0, 0, rotation), 'XYZ');
-		// И опускаем немного вниз
-		this.camera.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 5);
+        // Крутим камеру
+        this.camera.rotation.setFromVector3( new THREE.Vector3( 0, 0, rotation ), 'XYZ' );
+        // И опускаем немного вниз
+        this.camera.rotateOnAxis( new THREE.Vector3( 1, 0, 0 ), Math.PI / 5 );
 
-	}
-};
+    }
+}
 
-export {
-	Player
-};
+export { Player };
