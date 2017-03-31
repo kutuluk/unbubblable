@@ -10,6 +10,8 @@ class Connect {
 
         this.protobuf = proto.default.protocol;
 
+        this.ping = 0;
+
         this.ws = new WebSocket( `ws://${window.location.host}/ws` );
         this.ws.binaryType = 'arraybuffer';
 
@@ -63,6 +65,14 @@ class Connect {
             let msgChain = this.protobuf.Messaging.MessageChain.decode( message.body ).toObject( { defaults: true } );
             // Запускаем обработчик для всех сообщений в цепочке
             msgChain.chain.forEach( message => this.handleMessage( message ) );
+            break;
+
+        case this.protobuf.Messaging.MessageType.MsgInfo:
+
+            // Декодируем сообщение
+            let msgInfo = this.protobuf.Messaging.Messages.Info.decode( message.body ).toObject( { defaults: true } );
+            // Обрабатываем
+            this.ping = msgInfo.ping / 1000000;
             break;
 
         case this.protobuf.Messaging.MessageType.MsgMovement:

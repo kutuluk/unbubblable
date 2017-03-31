@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package protocol.Messaging.Messages;
+
+// Info определяет служебную информацию для клиента
+message Info {
+	// ping определяет значение пинга в наносекундах
+	int32 ping = 1;
+}

@@ -44,7 +44,10 @@ func (h *Hub) Join(ws *websocket.Conn) {
 		ws:       ws,
 		Player:   NewPlayer(),
 		bestPing: time.Hour,
-		pings:    NewPings(20),
+		// Пинги идут 4 раза в секунду. Медиану быдем рассчитывать раз в секунду, значит
+		// интервал устанавливаем равным 4. Медиану рассчитываем на основании последних
+		// 5 секунд, значит длину сохраняемых пингов устанавливаем в 4*5=20
+		pings: NewPings(20, 4),
 	}
 
 	// Добавляем его в список коннектов
@@ -78,37 +81,55 @@ func (h *Hub) Tick(tick uint) {
 
 		// Отправляем сообщение клиенту
 		c.sendMovement()
-		//		c.sendPingRequest()
 		c.update()
 	}
 }
 
-type PingInfo []time.Duration
+// Durations определяет набор временных отрезков
+type Durations []time.Duration
 
-type PingInfos struct {
-	pings  PingInfo
-	head   int
-	median time.Duration
+func (d Durations) Len() int           { return len(d) }
+func (d Durations) Swap(i, j int)      { d[i], d[j] = d[j], d[i] }
+func (d Durations) Less(i, j int) bool { return d[i] < d[j] }
+
+// PingInfo определяет статистику о пинге
+type PingInfo struct {
+	durations Durations
+	interval  int
+	frame     int
+	head      int
+	median    time.Duration
 }
 
-func NewPings(l int) PingInfos {
-	return PingInfos{
-		pings: make(PingInfo, l),
+func NewPings(length, interval int) PingInfo {
+	return PingInfo{
+		durations: make(Durations, length),
+		interval:  interval,
+		head:      length - 1,
 	}
 }
 
-func (p *PingInfos) Add(ping time.Duration) {
-	p.pings[p.head] = ping
+func (p *PingInfo) Add(ping time.Duration) {
+
 	p.head++
-	if p.head == len(p.pings) {
+	if p.head == len(p.durations) {
 		p.head = 0
 	}
+
+	p.durations[p.head] = ping
+
+	p.frame++
+	if p.frame == p.interval {
+		p.frame = 0
+		p.CalcMedian()
+	}
+
 }
 
-func (p *PingInfos) CalcMedian() time.Duration {
+func (p *PingInfo) CalcMedian() time.Duration {
 
-	s := make(PingInfo, len(p.pings))
-	copy(s, p.pings)
+	s := make(Durations, len(p.durations))
+	copy(s, p.durations)
 	sort.Sort(s)
 
 	l := len(s)
@@ -118,34 +139,27 @@ func (p *PingInfos) CalcMedian() time.Duration {
 		p.median = s[l/2]
 	}
 
-	//	log.Println("[sort pings]:", s)
+	log.Println("[unsort pings]:", p.durations)
+	log.Println("[sort pings]:", s)
 	log.Println("[median]:", p.median)
 	return p.median
 }
 
-func (p PingInfo) Len() int { return 20 }
-
-func (p PingInfo) Swap(i, j int) {
-	p[i], p[j] = p[j], p[i]
-}
-
-func (p PingInfo) Less(i, j int) bool { return p[i] < p[j] }
-
 // Connect связывает коннект с персонажем
 type Connect struct {
-	Hub        *Hub
-	ws         *websocket.Conn
-	Player     *Player
-	Received   int
-	Sent       int
-	Ping       time.Duration
+	Hub      *Hub
+	ws       *websocket.Conn
+	Player   *Player
+	Received int
+	Sent     int
+
 	bestPing   time.Duration
 	pingTime   time.Time
 	pingToken  int32
 	timeOffset time.Duration
 	state      int
 	frame      int
-	pings      PingInfos
+	pings      PingInfo
 }
 
 func (c *Connect) update() {
@@ -154,27 +168,32 @@ func (c *Connect) update() {
 
 	case StateSYNC:
 
+		// Сразу после создания соединения форсируем сбор статистики
 		c.sendPingRequest()
-
-		if c.frame%20 == 0 {
-			c.pings.CalcMedian()
-		}
 
 	case StateTRANSFER:
 
 		if c.frame%20 == 0 {
-			c.sendPingRequest()
-			c.pings.CalcMedian()
+			//			c.sendPingRequest()
 		}
 
 	}
-
-	c.frame++
 
 	if c.state == StateSYNC && c.frame%40 == 0 {
 		c.state = StateTRANSFER
 	}
 
+	// раз в секунду отправляем служебную информацию
+	if c.frame%20 == 0 {
+		c.sendInfo()
+	}
+
+	// 4 раза в секунду отправляем запрос на пинг
+	if c.frame%5 == 0 {
+		c.sendPingRequest()
+	}
+
+	c.frame++
 	if c.frame > LoopAmplitude*60 {
 		c.frame = 0
 	}
@@ -219,7 +238,6 @@ func (c *Connect) handler(message *protocol.Message) {
 		timeRequest := time.Unix(msgPingResponse.Time.Seconds, int64(msgPingResponse.Time.Nanos)).UTC()
 
 		ping := timeNow.Sub(c.pingTime)
-		c.Ping = ping
 
 		c.pings.Add(ping)
 
@@ -433,7 +451,27 @@ func (c *Connect) sendMovement() {
 
 }
 
-// sendMap отправляет клиенту карту
+// sendInfo отправляет клиенту служебную информацию
+func (c *Connect) sendInfo() {
+
+	// Формируем сообщение
+	msgInfo := &protocol.Info{
+		Ping: int32(c.pings.median),
+	}
+
+	// Сериализуем сообщение протобафом
+	msgBuffer, err := proto.Marshal(msgInfo)
+	if err != nil {
+		log.Println("[proto send]:", err)
+		return
+	}
+
+	// Отправляем сообщение
+	c.sendMessage(protocol.MessageType_MsgInfo, msgBuffer)
+
+}
+
+// sendTerrain отправляет клиенту карту
 func (c *Connect) sendTerrain() {
 
 	// Отправляем сообщение

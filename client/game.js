@@ -49,8 +49,9 @@ class Game {
 
         this.stats = new Stats();
         this.stats.showPanel( 1 );
-        this.stats.updPanel = this.stats.addPanel( new Stats.Panel( 'update time', '#ff8', '#221' ) );
-        this.stats.deltaPanel = this.stats.addPanel( new Stats.Panel( 'delta', '#ff8', '#212' ) );
+        this.stats.updatePanel = this.stats.addPanel( new Stats.Panel( 'Update', '#ff8', '#212' ) );
+        this.stats.deltaPanel = this.stats.addPanel( new Stats.Panel( 'Delta', '#ff8', '#212' ) );
+        this.stats.pingPanel = this.stats.addPanel( new Stats.Panel( 'Ping', '#ff8', '#212' ) );
 
         this.screen.container.appendChild( this.renderer.domElement );
         this.screen.container.appendChild( this.stats.domElement );
@@ -136,8 +137,9 @@ class Game {
         requestAnimationFrame( this.animate.bind( this ) );
         this.render();
         this.stats.update();
-        this.stats.updPanel.update( this.loop.busy, this.loop.interval );
-        this.stats.deltaPanel.update( -this.loop.delta, 10 );
+        this.stats.updatePanel.update( this.loop.busy, this.loop.interval );
+        this.stats.deltaPanel.update( Math.abs(this.loop.delta), 10 );
+        this.stats.pingPanel.update( this.connect.ping, 100 );
     }
 
     update() {
