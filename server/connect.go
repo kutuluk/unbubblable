@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"sort"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -10,6 +11,12 @@ import (
 	"math"
 
 	"github.com/gorilla/websocket"
+)
+
+// Набор состояний соединения
+const (
+	StateSYNC = iota
+	StateTRANSFER
 )
 
 // Hub определяет список коннектов
@@ -37,7 +44,9 @@ func (h *Hub) Join(ws *websocket.Conn) {
 		ws:       ws,
 		Player:   NewPlayer(),
 		bestPing: time.Hour,
+		pings:    NewPings(20),
 	}
+
 	// Добавляем его в список коннектов
 	h.connections[c] = true
 	// Запускаем обработчик входящих сообщений
@@ -69,9 +78,58 @@ func (h *Hub) Tick(tick uint) {
 
 		// Отправляем сообщение клиенту
 		c.sendMovement()
-		c.sendPingRequest()
+		//		c.sendPingRequest()
+		c.update()
 	}
 }
+
+type PingInfo []time.Duration
+
+type PingInfos struct {
+	pings  PingInfo
+	head   int
+	median time.Duration
+}
+
+func NewPings(l int) PingInfos {
+	return PingInfos{
+		pings: make(PingInfo, l),
+	}
+}
+
+func (p *PingInfos) Add(ping time.Duration) {
+	p.pings[p.head] = ping
+	p.head++
+	if p.head == len(p.pings) {
+		p.head = 0
+	}
+}
+
+func (p *PingInfos) CalcMedian() time.Duration {
+
+	s := make(PingInfo, len(p.pings))
+	copy(s, p.pings)
+	sort.Sort(s)
+
+	l := len(s)
+	if l%2 == 0 {
+		p.median = (s[l/2+1] - s[l/2-1]) / 2
+	} else {
+		p.median = s[l/2]
+	}
+
+	//	log.Println("[sort pings]:", s)
+	log.Println("[median]:", p.median)
+	return p.median
+}
+
+func (p PingInfo) Len() int { return 20 }
+
+func (p PingInfo) Swap(i, j int) {
+	p[i], p[j] = p[j], p[i]
+}
+
+func (p PingInfo) Less(i, j int) bool { return p[i] < p[j] }
 
 // Connect связывает коннект с персонажем
 type Connect struct {
@@ -85,6 +143,41 @@ type Connect struct {
 	pingTime   time.Time
 	pingToken  int32
 	timeOffset time.Duration
+	state      int
+	frame      int
+	pings      PingInfos
+}
+
+func (c *Connect) update() {
+
+	switch c.state {
+
+	case StateSYNC:
+
+		c.sendPingRequest()
+
+		if c.frame%20 == 0 {
+			c.pings.CalcMedian()
+		}
+
+	case StateTRANSFER:
+
+		if c.frame%20 == 0 {
+			c.sendPingRequest()
+			c.pings.CalcMedian()
+		}
+
+	}
+
+	c.frame++
+
+	if c.state == StateSYNC && c.frame%40 == 0 {
+		c.state = StateTRANSFER
+	}
+
+	if c.frame > LoopAmplitude*60 {
+		c.frame = 0
+	}
 }
 
 func (c *Connect) handler(message *protocol.Message) {
@@ -127,6 +220,8 @@ func (c *Connect) handler(message *protocol.Message) {
 
 		ping := timeNow.Sub(c.pingTime)
 		c.Ping = ping
+
+		c.pings.Add(ping)
 
 		if ping < c.bestPing {
 			c.bestPing = ping

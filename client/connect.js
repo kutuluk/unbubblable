@@ -1,3 +1,4 @@
+import { time } from './time';
 import { log } from './log';
 import * as proto from './protocol.js';
 
@@ -180,16 +181,13 @@ class Connect {
 
     sendPingResponse() {
 
-        let now = new Date().getTime();
-        let seconds = now / 1000 | 0;
-        let milliseconds = now - seconds * 1000;
-        let nanos = milliseconds * 1000000;
+        let now = time.timestamp();
 
         // Формируем сообщение
         let msg = this.protobuf.Messaging.Response.PingResponse.create( {
             time: this.protobuf.Data.Timestamp.create( {
-                seconds: seconds,
-                nanos: nanos
+                seconds: now.seconds,
+                nanos: now.nanos
             } )
         } );
 

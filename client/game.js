@@ -48,6 +48,9 @@ class Game {
         this.controller = new Controller( this.renderer.domElement );
 
         this.stats = new Stats();
+        this.stats.showPanel( 1 );
+        this.stats.updPanel = this.stats.addPanel( new Stats.Panel( 'update time', '#ff8', '#221' ) );
+        this.stats.deltaPanel = this.stats.addPanel( new Stats.Panel( 'delta', '#ff8', '#212' ) );
 
         this.screen.container.appendChild( this.renderer.domElement );
         this.screen.container.appendChild( this.stats.domElement );
@@ -133,6 +136,8 @@ class Game {
         requestAnimationFrame( this.animate.bind( this ) );
         this.render();
         this.stats.update();
+        this.stats.updPanel.update( this.loop.busy, this.loop.interval );
+        this.stats.deltaPanel.update( -this.loop.delta, 10 );
     }
 
     update() {
@@ -196,7 +201,15 @@ class Game {
         // Вычисляем время, прошедшее после начала тика
         let delta = new Date().getTime() - this.loop.start;
         // Чем больше времени прошло, тем больше множитель (0 -> 1)
+
+        let current = ( this.loop.start - this.loop.entry ) / this.loop.interval | 0;
+
         let frame = delta / this.loop.duration;
+
+        if ( current > this.loop.current ) {
+            let frame = 1;
+        }
+
 
         this.player.animate( frame );
 

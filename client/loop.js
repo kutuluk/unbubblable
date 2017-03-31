@@ -21,21 +21,16 @@ class Loop {
         // Проверка на то, что итерация запустилась слишком рано
         this.current = ( current == this.current ) ? current + 1 : current;
 
-        let delta = this.entry + this.current * this.interval - this.start;
+        this.delta = this.entry + this.current * this.interval - this.start;
         // Предположительная продолжительность тика
-        this.duration = this.interval + delta;
+        this.duration = this.interval + this.delta;
 
-        /*
-                if ( delta < -10 || delta > 10 ) {
-                    log.appendText( `[Tick]: current: ${this.current}, delta ${delta}` );
-                }
-        */
-        log.appendText( `[Tick]: current: ${this.current}, delta ${delta}` );
+        //        log.appendText( `[Tick]: current: ${this.current}, delta ${this.delta}` );
 
         this.updater();
 
-        let busy = new Date().getTime() - this.start;
-        this.ticker = setTimeout( () => { this.tick(); }, this.interval - busy + delta );
+        this.busy = new Date().getTime() - this.start;
+        this.ticker = setTimeout( () => { this.tick(); }, this.interval - this.busy + this.delta );
 
     }
 
