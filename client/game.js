@@ -43,7 +43,42 @@ class Game {
         this.scene = new THREE.Scene();
         //	this.scene.fog = new THREE.Fog( 0xaaaaff, 1*18, 1*24 );
 
-        this.atlas = new Atlas( 16, 16, 32, 'textures/atlas.png' );
+        //        let ambientLight = new THREE.AmbientLight( 0x404040 ); // soft white light
+        //        let ambientLight = new THREE.AmbientLight( 0xffffff ); // soft white light
+        //        this.scene.add( ambientLight );
+
+        this.dirLight = new THREE.DirectionalLight( 0xffffff );
+        this.dirLight.position.set( 100, 100, 50 );
+        this.scene.add( this.dirLight );
+
+        // The X axis is red. The Y axis is green. The Z axis is blue.
+        let axisHelper = new THREE.AxisHelper();
+        this.scene.add( axisHelper );
+        axisHelper.position.set( -1.5, -1.5, 0 );
+
+        this.atlas = new Atlas( 16, 16, 32, 'assets/textures/atlas.png' );
+
+        // Загрузка модели
+        let loader = new THREE.ObjectLoader();
+        loader.load(
+            "assets/models/model.json",
+            // onLoad
+            ( obj ) => {
+                this.model = obj;
+                this.scene.add( obj );
+                this.player.unit.mesh = obj;
+                obj.scale.set( 0.5, 0.5, 0.5 );
+                console.log( obj );
+            },
+            // onProgress
+            ( xhr ) => {
+                console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+            },
+            // onError
+            ( xhr ) => {
+                console.error( 'An error happened' );
+            }
+        );
 
         this.controller = new Controller( this.renderer.domElement );
 
@@ -58,7 +93,8 @@ class Game {
         this.screen.container.appendChild( log.domElement );
 
 
-        this.player = new Player( this.camera, new Unit( this.createCharacter( 220 ) ) ); //219
+        //        this.player = new Player( this.camera, new Unit( this.createCharacter( 220 ) ) ); //219
+        this.player = new Player( this.camera, new Unit( /*this.model*/) ); //219
 
         this.terrain = undefined;
 
@@ -138,7 +174,7 @@ class Game {
         this.render();
         this.stats.update();
         this.stats.updatePanel.update( this.loop.busy, this.loop.interval );
-        this.stats.deltaPanel.update( Math.abs(this.loop.delta), 10 );
+        this.stats.deltaPanel.update( Math.abs( this.loop.delta ), 10 );
         this.stats.pingPanel.update( this.connect.ping, 100 );
     }
 

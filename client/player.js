@@ -30,6 +30,13 @@ class Player {
         // Крутим игрока
         this.unit.mesh.rotation.setFromVector3( new THREE.Vector3( 0, 0, rotation ), 'XYZ' );
 
+        // разворот головой вверх
+        this.unit.mesh.rotateOnAxis( new THREE.Vector3( 0, 0, 1 ), Math.PI / 2 );
+        // компенсация кривого создания модели
+        this.unit.mesh.rotateOnAxis( new THREE.Vector3( 1, 0, 0 ), Math.PI / 2 );
+        this.unit.mesh.position.z = 0.55;
+
+
         // Рассчитываем высоту камеры в этом фрейме
         let height = this.camHeight + this.camMotion * scalar;
 

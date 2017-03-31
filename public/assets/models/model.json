@@ -1,0 +1,193 @@
+{
+	"metadata": {
+		"version": 4.4,
+		"type": "Object",
+		"generator": "Object3D.toJSON"
+	},
+	"geometries": [
+		{
+			"uuid": "58C49CFE-4143-462E-8302-8A1B38B230BC",
+			"type": "BoxBufferGeometry",
+			"width": 1,
+			"height": 1,
+			"depth": 1
+		},
+		{
+			"uuid": "EAD96D52-A3D3-416B-8BDB-235D12BB7A96",
+			"type": "BoxBufferGeometry",
+			"width": 0.3,
+			"height": 0.3,
+			"depth": 0.3,
+			"widthSegments": 0,
+			"heightSegments": 0,
+			"depthSegments": 0
+		},
+		{
+			"uuid": "1E074FA5-AA2F-46CF-A263-D36D682961E3",
+			"type": "BoxBufferGeometry",
+			"width": 0.25,
+			"height": 1.74,
+			"depth": 0.1,
+			"widthSegments": 0,
+			"heightSegments": 0,
+			"depthSegments": 0
+		},
+		{
+			"uuid": "4AB1775A-8959-4F5E-9DB4-CF9C2D37DE05",
+			"type": "BoxBufferGeometry",
+			"width": 0.3,
+			"height": 0.3,
+			"depth": 0.3,
+			"widthSegments": 0,
+			"heightSegments": 0,
+			"depthSegments": 0
+		},
+		{
+			"uuid": "8533AF98-A6E4-4DE5-9B6F-241E8E2EA6FB",
+			"type": "BoxBufferGeometry",
+			"width": 1.2,
+			"height": 1.2,
+			"depth": 0.15,
+			"widthSegments": 0,
+			"heightSegments": 0,
+			"depthSegments": 0
+		},
+		{
+			"uuid": "75B93722-9F35-492C-BB7E-24912CEE34AA",
+			"type": "BoxBufferGeometry",
+			"width": 0.3,
+			"height": 0.3,
+			"depth": 0.3,
+			"widthSegments": 0,
+			"heightSegments": 0,
+			"depthSegments": 0
+		},
+		{
+			"uuid": "11D9C1FD-6400-4015-801D-C48A5378D24D",
+			"type": "BoxBufferGeometry",
+			"width": 0.3,
+			"height": 0.3,
+			"depth": 0.3,
+			"widthSegments": 0,
+			"heightSegments": 0,
+			"depthSegments": 0
+		}],
+	"materials": [
+		{
+			"uuid": "616F3319-AFAE-48EB-926A-D17919F2C384",
+			"type": "MeshLambertMaterial",
+			"color": 8405056,
+			"emissive": 6160384,
+			"depthFunc": 3,
+			"depthTest": true,
+			"depthWrite": true,
+			"skinning": false,
+			"morphTargets": false
+		},
+		{
+			"uuid": "CB52411B-8719-4D12-AC1D-E0F12F5066D7",
+			"type": "MeshLambertMaterial",
+			"color": 8404992,
+			"emissive": 5844224,
+			"depthFunc": 3,
+			"depthTest": true,
+			"depthWrite": true,
+			"skinning": false,
+			"morphTargets": false
+		},
+		{
+			"uuid": "F77AE21E-0756-4153-AD5C-539FC82E0CDD",
+			"type": "MeshLambertMaterial",
+			"color": 8421504,
+			"emissive": 3618615,
+			"depthFunc": 3,
+			"depthTest": true,
+			"depthWrite": true,
+			"skinning": false,
+			"morphTargets": false
+		}],
+	"object": {
+		"uuid": "7A571CE8-3DEA-49CB-86EA-9BC57273DFD4",
+		"type": "Group",
+		"name": "Model",
+		"matrix": [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
+		"children": [
+			{
+				"uuid": "E87F836A-DACA-4C8F-B288-78BE06087E90",
+				"type": "Group",
+				"name": "Body",
+				"matrix": [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
+				"children": [
+					{
+						"uuid": "6AFF31DA-710A-41A3-8971-7A7C1B264ABC",
+						"type": "Mesh",
+						"name": "Head",
+						"matrix": [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
+						"geometry": "58C49CFE-4143-462E-8302-8A1B38B230BC",
+						"material": "616F3319-AFAE-48EB-926A-D17919F2C384"
+					},
+					{
+						"uuid": "E95B0977-55B6-49A3-AA17-0CDA73C01FF7",
+						"type": "Group",
+						"name": "Right",
+						"matrix": [0.875426,-0.441454,0.196844,0,0.408218,0.893326,0.187955,0,-0.258819,-0.084186,0.96225,0,-0.175317,-0.3,0.815676,1],
+						"children": [
+							{
+								"uuid": "8AA1FFA4-FE7A-4F7E-B2E4-BDCBD62474F0",
+								"type": "Mesh",
+								"name": "Hand",
+								"matrix": [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
+								"geometry": "EAD96D52-A3D3-416B-8BDB-235D12BB7A96",
+								"material": "CB52411B-8719-4D12-AC1D-E0F12F5066D7"
+							},
+							{
+								"uuid": "1BDFA359-666C-4FB6-8EA1-E09BCBD9B745",
+								"type": "Mesh",
+								"name": "Sword",
+								"matrix": [1,0,0,0,0,1,0,0,0,0,1,0,0,0.6,0,1],
+								"geometry": "1E074FA5-AA2F-46CF-A263-D36D682961E3",
+								"material": "F77AE21E-0756-4153-AD5C-539FC82E0CDD"
+							}]
+					},
+					{
+						"uuid": "392CFBC1-39E0-435F-B739-7A5AA614E347",
+						"type": "Group",
+						"name": "Left",
+						"matrix": [0.95213,0.030892,0.30413,0,0,0.99488,-0.101056,0,-0.305695,0.096219,0.947254,0,0.138425,0,-0.776161,1],
+						"children": [
+							{
+								"uuid": "1F418F25-719E-46BE-98C2-662C9A9F8481",
+								"type": "Mesh",
+								"name": "Hand",
+								"matrix": [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
+								"geometry": "4AB1775A-8959-4F5E-9DB4-CF9C2D37DE05",
+								"material": "CB52411B-8719-4D12-AC1D-E0F12F5066D7"
+							},
+							{
+								"uuid": "B26A779F-A02D-4F06-9F8F-6D2A075DDE86",
+								"type": "Mesh",
+								"name": "Shield",
+								"matrix": [1,0,0,0,0,1,0,0,0,0,1,0,0,0,-0.25,1],
+								"geometry": "8533AF98-A6E4-4DE5-9B6F-241E8E2EA6FB",
+								"material": "F77AE21E-0756-4153-AD5C-539FC82E0CDD"
+							}]
+					}]
+			},
+			{
+				"uuid": "2915C8A3-3859-4D65-A18A-6CC0B527079A",
+				"type": "Mesh",
+				"name": "Left Leg",
+				"matrix": [1,0,0,0,0,1,0,0,0,0,1,0,0,-1,-0.45,1],
+				"geometry": "75B93722-9F35-492C-BB7E-24912CEE34AA",
+				"material": "CB52411B-8719-4D12-AC1D-E0F12F5066D7"
+			},
+			{
+				"uuid": "1A058823-1F92-4240-89A1-16F8AD48C726",
+				"type": "Mesh",
+				"name": "Right Leg",
+				"matrix": [1,0,0,0,0,1,0,0,0,0,1,0,-0.001478,-1,0.45,1],
+				"geometry": "11D9C1FD-6400-4015-801D-C48A5378D24D",
+				"material": "CB52411B-8719-4D12-AC1D-E0F12F5066D7"
+			}]
+	}
+}

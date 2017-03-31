@@ -139,9 +139,9 @@ func (p *PingInfo) CalcMedian() time.Duration {
 		p.median = s[l/2]
 	}
 
-	log.Println("[unsort pings]:", p.durations)
-	log.Println("[sort pings]:", s)
-	log.Println("[median]:", p.median)
+	//	log.Println("[unsort pings]:", p.durations)
+	//	log.Println("[sort pings]:", s)
+	//	log.Println("[median]:", p.median)
 	return p.median
 }
 
