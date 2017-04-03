@@ -43,9 +43,9 @@ class Game {
         this.scene = new THREE.Scene();
         //	this.scene.fog = new THREE.Fog( 0xaaaaff, 1*18, 1*24 );
 
-        //        let ambientLight = new THREE.AmbientLight( 0x404040 ); // soft white light
+        let ambientLight = new THREE.AmbientLight( 0x404040 ); // soft white light
         //        let ambientLight = new THREE.AmbientLight( 0xffffff ); // soft white light
-        //        this.scene.add( ambientLight );
+        this.scene.add( ambientLight );
 
         this.dirLight = new THREE.DirectionalLight( 0xffffff );
         this.dirLight.position.set( 100, 100, 50 );
@@ -64,11 +64,17 @@ class Game {
             "assets/models/model.json",
             // onLoad
             ( obj ) => {
+                console.log( obj );
+
                 this.model = obj;
                 this.scene.add( obj );
                 this.player.unit.mesh = obj;
-                obj.scale.set( 0.5, 0.5, 0.5 );
-                console.log( obj );
+                obj.scale.set( 0.25, 0.25, 0.25 );
+
+                this.player.mixer = new THREE.AnimationMixer( obj );
+                this.player.mixer.clipAction( obj.animations[0] ).play();
+//                this.player.mixer.clipAction( obj.animations[1] ).play();
+//                this.player.mixer.clipAction( obj.animations[2] ).play();
             },
             // onProgress
             ( xhr ) => {
@@ -248,9 +254,15 @@ class Game {
             let frame = 1;
         }
 
-
+        //---
+        let delta2 = 0.01;
         this.player.animate( frame );
 
+        if ( this.player.mixer ) {
+            //console.log( "updating mixer by " + delta );
+            this.player.mixer.update( delta2 );
+        }
+        //---
 
         this.renderer.render( this.scene, this.camera );
 
