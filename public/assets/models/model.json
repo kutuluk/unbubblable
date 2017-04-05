@@ -1,78 +1,205 @@
 {
-    "geometries":[{
-        "type":"Geometry",
-        "uuid":"CC302220-1579-4170-A159-1E2C27C5880C",
-        "name":"Cube.006Geometry.3",
-        "data":{
-            "vertices":[-1,-1,-1,-1,-1,1,-1,1,-1,-1,1,1,1,-1,-1,1,-1,1,1,1,-1,1,1,1],
-            "faces":[1,0,1,3,2,1,2,3,7,6,1,6,7,5,4,1,1,0,4,5,1,4,0,2,6,1,7,3,1,5]
-        }
+    "textures":[],
+    "metadata":{
+        "version":4.4,
+        "generator":"io_three",
+        "type":"Object",
+        "sourceFile":"model.blend"
+    },
+    "materials":[{
+        "specular":3477763,
+        "depthTest":true,
+        "vertexColors":0,
+        "type":"MeshPhongMaterial",
+        "emissive":0,
+        "uuid":"1640F1D1-17FB-489A-903F-72533493F62B",
+        "name":"HeadMaterial",
+        "blending":"NormalBlending",
+        "depthWrite":true,
+        "shininess":50,
+        "color":5577476
     },{
-        "type":"Geometry",
-        "uuid":"9DAD2E82-CBFE-4504-A193-96E22683E891",
+        "specular":6042900,
+        "depthTest":true,
+        "vertexColors":0,
+        "type":"MeshPhongMaterial",
+        "emissive":0,
+        "uuid":"05516B2C-C1F7-43E8-B42F-1CB7BA546490",
+        "name":"SkinMaterial",
+        "blending":"NormalBlending",
+        "depthWrite":true,
+        "shininess":50,
+        "color":9655584
+    },{
+        "depthWrite":true,
+        "depthTest":true,
+        "type":"MeshBasicMaterial",
+        "vertexColors":0,
+        "name":"WeaponMaterial",
+        "blending":"NormalBlending",
+        "uuid":"19296171-2325-4172-929C-F4252C4E0E6B",
+        "color":1973790
+    }],
+    "geometries":[{
         "name":"Cube.007Geometry.2",
         "data":{
             "vertices":[-1,-1,-1,-1,-1,1,-1,1,-1,-1,1,1,1,-1,-1,1,-1,1,1,1,-1,1,1,1],
             "faces":[1,0,1,3,2,1,2,3,7,6,1,6,7,5,4,1,1,0,4,5,1,4,0,2,6,1,7,3,1,5]
-        }
-    },{
+        },
         "type":"Geometry",
-        "uuid":"C39A71CE-F4FC-4AB4-9772-421CB2BFC896",
-        "name":"CubeGeometry.16",
+        "uuid":"172B78C5-3ADC-4D05-B86E-A8F32B1DEBA6"
+    },{
+        "name":"Cube.001Geometry.2",
+        "data":{
+            "vertices":[-1,-1,-1,-1,-1,1,-1,1,-1,-1,1,1,1,-1,-1,1,-1,1,1,1,-1,1,1,1],
+            "faces":[1,0,1,3,2,1,2,3,7,6,1,6,7,5,4,1,1,0,4,5,1,4,0,2,6,1,7,3,1,5]
+        },
+        "type":"Geometry",
+        "uuid":"D92E4C85-3CE6-49C6-A703-7223C098939B"
+    },{
+        "name":"CubeGeometry.2",
         "data":{
             "vertices":[1,1,-1,1,-1,-1,-1,-1,-1,-1,1,-1,1,0.999999,1,0.999999,-1,1,-1,-1,1,-1,1,1],
             "faces":[1,0,1,2,3,1,4,7,6,5,1,0,4,5,1,1,1,5,6,2,1,2,6,7,3,1,4,0,3,7]
-        }
-    },{
+        },
         "type":"Geometry",
-        "uuid":"EFEC5FB6-B4E2-44EE-A9DC-CB85862FD997",
-        "name":"Cube.002Geometry.10",
+        "uuid":"28621E1D-1A7D-451F-9EAB-90E4A04DBB8D"
+    },{
+        "name":"Cube.006Geometry.2",
         "data":{
             "vertices":[-1,-1,-1,-1,-1,1,-1,1,-1,-1,1,1,1,-1,-1,1,-1,1,1,1,-1,1,1,1],
             "faces":[1,0,1,3,2,1,2,3,7,6,1,6,7,5,4,1,1,0,4,5,1,4,0,2,6,1,7,3,1,5]
-        }
-    },{
+        },
         "type":"Geometry",
-        "uuid":"21B2473A-DA08-458B-9472-E85FC415B820",
-        "name":"Cube.001Geometry.8",
+        "uuid":"B345B6B2-F969-4C1E-B215-F364E20498F4"
+    },{
+        "name":"Cube.004Geometry.2",
         "data":{
             "vertices":[-1,-1,-1,-1,-1,1,-1,1,-1,-1,1,1,1,-1,-1,1,-1,1,1,1,-1,1,1,1],
             "faces":[1,0,1,3,2,1,2,3,7,6,1,6,7,5,4,1,1,0,4,5,1,4,0,2,6,1,7,3,1,5]
-        }
-    },{
+        },
         "type":"Geometry",
-        "uuid":"408436F7-FE53-442B-954E-70C29664E923",
-        "name":"Cube.005Geometry.6",
+        "uuid":"55BBD5BE-4A98-43A0-9923-C07462A09480"
+    },{
+        "name":"Cube.002Geometry.2",
         "data":{
             "vertices":[-1,-1,-1,-1,-1,1,-1,1,-1,-1,1,1,1,-1,-1,1,-1,1,1,1,-1,1,1,1],
             "faces":[1,0,1,3,2,1,2,3,7,6,1,6,7,5,4,1,1,0,4,5,1,4,0,2,6,1,7,3,1,5]
-        }
-    },{
+        },
         "type":"Geometry",
-        "uuid":"B6F43B87-6365-4A43-8ECA-E444751FBC2E",
-        "name":"Cube.004Geometry.6",
+        "uuid":"A14EDBBB-BD09-4906-B3DA-AB0FA04113B2"
+    },{
+        "name":"Cube.005Geometry.2",
         "data":{
             "vertices":[-1,-1,-1,-1,-1,1,-1,1,-1,-1,1,1,1,-1,-1,1,-1,1,1,1,-1,1,1,1],
             "faces":[1,0,1,3,2,1,2,3,7,6,1,6,7,5,4,1,1,0,4,5,1,4,0,2,6,1,7,3,1,5]
-        }
+        },
+        "type":"Geometry",
+        "uuid":"131CC06A-D51D-44A2-A6A3-DE4BA18932A8"
     }],
+    "object":{
+        "children":[{
+            "name":"Model",
+            "uuid":"945B4672-C721-4ABC-A6E4-D0D4535D8A74",
+            "matrix":[-1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1],
+            "visible":true,
+            "type":"Object",
+            "children":[{
+                "name":"Head",
+                "uuid":"B435D427-9033-48C7-93A7-8CC7E3D11261",
+                "matrix":[1,0,0,0,0,1,0,0,0,0,1,0,0,0,2.2,1],
+                "visible":true,
+                "type":"Mesh",
+                "material":"1640F1D1-17FB-489A-903F-72533493F62B",
+                "castShadow":true,
+                "receiveShadow":true,
+                "geometry":"28621E1D-1A7D-451F-9EAB-90E4A04DBB8D",
+                "children":[{
+                    "name":"LeftHand",
+                    "uuid":"A1F1550C-2505-401F-AD10-0EC00EA6406D",
+                    "matrix":[0.375877,-0.136808,0,0,0.136059,0.373818,0.0418114,0,-0.0143003,-0.0392899,0.397809,0,-1.5,0.3,-0.5,1],
+                    "visible":true,
+                    "type":"Mesh",
+                    "material":"05516B2C-C1F7-43E8-B42F-1CB7BA546490",
+                    "castShadow":true,
+                    "receiveShadow":true,
+                    "geometry":"55BBD5BE-4A98-43A0-9923-C07462A09480",
+                    "children":[{
+                        "name":"Shield",
+                        "uuid":"0D3ECCF7-B962-4015-A4DC-C694A5D4E2C0",
+                        "matrix":[0.4,0,9.31323e-10,0,-7.60545e-10,2.5,9.31323e-09,0,-1.01305e-08,2.98023e-08,3.5,0,-1,-2.98023e-08,0.3,1],
+                        "visible":true,
+                        "type":"Mesh",
+                        "material":"19296171-2325-4172-929C-F4252C4E0E6B",
+                        "castShadow":true,
+                        "receiveShadow":true,
+                        "geometry":"172B78C5-3ADC-4D05-B86E-A8F32B1DEBA6"
+                    }]
+                },{
+                    "name":"RightHand",
+                    "uuid":"A0220F21-B3DC-4E2D-8982-62510782BB77",
+                    "matrix":[0.4,0,0,0,0,0.384505,-0.110255,0,0,0.110255,0.384505,0,1.7,-0.2,-0.5,1],
+                    "visible":true,
+                    "type":"Mesh",
+                    "material":"05516B2C-C1F7-43E8-B42F-1CB7BA546490",
+                    "castShadow":true,
+                    "receiveShadow":true,
+                    "geometry":"131CC06A-D51D-44A2-A6A3-DE4BA18932A8",
+                    "children":[{
+                        "name":"Sword",
+                        "uuid":"5F6F7B83-0AA2-4806-8C7B-59447B4282F5",
+                        "matrix":[0.4,0,0,0,0,0.8,1.49012e-08,0,0,0,4,0,0,-3.72529e-08,2.2,1],
+                        "visible":true,
+                        "type":"Mesh",
+                        "material":"19296171-2325-4172-929C-F4252C4E0E6B",
+                        "castShadow":true,
+                        "receiveShadow":true,
+                        "geometry":"B345B6B2-F969-4C1E-B215-F364E20498F4"
+                    }]
+                }]
+            },{
+                "name":"Left leg",
+                "uuid":"B1636963-20C5-4FC5-BC7F-288B51B129A3",
+                "matrix":[0.4,0,0,0,0,0.4,0,0,0,0,0.4,0,-0.8,-0.2,0.4,1],
+                "visible":true,
+                "type":"Mesh",
+                "material":"05516B2C-C1F7-43E8-B42F-1CB7BA546490",
+                "castShadow":true,
+                "receiveShadow":true,
+                "geometry":"A14EDBBB-BD09-4906-B3DA-AB0FA04113B2"
+            },{
+                "name":"Right leg",
+                "uuid":"DD032CC9-2A1A-44A2-B8D5-93AAB23F2F34",
+                "matrix":[0.4,0,0,0,0,0.4,0,0,0,0,0.4,0,0.8,-0.2,0.4,1],
+                "visible":true,
+                "type":"Mesh",
+                "material":"05516B2C-C1F7-43E8-B42F-1CB7BA546490",
+                "castShadow":true,
+                "receiveShadow":true,
+                "geometry":"D92E4C85-3CE6-49C6-A703-7223C098939B"
+            }]
+        }],
+        "matrix":[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
+        "type":"Scene",
+        "uuid":"6FEFBC87-41E5-41F1-8072-A03684DF52F8"
+    },
     "animations":[{
         "name":"default",
         "tracks":[{
-            "type":"vector3",
+            "name":"Head.position",
             "keys":[{
                 "time":0,
-                "value":[0,0,2]
-            },{
-                "time":20,
                 "value":[0,0,2.2]
             },{
+                "time":20,
+                "value":[0,0,2.6]
+            },{
                 "time":39,
-                "value":[0,0,2]
+                "value":[0,0,2.2]
             }],
-            "name":"Head.position"
+            "type":"vector3"
         },{
-            "type":"vector3",
+            "name":"Head.scale",
             "keys":[{
                 "time":0,
                 "value":[1,1,1]
@@ -83,9 +210,9 @@
                 "time":39,
                 "value":[1,1,1]
             }],
-            "name":"Head.scale"
+            "type":"vector3"
         },{
-            "type":"quaternion",
+            "name":"Head.quaternion",
             "keys":[{
                 "time":0,
                 "value":[0,0,0,1]
@@ -96,9 +223,9 @@
                 "time":39,
                 "value":[0,0,0,1]
             }],
-            "name":"Head.quaternion"
+            "type":"quaternion"
         },{
-            "type":"vector3",
+            "name":"LeftHand.position",
             "keys":[{
                 "time":0,
                 "value":[-1.5,0.3,-0.5]
@@ -109,9 +236,9 @@
                 "time":39,
                 "value":[-1.5,0.3,-0.5]
             }],
-            "name":"LeftHand.position"
+            "type":"vector3"
         },{
-            "type":"vector3",
+            "name":"LeftHand.scale",
             "keys":[{
                 "time":0,
                 "value":[0.4,0.4,0.4]
@@ -122,9 +249,9 @@
                 "time":39,
                 "value":[0.4,0.4,0.4]
             }],
-            "name":"LeftHand.scale"
+            "type":"vector3"
         },{
-            "type":"quaternion",
+            "name":"LeftHand.quaternion",
             "keys":[{
                 "time":0,
                 "value":[0.0515409,-0.00908804,-0.17341,0.983458]
@@ -135,9 +262,9 @@
                 "time":39,
                 "value":[0.0515409,-0.00908804,-0.17341,0.983458]
             }],
-            "name":"LeftHand.quaternion"
+            "type":"quaternion"
         },{
-            "type":"vector3",
+            "name":"RightHand.position",
             "keys":[{
                 "time":0,
                 "value":[1.7,-0.2,-0.5]
@@ -148,9 +275,9 @@
                 "time":39,
                 "value":[1.7,-0.2,-0.5]
             }],
-            "name":"RightHand.position"
+            "type":"vector3"
         },{
-            "type":"vector3",
+            "name":"RightHand.scale",
             "keys":[{
                 "time":0,
                 "value":[0.4,0.4,0.4]
@@ -161,9 +288,9 @@
                 "time":39,
                 "value":[0.4,0.4,0.4]
             }],
-            "name":"RightHand.scale"
+            "type":"vector3"
         },{
-            "type":"quaternion",
+            "name":"RightHand.quaternion",
             "keys":[{
                 "time":0,
                 "value":[-0.139173,0,0,0.990268]
@@ -174,136 +301,9 @@
                 "time":39,
                 "value":[-0.139173,0,0,0.990268]
             }],
-            "name":"RightHand.quaternion"
+            "type":"quaternion"
         }],
         "fps":24
     }],
-    "images":[],
-    "textures":[],
-    "metadata":{
-        "type":"Object",
-        "sourceFile":"model.blend",
-        "version":4.4,
-        "generator":"io_three"
-    },
-    "materials":[{
-        "depthTest":true,
-        "emissive":0,
-        "color":5577476,
-        "shininess":50,
-        "uuid":"6B7EC480-0D0D-4D57-A625-6C7F6323B6F5",
-        "blending":"NormalBlending",
-        "type":"MeshPhongMaterial",
-        "name":"HeadMaterial",
-        "depthWrite":true,
-        "specular":3477763,
-        "vertexColors":0
-    },{
-        "depthTest":true,
-        "emissive":0,
-        "color":9655584,
-        "shininess":50,
-        "uuid":"56F2119F-1C2F-439C-8972-112FE7DD9DD1",
-        "blending":"NormalBlending",
-        "type":"MeshPhongMaterial",
-        "name":"SkinMaterial",
-        "depthWrite":true,
-        "specular":8355711,
-        "vertexColors":0
-    },{
-        "depthTest":true,
-        "color":1184274,
-        "uuid":"40352AA3-0BAE-41F8-B23C-AC762112347E",
-        "blending":"NormalBlending",
-        "type":"MeshBasicMaterial",
-        "name":"WeaponMaterial",
-        "depthWrite":true,
-        "vertexColors":0
-    }],
-    "object":{
-        "type":"Scene",
-        "children":[{
-            "name":"Model",
-            "uuid":"2999B839-037C-48DE-9EF7-95F7C91EF0E2",
-            "matrix":[-1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1],
-            "visible":true,
-            "type":"Object",
-            "children":[{
-                "name":"Head",
-                "uuid":"92DD1F1F-4CE7-4886-99C9-E1816C407272",
-                "matrix":[1,0,0,0,0,1,0,0,0,0,1,0,0,0,2.16053,1],
-                "visible":true,
-                "type":"Mesh",
-                "material":"6B7EC480-0D0D-4D57-A625-6C7F6323B6F5",
-                "castShadow":true,
-                "receiveShadow":true,
-                "geometry":"C39A71CE-F4FC-4AB4-9772-421CB2BFC896",
-                "children":[{
-                    "name":"LeftHand",
-                    "uuid":"0C2B2772-4280-4E24-A6CE-348764B5B94A",
-                    "matrix":[0.365381,-0.162778,0,0,0.162459,0.364663,0.0250613,0,-0.0101986,-0.0228923,0.399214,0,-1.41974,0.380263,-0.5,1],
-                    "visible":true,
-                    "type":"Mesh",
-                    "material":"56F2119F-1C2F-439C-8972-112FE7DD9DD1",
-                    "castShadow":true,
-                    "receiveShadow":true,
-                    "geometry":"B6F43B87-6365-4A43-8ECA-E444751FBC2E",
-                    "children":[{
-                        "name":"Shield",
-                        "uuid":"99957D56-F20B-4AB0-B9D3-9215FA4D2516",
-                        "matrix":[0.4,1.49012e-08,-9.31323e-10,0,-4.55862e-10,2.5,0,0,-2.71575e-09,3.72529e-09,3.5,0,-1,0,0.3,1],
-                        "visible":true,
-                        "type":"Mesh",
-                        "material":"40352AA3-0BAE-41F8-B23C-AC762112347E",
-                        "castShadow":true,
-                        "receiveShadow":true,
-                        "geometry":"9DAD2E82-CBFE-4504-A193-96E22683E891"
-                    }]
-                },{
-                    "name":"RightHand",
-                    "uuid":"625FDC4D-7226-4E77-8A16-EF9C200105E2",
-                    "matrix":[0.394362,0.0669246,0,0,-0.0656536,0.386872,-0.0775857,0,-0.012981,0.0764921,0.392403,0,1.7,0.0086834,-0.339474,1],
-                    "visible":true,
-                    "type":"Mesh",
-                    "material":"56F2119F-1C2F-439C-8972-112FE7DD9DD1",
-                    "castShadow":true,
-                    "receiveShadow":true,
-                    "geometry":"408436F7-FE53-442B-954E-70C29664E923",
-                    "children":[{
-                        "name":"Sword",
-                        "uuid":"CF273BC5-EBF5-43ED-B33D-E5B81FEA91FB",
-                        "matrix":[0.4,7.45058e-09,0,0,4.51608e-10,0.8,-1.21072e-08,0,3.48072e-09,5.7742e-08,4,0,7.18076e-07,0,2.2,1],
-                        "visible":true,
-                        "type":"Mesh",
-                        "material":"40352AA3-0BAE-41F8-B23C-AC762112347E",
-                        "castShadow":true,
-                        "receiveShadow":true,
-                        "geometry":"CC302220-1579-4170-A159-1E2C27C5880C"
-                    }]
-                }]
-            },{
-                "name":"Left leg",
-                "uuid":"C4E0BF3E-1189-4305-ABC7-2B851CF90411",
-                "matrix":[0.4,0,0,0,0,0.4,0,0,0,0,0.4,0,-0.8,-0.2,0.4,1],
-                "visible":true,
-                "type":"Mesh",
-                "material":"56F2119F-1C2F-439C-8972-112FE7DD9DD1",
-                "castShadow":true,
-                "receiveShadow":true,
-                "geometry":"EFEC5FB6-B4E2-44EE-A9DC-CB85862FD997"
-            },{
-                "name":"Right leg",
-                "uuid":"AB71FE30-E480-4F9A-AB1B-5579701C6693",
-                "matrix":[0.4,0,0,0,0,0.4,0,0,0,0,0.4,0,0.8,-0.2,0.4,1],
-                "visible":true,
-                "type":"Mesh",
-                "material":"56F2119F-1C2F-439C-8972-112FE7DD9DD1",
-                "castShadow":true,
-                "receiveShadow":true,
-                "geometry":"21B2473A-DA08-458B-9472-E85FC415B820"
-            }]
-        }],
-        "uuid":"467A4AF1-C761-407F-A4C8-1CEEEAE35B04",
-        "matrix":[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]
-    }
+    "images":[]
 }

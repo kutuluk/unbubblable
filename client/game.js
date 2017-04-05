@@ -43,13 +43,17 @@ class Game {
         this.scene = new THREE.Scene();
         //	this.scene.fog = new THREE.Fog( 0xaaaaff, 1*18, 1*24 );
 
-        let ambientLight = new THREE.AmbientLight( 0x404040 ); // soft white light
+        //        let ambientLight = new THREE.AmbientLight( 0x404040 ); // soft white light
         //        let ambientLight = new THREE.AmbientLight( 0xffffff ); // soft white light
-        this.scene.add( ambientLight );
+        //        this.scene.add( ambientLight );
 
-        this.dirLight = new THREE.DirectionalLight( 0xffffff );
-        this.dirLight.position.set( 100, 100, 50 );
-        this.scene.add( this.dirLight );
+        //        this.dirLight = new THREE.DirectionalLight( 0xffffff );
+        //        this.dirLight.position.set( 100, 100, 50 );
+        //        this.scene.add( this.dirLight );
+
+//        let light = new THREE.HemisphereLight( 0xFFFFFF, 0x404040, 1 );
+        let light = new THREE.HemisphereLight( 0xFFFFFF, 0xA0A0A0, 1 );
+        this.scene.add( light );
 
         // The X axis is red. The Y axis is green. The Z axis is blue.
         let axisHelper = new THREE.AxisHelper();
@@ -72,9 +76,9 @@ class Game {
                 obj.scale.set( 0.25, 0.25, 0.25 );
 
                 this.player.mixer = new THREE.AnimationMixer( obj );
-                this.player.mixer.clipAction( obj.animations[0] ).play();
-//                this.player.mixer.clipAction( obj.animations[1] ).play();
-//                this.player.mixer.clipAction( obj.animations[2] ).play();
+                this.player.mixer.clipAction( obj.animations[ 0 ] ).play();
+                //                this.player.mixer.clipAction( obj.animations[1] ).play();
+                //                this.player.mixer.clipAction( obj.animations[2] ).play();
             },
             // onProgress
             ( xhr ) => {

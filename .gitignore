@@ -1,5 +1,6 @@
 node_modules/
 *.exe
+*.blend1
 public/js/app.js
 server/proto/*
 server/protocol/*
