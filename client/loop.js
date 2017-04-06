@@ -1,12 +1,15 @@
 import { log } from './log';
 
+// допустимый разброс запуска итераций
+const scatter = 5;
+
 class Loop {
 
-    constructor( amplitude, updater ) {
+    constructor( frequency, updater ) {
 
         this.updater = updater;
-        this.amplitude = amplitude;
-        this.interval = 1000 / this.amplitude | 0;
+        this.frequency = frequency;
+        this.interval = 1000 / this.frequency | 0;
         this.entry = new Date().getTime();
 
         this.tick();
