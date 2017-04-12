@@ -9,13 +9,13 @@ import (
 )
 
 const (
-	// LoopAmplitude задает частоту тиков симуляции в секунду
-	LoopAmplitude = 20
+	// LoopFrequency задает частоту тиков симуляции в секунду
+	LoopFrequency = 20
 )
 
 var upgrader = websocket.Upgrader{}
 var hub = NewHub()
-var loop = NewLoop(LoopAmplitude, hub)
+var loop = NewLoop(LoopFrequency, hub)
 
 // Информационная страница о статусе сервера
 func status(w http.ResponseWriter, req *http.Request) {

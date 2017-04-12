@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"sort"
 	"time"
@@ -19,6 +20,9 @@ const (
 	StateTRANSFER
 )
 
+// MapChunkSize определяет размер чанка
+const MapChunkSize = 24
+
 // Hub определяет список коннектов
 type Hub struct {
 	connections map[*Connect]bool
@@ -30,7 +34,7 @@ type Hub struct {
 func NewHub() *Hub {
 	h := &Hub{
 		connections: make(map[*Connect]bool),
-		Terrain:     NewTerrain(24*5, 24*5, 24, 3184627059),
+		Terrain:     NewTerrain(MapChunkSize*5, MapChunkSize*5, MapChunkSize, 3184627059),
 	}
 	return h
 }
@@ -48,12 +52,15 @@ func (h *Hub) Join(ws *websocket.Conn) {
 		// интервал устанавливаем равным 4. Медиану рассчитываем на основании последних
 		// 5 секунд, значит длину сохраняемых пингов устанавливаем в 4*5=20
 		pings: NewPings(20, 4),
+		send:  make(chan []byte),
 	}
 
 	// Добавляем его в список коннектов
 	h.connections[c] = true
 	// Запускаем обработчик входящих сообщений
 	go c.receiver()
+	// Запускаем обработчик исходящих сообщений
+	go c.sender()
 	log.Print("[connect]: новое подключение с адреса ", c.ws.RemoteAddr())
 	c.sendTerrain()
 }
@@ -142,6 +149,7 @@ func (p *PingInfo) CalcMedian() time.Duration {
 	//	log.Println("[unsort pings]:", p.durations)
 	//	log.Println("[sort pings]:", s)
 	//	log.Println("[median]:", p.median)
+
 	return p.median
 }
 
@@ -152,6 +160,7 @@ type Connect struct {
 	Player   *Player
 	Received int
 	Sent     int
+	send     chan []byte
 
 	bestPing   time.Duration
 	pingTime   time.Time
@@ -186,6 +195,7 @@ func (c *Connect) update() {
 	// раз в секунду отправляем служебную информацию
 	if c.frame%20 == 0 {
 		c.sendInfo()
+		c.sendSystemMessage(0, fmt.Sprintf("Ping: %v", c.pings.median))
 	}
 
 	// 4 раза в секунду отправляем запрос на пинг
@@ -194,7 +204,7 @@ func (c *Connect) update() {
 	}
 
 	c.frame++
-	if c.frame > LoopAmplitude*60 {
+	if c.frame > LoopFrequency*60 {
 		c.frame = 0
 	}
 }
@@ -245,7 +255,7 @@ func (c *Connect) handler(message *protocol.Message) {
 			c.bestPing = ping
 			timeLocal := c.pingTime.Add(ping / 2).UTC()
 			c.timeOffset = timeLocal.Sub(timeRequest)
-			log.Println("[time]: ping -", ping, "offset -", c.timeOffset)
+			c.sendSystemMessage(0, fmt.Sprintf("Sync: ping %v, offset %v", ping, c.timeOffset))
 		}
 
 		c.pingTime = time.Time{}
@@ -334,17 +344,60 @@ func (c *Connect) receiver() {
 	log.Println("[connect]: ресивер завершился")
 }
 
+// sender отправляет исходящие сообщения
+func (c *Connect) sender() {
+
+	queue := make([][]byte, 0, 10)
+	//	var queue [][]byte
+
+	for {
+		select {
+		case msg := <-c.send:
+
+			if len(queue) < 10 {
+				queue = append(queue, msg)
+			} else {
+				log.Println("[connect]: очередь на отправку переполнена")
+				//ToDo: тут исходящее сообщение теряется
+			}
+
+		default:
+
+			if len(queue) > 0 {
+
+				// Отправляем сообщение
+				err := c.ws.WriteMessage(websocket.BinaryMessage, queue[0])
+				if err != nil {
+					log.Println("[ws write]:", err)
+					//ToDo: сделать обработку ошибки
+					// В данный момент выход из select и в последующем попытка отправить снова
+					break
+				}
+
+				// Увеличиваем счетчик отправленных байт
+				c.Sent += len(queue[0])
+
+				queue = queue[1:]
+			}
+		}
+	}
+}
+
 // sendMessage упаковывает данные в цепочку из одного сообщения и отправляет его
 func (c *Connect) sendChain(msgType protocol.MessageType, msgBody []byte) {
 
 	// Формируем сообщение
-	message := new(protocol.Message)
-	message.Type = msgType
-	message.Body = msgBody
+	message := &protocol.Message{
+		Type: msgType,
+		Body: msgBody,
+	}
 
 	// Упаковываем сообщение в цепочку
-	chain := new(protocol.MessageChain)
-	chain.Chain = append(chain.Chain, message)
+	//	chain := new(protocol.MessageChain)
+	//	chain.Chain = append(chain.Chain, message)
+	chain := &protocol.MessageChain{
+		Chain: []*protocol.Message{message},
+	}
 
 	// Сериализуем сообщение протобафом
 	body, err := proto.Marshal(chain)
@@ -362,9 +415,10 @@ func (c *Connect) sendChain(msgType protocol.MessageType, msgBody []byte) {
 func (c *Connect) sendMessage(msgType protocol.MessageType, msgBody []byte) {
 
 	// Формируем сообщение
-	msg := new(protocol.Message)
-	msg.Type = msgType
-	msg.Body = msgBody
+	msg := &protocol.Message{
+		Type: msgType,
+		Body: msgBody,
+	}
 
 	// Сериализуем сообщение протобафом
 	message, err := proto.Marshal(msg)
@@ -374,14 +428,28 @@ func (c *Connect) sendMessage(msgType protocol.MessageType, msgBody []byte) {
 	}
 
 	// Отправляем сообщение
-	err = c.ws.WriteMessage(websocket.BinaryMessage, message)
+	c.send <- message
+
+}
+
+// sendSystemMessage отправляет клиенту системное сообщение
+func (c *Connect) sendSystemMessage(level int, text string) {
+
+	// Формируем сообщение
+	msgSystemMessage := &protocol.SystemMessage{
+		Level: int32(level),
+		Text:  text,
+	}
+
+	// Сериализуем сообщение протобафом
+	msgBuffer, err := proto.Marshal(msgSystemMessage)
 	if err != nil {
-		log.Println("[ws write]:", err)
+		log.Println("[proto send]:", err)
 		return
 	}
 
-	// Увеличиваем счетчик отправленных байт
-	c.Sent += len(message)
+	// Отправляем сообщение
+	c.sendMessage(protocol.MessageType_MsgSystemMessage, msgBuffer)
 
 }
 
@@ -427,17 +495,20 @@ func (c *Connect) sendPingRequest() {
 func (c *Connect) sendMovement() {
 
 	// Формируем сообщение
-	msgMovement := new(protocol.Movement)
-	msgMovement.Position = new(protocol.Vec3)
-	msgMovement.Position.X = c.Player.Position.X()
-	msgMovement.Position.Y = c.Player.Position.Y()
-	msgMovement.Position.Z = c.Player.Position.Z()
-	msgMovement.Motion = new(protocol.Vec3)
-	msgMovement.Motion.X = c.Player.Motion.X()
-	msgMovement.Motion.Y = c.Player.Motion.Y()
-	msgMovement.Motion.Z = c.Player.Motion.Z()
-	msgMovement.Angle = c.Player.Angle
-	msgMovement.Slew = c.Player.Slew
+	msgMovement := &protocol.Movement{
+		Position: &protocol.Vec3{
+			X: c.Player.Position.X(),
+			Y: c.Player.Position.Y(),
+			Z: c.Player.Position.Z(),
+		},
+		Motion: &protocol.Vec3{
+			X: c.Player.Motion.X(),
+			Y: c.Player.Motion.Y(),
+			Z: c.Player.Motion.Z(),
+		},
+		Angle: c.Player.Angle,
+		Slew:  c.Player.Slew,
+	}
 
 	// Сериализуем сообщение протобафом
 	msgBuffer, err := proto.Marshal(msgMovement)
@@ -479,7 +550,7 @@ func (c *Connect) sendTerrain() {
 
 }
 
-// sendChunk отправляет клиенту чанк по индексу
+// sendChunk отправляет клиенту чанк
 func (c *Connect) sendChunk(i int) {
 
 	// Отправляем сообщение

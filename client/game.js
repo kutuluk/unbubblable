@@ -51,7 +51,7 @@ class Game {
         //        this.dirLight.position.set( 100, 100, 50 );
         //        this.scene.add( this.dirLight );
 
-//        let light = new THREE.HemisphereLight( 0xFFFFFF, 0x404040, 1 );
+        //        let light = new THREE.HemisphereLight( 0xFFFFFF, 0x404040, 1 );
         let light = new THREE.HemisphereLight( 0xFFFFFF, 0xA0A0A0, 1 );
         this.scene.add( light );
 
@@ -82,7 +82,7 @@ class Game {
             },
             // onProgress
             ( xhr ) => {
-                console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+                //                console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
             },
             // onError
             ( xhr ) => {
@@ -104,7 +104,7 @@ class Game {
 
 
         //        this.player = new Player( this.camera, new Unit( this.createCharacter( 220 ) ) ); //219
-        this.player = new Player( this.camera, new Unit( /*this.model*/) ); //219
+        this.player = new Player( this.camera, new Unit( /*this.model*/) );
 
         this.terrain = undefined;
 
@@ -248,23 +248,20 @@ class Game {
 
         // Вычисляем время, прошедшее после начала тика
         let delta = new Date().getTime() - this.loop.start;
+
+        //        let current = ( this.loop.start - this.loop.entry ) / this.loop.interval | 0;
+
         // Чем больше времени прошло, тем больше множитель (0 -> 1)
-
-        let current = ( this.loop.start - this.loop.entry ) / this.loop.interval | 0;
-
         let frame = delta / this.loop.duration;
-
-        if ( current > this.loop.current ) {
-            let frame = 1;
+        if ( frame > 1 ) {
+            frame = 1;
         }
 
-        //---
-        let delta2 = 0.01;
         this.player.animate( frame );
 
+        //---
         if ( this.player.mixer ) {
-            //console.log( "updating mixer by " + delta );
-            this.player.mixer.update( delta2 );
+            this.player.mixer.update( 0.01 );
         }
         //---
 

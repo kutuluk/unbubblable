@@ -75,6 +75,14 @@ class Connect {
             this.ping = msgInfo.ping / 1000000;
             break;
 
+        case this.protobuf.Messaging.MessageType.MsgSystemMessage:
+
+            // Декодируем сообщение
+            let msgSystemMessage = this.protobuf.Messaging.Messages.SystemMessage.decode( message.body ).toObject( { defaults: true } );
+            // Обрабатываем
+            log.systemMessage( msgSystemMessage.text );
+            break;
+
         case this.protobuf.Messaging.MessageType.MsgMovement:
 
             // Декодируем сообщение

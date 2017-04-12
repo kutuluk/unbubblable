@@ -9,6 +9,12 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
+
+			@font-face {
+				font-family: Hobo;
+				src: url(assets/font/hobo.ttf);
+			}
+
 			body {
 				color: #ffffff;
 				font-family:Monospace;
@@ -20,23 +26,14 @@
 				margin: 0px;
 				overflow: hidden;
 			}
-			#info {
-				color: #fff;
-				position: absolute;
-				top: 0px; width: 100%;
-				padding: 5px;
-				z-index:100;
-			}
 
 		</style>
 	</head>
 
 	<body>
-		<div id="info">Unbubblable</div>
 		<div id="container"></div>
 
 		<script src="js/vendor/three/build/three.min.js"></script>
-
 		<script src="js/vendor/three/libs/stats.min.js"></script>
 		<script src="js/vendor/Detector.js"></script>
 

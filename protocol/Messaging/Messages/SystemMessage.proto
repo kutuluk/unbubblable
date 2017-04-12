@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package protocol.Messaging.Messages;
+
+// SystemMessage определяет служебное сообщение от сервера
+message SystemMessage {
+	// level определяет категорию сообщения
+	int32 level = 1;
+	// text определяет текст сообщения
+    string text = 2;
+}

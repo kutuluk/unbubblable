@@ -13,8 +13,8 @@ class Log {
         this.domElement.style.height = "10em";
         this.domElement.style.bottom = "1em";
         this.domElement.style.overflow = "auto";
-        //this.dom.style.font = "normal 16px Fixedsys";
-        this.domElement.style.font = "normal 16px sans-serif";
+        this.domElement.style.font = "normal 14px Hobo";
+        //        this.domElement.style.font = "normal 16px sans-serif";
         //this.dom.style.textShadow = "1px 1px 2px black, 0 0 1em red";
         //this.dom.style.textShadow = "1px 1px 0px #000000, -1px -1px 0px #000000";
         //this.dom.style.textShadow = "0px 1px 0px #000000, 0px 2px 0px #333333";
@@ -29,10 +29,30 @@ class Log {
         }
     }
 
-    appendText( text ) {
+    appendText( text, level ) {
+
         let item = document.createElement( "div" );
+
+        switch ( level ) {
+
+        case "system":
+
+            item.style.color = "#fae70e";
+            break;
+
+        default:
+
+            item.style.color = "#ffffff";
+            break;
+
+        }
+
         item.innerHTML = ( text ) ? text : '';
         this.appendLog( item );
+    }
+
+    systemMessage( text ) {
+        this.appendText( text, 'system' );
     }
 
     appendTimestamp( text ) {

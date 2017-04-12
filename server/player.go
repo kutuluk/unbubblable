@@ -55,7 +55,7 @@ type Player struct {
 // NewPlayer инициализирует нового игрока
 func NewPlayer() *Player {
 	return &Player{
-		Speed:           10.0,
+		Speed:           7.0,
 		Position:        mathgl.Vec3{0, 0, 0.01},
 		ControllerQueue: make(ControllerQueue, 10),
 	}
@@ -80,11 +80,11 @@ func (p *Player) Update(tick uint) {
 
 		// Формируем величину поворота
 		if controller.RotateLeft {
-			p.Slew += p.Speed / (math.Pi * 2) / LoopAmplitude
+			p.Slew += p.Speed / (math.Pi * 2) / LoopFrequency
 		}
 
 		if controller.RotateRight {
-			p.Slew -= p.Speed / (math.Pi * 2) / LoopAmplitude
+			p.Slew -= p.Speed / (math.Pi * 2) / LoopFrequency
 		}
 
 		// Рассчитываем единичный вектор движения прямо
@@ -113,7 +113,7 @@ func (p *Player) Update(tick uint) {
 		if p.Motion.Len() > 0 {
 			p.Motion = p.Motion.Normalize()
 		}
-		p.Motion = p.Motion.Mul(p.Speed / LoopAmplitude)
+		p.Motion = p.Motion.Mul(p.Speed / LoopFrequency)
 
 		// Уменьшаем приращения в 4 раза при нажатом шифте
 		if controller.Mods.Shift {
