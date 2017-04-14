@@ -1,4 +1,4 @@
-package main
+package terrain
 
 import (
 	"log"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+
 	"github.com/kutuluk/unbubblable/server/protocol"
 )
 
@@ -165,14 +166,6 @@ type Terrain struct {
 	Chunks []*Chunk
 	// Proto определяет сериализованное сообщение с информацией о ландшафте
 	Proto []byte
-}
-
-// Instance определяет игровой инстанс
-type Instance struct {
-	// Name определяет название инстанса
-	Name string
-	// Terrain определяет карту
-	Terrain Terrain
 }
 
 // NewChank создает чанк по индексу

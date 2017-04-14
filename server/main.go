@@ -6,16 +6,15 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
-)
 
-const (
-	// LoopFrequency задает частоту тиков симуляции в секунду
-	LoopFrequency = 20
+	"github.com/kutuluk/unbubblable/server/config"
+	"github.com/kutuluk/unbubblable/server/connect"
+	"github.com/kutuluk/unbubblable/server/loop"
 )
 
 var upgrader = websocket.Upgrader{}
-var hub = NewHub()
-var loop = NewLoop(LoopFrequency, hub)
+var hub = connect.NewHub()
+var l = loop.NewLoop(config.LoopFrequency, hub)
 
 // Информационная страница о статусе сервера
 func status(w http.ResponseWriter, req *http.Request) {

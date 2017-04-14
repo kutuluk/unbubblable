@@ -3,7 +3,6 @@ class Log {
     constructor() {
         this.domElement = document.createElement( "div" );
 
-        //this.dom.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
         this.domElement.style.margin = "0";
         this.domElement.style.textAlign = "left";
         this.domElement.style.padding = "0.5em 0.5em 0.5em 0.5em";
@@ -12,13 +11,19 @@ class Log {
         this.domElement.style.width = "30em";
         this.domElement.style.height = "10em";
         this.domElement.style.bottom = "1em";
-        this.domElement.style.overflow = "auto";
+        this.domElement.style.overflow = "hidden";
         this.domElement.style.font = "normal 14px Hobo";
-        //        this.domElement.style.font = "normal 16px sans-serif";
-        //this.dom.style.textShadow = "1px 1px 2px black, 0 0 1em red";
-        //this.dom.style.textShadow = "1px 1px 0px #000000, -1px -1px 0px #000000";
-        //this.dom.style.textShadow = "0px 1px 0px #000000, 0px 2px 0px #333333";
         this.domElement.style.textShadow = "0px 1px 0px #000000";
+
+        this.domElement.onmouseover = () => {
+            this.domElement.style.overflowY = 'auto';
+            this.domElement.style.backgroundColor = "rgba(0, 0, 0, 0.3)";
+        };
+        this.domElement.onmouseout = () => {
+            this.domElement.style.overflowY = 'hidden';
+            this.domElement.style.backgroundColor = "";
+        };
+
     }
 
     appendLog( item ) {
@@ -52,7 +57,13 @@ class Log {
     }
 
     systemMessage( text ) {
-        this.appendText( text, 'system' );
+
+        let d = new Date();
+        let hour = d.getHours();
+        let minutes = d.getMinutes();
+        let seconds = d.getSeconds();
+
+        this.appendText( `${hour}:${minutes}:${seconds} ` + text, 'system' );
     }
 
     appendTimestamp( text ) {

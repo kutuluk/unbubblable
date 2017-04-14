@@ -1,4 +1,4 @@
-package main
+package loop
 
 import (
 	"log"
@@ -14,8 +14,8 @@ type Ticker interface {
 // и корректирующий момент следующего тика для того, чтобы каждый N-ый тик происходил
 // в момент времени Entry + N*interval
 type Loop struct {
-	// amplitude определяет количество тиков в секунду
-	amplitude int
+	// frequency определяет количество тиков в секунду
+	frequency int
 	// interval определяет интервал между тиками
 	interval time.Duration
 	// ticker определяет обработчик тиков
@@ -29,11 +29,11 @@ type Loop struct {
 }
 
 // NewLoop создает и запускает цикл в отдельной горутине
-func NewLoop(a int, t Ticker) Loop {
+func NewLoop(f int, t Ticker) Loop {
 	l := Loop{
-		amplitude: a,
+		frequency: f,
 		ticker:    t,
-		interval:  time.Second / time.Duration(a),
+		interval:  time.Second / time.Duration(f),
 	}
 	go l.Entry()
 	log.Printf("[loop]: цикл запущен с интервалом %v\n", l.interval)

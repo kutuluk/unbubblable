@@ -1,12 +1,13 @@
-package main
+package player
 
 import (
 	"log"
 	"math"
 
-	"github.com/kutuluk/unbubblable/server/protocol"
-
 	mathgl "github.com/go-gl/mathgl/mgl64"
+
+	"github.com/kutuluk/unbubblable/server/config"
+	"github.com/kutuluk/unbubblable/server/protocol"
 )
 
 type ControllerQueue []*protocol.ApplyControllerMessage
@@ -34,6 +35,7 @@ func (q *ControllerQueue) Len() int {
 
 // Player определяет игрока
 type Player struct {
+	//	connect *connect.Connect
 	// Speed определяет скорость движеия и поворота игрока.
 	// Скорость движения в тайлах в секунду равно этому значение.
 	// Скорость поворота в радианах в секунду получается при деленни на PI*2 - ???
@@ -80,11 +82,11 @@ func (p *Player) Update(tick uint) {
 
 		// Формируем величину поворота
 		if controller.RotateLeft {
-			p.Slew += p.Speed / (math.Pi * 2) / LoopFrequency
+			p.Slew += p.Speed / (math.Pi * 2) / config.LoopFrequency
 		}
 
 		if controller.RotateRight {
-			p.Slew -= p.Speed / (math.Pi * 2) / LoopFrequency
+			p.Slew -= p.Speed / (math.Pi * 2) / config.LoopFrequency
 		}
 
 		// Рассчитываем единичный вектор движения прямо
@@ -113,7 +115,7 @@ func (p *Player) Update(tick uint) {
 		if p.Motion.Len() > 0 {
 			p.Motion = p.Motion.Normalize()
 		}
-		p.Motion = p.Motion.Mul(p.Speed / LoopFrequency)
+		p.Motion = p.Motion.Mul(p.Speed / config.LoopFrequency)
 
 		// Уменьшаем приращения в 4 раза при нажатом шифте
 		if controller.Mods.Shift {
