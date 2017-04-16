@@ -13,59 +13,45 @@ import (
 // SenderQueueLength определяет размер очереди сендера
 const SenderQueueLength = 10
 
-// sender запускается в виде горутины, накапливает пришедшие из канала сообщения в очереди
-// и по мере возможности отправляет их
-func (c *Connect) sender() {
+// writer возвращает буферизованный канал и запускает горутину, отправляющую пришедшие
+// в этот канал сообщения. Задача этой горутины - обеспечить запись в сокет из единственного
+// конкурентного потока
+func (c *Connect) writer() chan []byte {
+	send := make(chan []byte, SenderQueueLength)
+	go func() {
+		defer func() { log.Println("[connect]: сендер завершился") }()
 
-	queue := make([][]byte, 0, SenderQueueLength)
-	//	var queue [][]byte
-
-	defer func() { log.Println("[connect]: сендер завершился") }()
-
-	for {
-		select {
-		case message, ok := <-c.send:
-
+		for {
+			message, ok := <-send
 			if !ok {
-				// Входящий канал закрыт - выход из горутины
+				// Входящий канал закрыт - завершаем горутину
 				return
 			}
 
-			if len(queue) < SenderQueueLength {
-				queue = append(queue, message)
-			} else {
-				log.Println("[connect]: очередь на отправку переполнена")
-				//ToDo: тут исходящее сообщение теряется
-			}
-
-		default:
-
-			if len(queue) > 0 {
-
-				// Отправляем сообщение
-				err := c.ws.WriteMessage(websocket.BinaryMessage, queue[0])
-				if err != nil {
-					log.Println("[ws write]:", err)
-					//ToDo: сделать полноценную обработку ошибки
-					if err == websocket.ErrCloseSent {
-						// Сокет закрыт - выход из горутины
-						return
-					}
-					// Выход из select и в последующем попытка отправить снова
-					break
+			// Отправляем сообщение
+			err := c.ws.WriteMessage(websocket.BinaryMessage, message)
+			if err != nil {
+				log.Println("[ws write]:", err)
+				//ToDo: сделать полноценную обработку ошибки
+				if err == websocket.ErrCloseSent {
+					// Сокет закрыт - выход из горутины
+					return
 				}
-
-				// Увеличиваем счетчик отправленных байт
-				c.Sent += len(queue[0])
-
-				queue = queue[1:]
+				// В этом месте сообщение теряется
+				// ToDo: возможно стоит попытаться отправить сообщение снова?
+				// ToDo: либо сразу закрывать соединение? Могут ли тут быть не критичные ошибки?
+				break
 			}
+
+			// Увеличиваем счетчик отправленных байт
+			c.Sent += len(message)
 		}
-	}
+	}()
+	return send
 }
 
-// SendMessage упаковывает данные в сообщение и отправляет его клиенту
-func (c *Connect) SendMessage(msgType protocol.MessageType, msgBody []byte) {
+// Send сериализует сообщение и отправляет его в исходящий канал
+func (c *Connect) Send(msgType protocol.MessageType, msgBody []byte) {
 
 	message := &protocol.Message{
 		Type: msgType,
@@ -78,7 +64,14 @@ func (c *Connect) SendMessage(msgType protocol.MessageType, msgBody []byte) {
 		return
 	}
 
-	c.send <- buffer
+	// ToDo: возможна ситуация, когда канал уже закрыт
+	// Разобраться, как обрабатывать такую ситуацию
+	select {
+	case c.send <- buffer:
+	default:
+		// Буфер переполнен - в этом месте сообщение теряется
+		log.Println("[connect]: очередь на отправку переполнена")
+	}
 
 }
 
@@ -106,7 +99,7 @@ func (c *Connect) SendChain(msgType protocol.MessageType, msgBody []byte) {
 	}
 
 	// Отправляем сообщение
-	c.SendMessage(protocol.MessageType_MsgChain, buffer)
+	c.Send(protocol.MessageType_MsgChain, buffer)
 
 }
 
@@ -124,7 +117,7 @@ func (c *Connect) SendSystemMessage(level int, text string) {
 		return
 	}
 
-	c.SendMessage(protocol.MessageType_MsgSystemMessage, buffer)
+	c.Send(protocol.MessageType_MsgSystemMessage, buffer)
 
 }
 
@@ -160,38 +153,9 @@ func (c *Connect) SendPingRequest() {
 		// Запоминаем время отправки сообщения
 		c.pingTime = time.Now()
 
-		c.SendMessage(protocol.MessageType_MsgPingRequest, buffer)
+		c.Send(protocol.MessageType_MsgPingRequest, buffer)
 
 	}
-}
-
-// SendMovement отправляет клиенту позицию персонажа
-func (c *Connect) SendMovement() {
-
-	// Формируем сообщение
-	message := &protocol.Movement{
-		Position: &protocol.Vec3{
-			X: c.Player.Position.X(),
-			Y: c.Player.Position.Y(),
-			Z: c.Player.Position.Z(),
-		},
-		Motion: &protocol.Vec3{
-			X: c.Player.Motion.X(),
-			Y: c.Player.Motion.Y(),
-			Z: c.Player.Motion.Z(),
-		},
-		Angle: c.Player.Angle,
-		Slew:  c.Player.Slew,
-	}
-
-	buffer, err := proto.Marshal(message)
-	if err != nil {
-		log.Println("[proto send]:", err)
-		return
-	}
-
-	c.SendMessage(protocol.MessageType_MsgMovement, buffer)
-
 }
 
 // SendInfo отправляет клиенту служебную информацию
@@ -207,20 +171,6 @@ func (c *Connect) SendInfo() {
 		return
 	}
 
-	c.SendMessage(protocol.MessageType_MsgInfo, buffer)
-
-}
-
-// SendTerrain отправляет клиенту карту
-func (c *Connect) SendTerrain() {
-
-	c.SendMessage(protocol.MessageType_MsgTerrain, c.Hub.Terrain.Proto)
-
-}
-
-// SendChunk отправляет клиенту чанк
-func (c *Connect) SendChunk(i int) {
-
-	c.SendMessage(protocol.MessageType_MsgChunk, c.Hub.Terrain.Chunks[i].Proto)
+	c.Send(protocol.MessageType_MsgInfo, buffer)
 
 }

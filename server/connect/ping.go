@@ -5,16 +5,9 @@ import (
 	"time"
 )
 
-// Durations определяет набор временных отрезков
-type Durations []time.Duration
-
-func (d Durations) Len() int           { return len(d) }
-func (d Durations) Swap(i, j int)      { d[i], d[j] = d[j], d[i] }
-func (d Durations) Less(i, j int) bool { return d[i] < d[j] }
-
 // PingInfo определяет статистику о пинге
 type PingInfo struct {
-	durations Durations
+	durations []time.Duration
 	interval  int
 	frame     int
 	head      int
@@ -23,7 +16,7 @@ type PingInfo struct {
 
 func newPings(length, interval int) PingInfo {
 	return PingInfo{
-		durations: make(Durations, length),
+		durations: make([]time.Duration, length),
 		interval:  interval,
 		head:      length - 1,
 	}
@@ -48,9 +41,9 @@ func (p *PingInfo) add(ping time.Duration) {
 
 func (p *PingInfo) calcMedian() time.Duration {
 
-	s := make(Durations, len(p.durations))
+	s := make([]time.Duration, len(p.durations))
 	copy(s, p.durations)
-	sort.Sort(s)
+	sort.Slice(s, func(i, j int) bool { return s[i] < s[j] })
 
 	l := len(s)
 	if l%2 == 0 {

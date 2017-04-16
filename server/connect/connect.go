@@ -3,7 +3,6 @@ package connect
 import (
 	"fmt"
 	"log"
-	"math"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -20,13 +19,19 @@ const (
 	StateTRANSFER
 )
 
+// Handler определяет интерфейс обработчика сообщений
+type Handler interface {
+	Handle(message *protocol.Message, connect *Connect)
+	Leave(connect *Connect)
+}
+
 // Connect связывает коннект с персонажем
 type Connect struct {
-	Hub   *Hub
-	ws    *websocket.Conn
-	send  chan []byte
-	state int
-	frame int
+	Handler Handler
+	ws      *websocket.Conn
+	send    chan []byte
+	state   int
+	frame   int
 
 	Player   *player.Player
 	Received int
@@ -40,7 +45,74 @@ type Connect struct {
 	timeOffset time.Duration
 }
 
-func (c *Connect) update() {
+// NewConnect создает коннект
+func NewConnect(hdr Handler, ws *websocket.Conn) *Connect {
+	p := player.NewPlayer()
+	c := &Connect{
+		Handler:  hdr,
+		ws:       ws,
+		Player:   p,
+		bestPing: time.Hour,
+		// Пинги идут 4 раза в секунду. Медиану быдем рассчитывать раз в секунду, значит
+		// интервал устанавливаем равным 4. Медиану рассчитываем на основании последних
+		// 5 секунд, значит длину сохраняемых пингов устанавливаем в 4*5=20
+		pings: newPings(20, 4),
+	}
+
+	// Запускаем обработчик входящих сообщений
+	c.reader()
+	// Запускаем обработчик исходящих сообщений
+	c.send = c.writer()
+
+	log.Print("[connect]: новое подключение с адреса ", c.ws.RemoteAddr())
+
+	return c
+}
+
+// reader обрабатывает входящие сообщения
+func (c *Connect) reader() {
+	go func() {
+		for {
+			// Читаем данные из сокета
+			messageType, messageData, err := c.ws.ReadMessage()
+			if err != nil {
+				// Завершение ресивера
+				log.Println("[ws read]:", err)
+				break
+			}
+
+			// Увеличиваем счетчик принятых байт
+			c.Received += len(messageData)
+
+			if messageType != websocket.BinaryMessage {
+				// Полученное сообщение в текстовом формате - игнорируем сообщение
+				log.Println("[ws read]: не ожидаемое текстовое сообщение")
+				continue
+			}
+
+			// Декодируем сообщение
+			msg := new(protocol.Message)
+			err = proto.Unmarshal(messageData, msg)
+			if err != nil {
+				// Полученное сообщение не декодировано - игнорируем сообщение
+				log.Println("[proto read]:", err)
+				continue
+			}
+
+			// Обрабатываем сообщение
+			c.handler(msg)
+
+		}
+		c.Handler.Leave(c)
+		log.Print("[connect]: подключение с адреса ", c.ws.RemoteAddr(), " завершено")
+		c.ws.Close()
+		close(c.send)
+
+		log.Println("[connect]: ресивер завершился")
+	}()
+}
+
+func (c *Connect) Update() {
 
 	c.frame++
 
@@ -130,88 +202,7 @@ func (c *Connect) handler(message *protocol.Message) {
 
 		c.pingTime = time.Time{}
 
-	// Controller
-	case protocol.MessageType_MsgController:
-
-		msgController := new(protocol.ApplyControllerMessage)
-		// Декодируем сообщение
-		err = proto.Unmarshal(message.Body, msgController)
-		if err != nil {
-			log.Println("[proto read]:", err)
-			break
-		}
-		// Применяем сообщение
-		//c.Player.Controller = msgController
-		c.Player.ControllerQueue.Push(msgController)
-
-	// ChunkRequest
-	case protocol.MessageType_MsgChunkRequest:
-
-		msgChunksRequest := new(protocol.GetChunksRequest)
-		// Декодируем сообщение
-		err = proto.Unmarshal(message.Body, msgChunksRequest)
-		if err != nil {
-			log.Println("[proto read]:", err)
-			break
-		}
-
-		// Применяем сообщение
-
-		// Обходим все запрашиваемые индексы чанков
-		for _, index := range msgChunksRequest.Chunks {
-
-			// Проверяем на соответсвие диапазону
-			if (index >= 0) && (int(index) < c.Hub.Terrain.ChunkedWidth*c.Hub.Terrain.ChunkedHeight) {
-				cx, cy := c.Hub.Terrain.GetChankCoord(int(index))
-				px := math.Floor(c.Player.Position.X() / float64(c.Hub.Terrain.ChunkSize))
-				py := math.Floor(c.Player.Position.Y() / float64(c.Hub.Terrain.ChunkSize))
-				dx := math.Abs(px - float64(cx))
-				dy := math.Abs(py - float64(cy))
-				// Проверяем смежность запрашиваемого чанка с координатами персонажа
-				if (dx <= 1) && (dy <= 1) {
-					c.SendChunk(int(index))
-				}
-			}
-		}
-
 	default:
-		log.Println("[proto read]: не известное сообщение")
+		c.Handler.Handle(message, c)
 	}
-}
-
-// receiver обрабатывает входящие сообщения
-func (c *Connect) receiver() {
-	for {
-		// Читаем данные из сокета
-		messageType, messageData, err := c.ws.ReadMessage()
-		if err != nil {
-			// Завершение ресивера
-			log.Println("[ws read]:", err)
-			break
-		}
-
-		// Увеличиваем счетчик принятых байт
-		c.Received += len(messageData)
-
-		if messageType != websocket.BinaryMessage {
-			// Полученное сообщение в текстовом формате - игнорируем сообщение
-			log.Println("[ws read]: не ожидаемое текстовое сообщение")
-			continue
-		}
-
-		// Декодируем сообщение
-		msg := new(protocol.Message)
-		err = proto.Unmarshal(messageData, msg)
-		if err != nil {
-			// Полученное сообщение не декодировано - игнорируем сообщение
-			log.Println("[proto read]:", err)
-			continue
-		}
-
-		// Обрабатываем сообщение
-		c.handler(msg)
-
-	}
-	c.Hub.Leave(c)
-	log.Println("[connect]: ресивер завершился")
 }

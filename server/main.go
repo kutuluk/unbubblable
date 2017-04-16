@@ -8,18 +8,18 @@ import (
 	"github.com/gorilla/websocket"
 
 	"github.com/kutuluk/unbubblable/server/config"
-	"github.com/kutuluk/unbubblable/server/connect"
+	"github.com/kutuluk/unbubblable/server/hub"
 	"github.com/kutuluk/unbubblable/server/loop"
 )
 
 var upgrader = websocket.Upgrader{}
-var hub = connect.NewHub()
-var l = loop.NewLoop(config.LoopFrequency, hub)
+var h = hub.NewHub()
+var l = loop.NewLoop(config.LoopFrequency, h)
 
 // Информационная страница о статусе сервера
 func status(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintln(w, "Unbubblable v. 0.6")
-	fmt.Fprintln(w, "Коннектов: ", hub.Count())
+	fmt.Fprintln(w, "Коннектов: ", h.Count())
 }
 
 // Обработчик запросов на соединения по протоколу Websocket
@@ -31,7 +31,7 @@ func ws(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Добавляем соединение в хаб коннектов
-	hub.Join(connect)
+	h.Join(connect)
 }
 
 func main() {

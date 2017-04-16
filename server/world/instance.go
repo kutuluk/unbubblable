@@ -25,8 +25,7 @@ func NewInstance(name string, width, height int, seed int64) *Instance {
 	}
 }
 
-// Join создает коннект, добавляет его в список коннектов и
-// запускает обработчик входящих сообщений
+// Join подключает игрока к инстансу
 func (i *Instance) Join(player *player.Player) {
 	// Добавляем игрока в список
 	i.players[player] = struct{}{}
@@ -37,7 +36,7 @@ func (i *Instance) Join(player *player.Player) {
 // Tick определяет обработчик тиков симуляции
 func (i *Instance) Tick(tick uint) {
 
-	// Перебираем все соединения
+	// Перебираем всех игроков
 	for p := range i.players {
 
 		// Осуществляем перерасчет
