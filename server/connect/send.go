@@ -13,21 +13,24 @@ import (
 // SenderQueueLength определяет размер очереди сендера
 const SenderQueueLength = 10
 
-// writer возвращает буферизованный канал и запускает горутину, отправляющую пришедшие
+// sender возвращает буферизованный канал и запускает горутину, отправляющую в сеть пришедшие
 // в этот канал сообщения. Задача этой горутины - обеспечить запись в сокет из единственного
 // конкурентного потока
-func (c *Connect) writer() chan []byte {
-	send := make(chan []byte, SenderQueueLength)
+func (c *Connect) sender() chan<- []byte {
+	outbound := make(chan []byte, SenderQueueLength)
 	go func() {
 		defer func() { log.Println("[connect]: сендер завершился") }()
 
-		for {
-			message, ok := <-send
-			if !ok {
-				// Входящий канал закрыт - завершаем горутину
-				return
-			}
+		/*
+			for {
+				message, ok := <-send
+				if !ok {
+					// Входящий канал закрыт - завершаем горутину
+					return
+				}
+		*/
 
+		for message := range outbound {
 			// Отправляем сообщение
 			err := c.ws.WriteMessage(websocket.BinaryMessage, message)
 			if err != nil {
@@ -35,6 +38,8 @@ func (c *Connect) writer() chan []byte {
 				//ToDo: сделать полноценную обработку ошибки
 				if err == websocket.ErrCloseSent {
 					// Сокет закрыт - выход из горутины
+					// ToDo: нужно ли предпринимать еще какие-то действия, или коннект
+					// все равно закроется в ресивере, поскольку соединение закрыто?
 					return
 				}
 				// В этом месте сообщение теряется
@@ -47,7 +52,7 @@ func (c *Connect) writer() chan []byte {
 			c.Sent += len(message)
 		}
 	}()
-	return send
+	return outbound
 }
 
 // Send сериализует сообщение и отправляет его в исходящий канал
@@ -67,7 +72,7 @@ func (c *Connect) Send(msgType protocol.MessageType, msgBody []byte) {
 	// ToDo: возможна ситуация, когда канал уже закрыт
 	// Разобраться, как обрабатывать такую ситуацию
 	select {
-	case c.send <- buffer:
+	case c.outbound <- buffer:
 	default:
 		// Буфер переполнен - в этом месте сообщение теряется
 		log.Println("[connect]: очередь на отправку переполнена")
@@ -162,7 +167,7 @@ func (c *Connect) SendPingRequest() {
 func (c *Connect) SendInfo() {
 
 	message := &protocol.Info{
-		Ping: int32(c.pings.median),
+		Ping: int32(c.statistics.median),
 	}
 
 	buffer, err := proto.Marshal(message)

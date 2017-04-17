@@ -27,50 +27,48 @@ type Handler interface {
 
 // Connect связывает коннект с персонажем
 type Connect struct {
-	Handler Handler
-	ws      *websocket.Conn
-	send    chan []byte
-	state   int
-	frame   int
+	handler  Handler
+	ws       *websocket.Conn
+	outbound chan<- []byte
+	state    int
+	frame    int
 
 	Player   *player.Player
 	Received int
 	Sent     int
 
-	pings     PingInfo
-	pingTime  time.Time
-	pingToken int32
+	statistics pingStatistics
+	pingTime   time.Time
+	pingToken  int32
 
 	bestPing   time.Duration
 	timeOffset time.Duration
 }
 
 // NewConnect создает коннект
-func NewConnect(hdr Handler, ws *websocket.Conn) *Connect {
+func NewConnect(h Handler, ws *websocket.Conn) *Connect {
 	p := player.NewPlayer()
 	c := &Connect{
-		Handler:  hdr,
+		handler:  h,
 		ws:       ws,
 		Player:   p,
 		bestPing: time.Hour,
-		// Пинги идут 4 раза в секунду. Медиану быдем рассчитывать раз в секунду, значит
-		// интервал устанавливаем равным 4. Медиану рассчитываем на основании последних
-		// 5 секунд, значит длину сохраняемых пингов устанавливаем в 4*5=20
-		pings: newPings(20, 4),
+		// Статистика охватывает 4 последних пинга
+		statistics: newPingStatistics(4),
 	}
 
 	// Запускаем обработчик входящих сообщений
-	c.reader()
+	c.receiver()
 	// Запускаем обработчик исходящих сообщений
-	c.send = c.writer()
+	c.outbound = c.sender()
 
 	log.Print("[connect]: новое подключение с адреса ", c.ws.RemoteAddr())
 
 	return c
 }
 
-// reader обрабатывает входящие сообщения
-func (c *Connect) reader() {
+// receiver обрабатывает входящие сообщения
+func (c *Connect) receiver() {
 	go func() {
 		for {
 			// Читаем данные из сокета
@@ -100,18 +98,19 @@ func (c *Connect) reader() {
 			}
 
 			// Обрабатываем сообщение
-			c.handler(msg)
+			c.handle(msg)
 
 		}
-		c.Handler.Leave(c)
+		c.handler.Leave(c)
 		log.Print("[connect]: подключение с адреса ", c.ws.RemoteAddr(), " завершено")
 		c.ws.Close()
-		close(c.send)
+		close(c.outbound)
 
 		log.Println("[connect]: ресивер завершился")
 	}()
 }
 
+// Переделать так, чтобы коннект был самодостаточныи и сам по таймеру вызывал свой апдейт
 func (c *Connect) Update() {
 
 	c.frame++
@@ -138,7 +137,7 @@ func (c *Connect) Update() {
 	// раз в секунду отправляем служебную информацию
 	if c.frame%(config.LoopFrequency) == 0 {
 		c.SendInfo()
-		c.SendSystemMessage(0, fmt.Sprintf("Ping: %v, status: %v", c.pings.median, c.state))
+		c.SendSystemMessage(0, fmt.Sprintf("Ping: %v, status: %v", c.statistics.median, c.state))
 	}
 
 	// 4 раза в секунду отправляем запрос на пинг
@@ -151,7 +150,7 @@ func (c *Connect) Update() {
 	}
 }
 
-func (c *Connect) handler(message *protocol.Message) {
+func (c *Connect) handle(message *protocol.Message) {
 
 	var err error
 
@@ -170,7 +169,7 @@ func (c *Connect) handler(message *protocol.Message) {
 
 		// Обходим все сообщения в цепочке
 		for _, message := range msgChain.Chain {
-			c.handler(message)
+			c.handle(message)
 		}
 
 	// PingResponse
@@ -191,7 +190,7 @@ func (c *Connect) handler(message *protocol.Message) {
 
 		ping := timeNow.Sub(c.pingTime)
 
-		c.pings.add(ping)
+		c.statistics.add(ping)
 
 		if ping < c.bestPing {
 			c.bestPing = ping
@@ -203,6 +202,6 @@ func (c *Connect) handler(message *protocol.Message) {
 		c.pingTime = time.Time{}
 
 	default:
-		c.Handler.Handle(message, c)
+		c.handler.Handle(message, c)
 	}
 }

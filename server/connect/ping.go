@@ -5,56 +5,45 @@ import (
 	"time"
 )
 
-// PingInfo определяет статистику о пинге
-type PingInfo struct {
-	durations []time.Duration
-	interval  int
-	frame     int
-	head      int
-	median    time.Duration
+// pingStatistics определяет статистику о пинге
+type pingStatistics struct {
+	pings  []time.Duration
+	length int
+	head   int
+	median time.Duration
 }
 
-func newPings(length, interval int) PingInfo {
-	return PingInfo{
-		durations: make([]time.Duration, length),
-		interval:  interval,
-		head:      length - 1,
+func newPingStatistics(length int) pingStatistics {
+	return pingStatistics{
+		pings:  make([]time.Duration, length),
+		length: length,
 	}
 }
 
-func (p *PingInfo) add(ping time.Duration) {
+func (p *pingStatistics) add(ping time.Duration) {
+
+	p.pings[p.head] = ping
 
 	p.head++
-	if p.head == len(p.durations) {
+	if p.head == p.length {
+		p.calcMedian()
 		p.head = 0
 	}
 
-	p.durations[p.head] = ping
-
-	p.frame++
-	if p.frame == p.interval {
-		p.frame = 0
-		p.calcMedian()
-	}
-
 }
 
-func (p *PingInfo) calcMedian() time.Duration {
+func (p *pingStatistics) calcMedian() {
 
-	s := make([]time.Duration, len(p.durations))
-	copy(s, p.durations)
-	sort.Slice(s, func(i, j int) bool { return s[i] < s[j] })
+	//	log.Println("[unsort pings]:", p.pings)
+	//	defer log.Println("[sort pings]:", p.pings)
 
-	l := len(s)
-	if l%2 == 0 {
-		p.median = (s[l/2+1] - s[l/2-1]) / 2
+	sort.Slice(p.pings, func(i, j int) bool { return p.pings[i] < p.pings[j] })
+	m := p.length / 2
+
+	if p.length%2 == 0 {
+		p.median = (p.pings[m+1] - p.pings[m-1]) / 2
 	} else {
-		p.median = s[l/2]
+		p.median = p.pings[m]
 	}
 
-	//	log.Println("[unsort pings]:", p.durations)
-	//	log.Println("[sort pings]:", s)
-	//	log.Println("[median]:", p.median)
-
-	return p.median
 }
