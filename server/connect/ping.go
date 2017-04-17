@@ -7,10 +7,12 @@ import (
 
 // pingStatistics определяет статистику о пинге
 type pingStatistics struct {
-	pings  []time.Duration
-	length int
-	head   int
-	median time.Duration
+	pings     []time.Duration
+	pingStart time.Time
+	length    int
+	head      int
+	median    time.Duration
+	delta     time.Duration
 }
 
 func newPingStatistics(length int) pingStatistics {
@@ -20,30 +22,45 @@ func newPingStatistics(length int) pingStatistics {
 	}
 }
 
-func (p *pingStatistics) add(ping time.Duration) {
+// Если пинг еще не отправлен, startPing запоминает текущее время и возвращает true
+func (p *pingStatistics) start() bool {
+	if p.pingStart.IsZero() {
+		p.pingStart = time.Now()
+		return true
+	}
+	return false
+}
 
-	p.pings[p.head] = ping
+// donePing вычисляет продолжительность пинга и, при необходимости, запускает расчет статистики
+func (p *pingStatistics) done(t time.Time) {
+	p.pings[p.head] = t.Sub(p.pingStart)
+	p.pingStart = time.Time{}
 
 	p.head++
 	if p.head == p.length {
-		p.calcMedian()
+		p.calc()
 		p.head = 0
 	}
-
 }
 
-func (p *pingStatistics) calcMedian() {
+// calc вычисляет медиану и дельту от прошлой медины
+func (p *pingStatistics) calc() {
 
 	//	log.Println("[unsort pings]:", p.pings)
 	//	defer log.Println("[sort pings]:", p.pings)
 
 	sort.Slice(p.pings, func(i, j int) bool { return p.pings[i] < p.pings[j] })
+
 	m := p.length / 2
+	var median time.Duration
 
 	if p.length%2 == 0 {
-		p.median = (p.pings[m+1] - p.pings[m-1]) / 2
+		median = (p.pings[m] - p.pings[m-1]) / 2
 	} else {
-		p.median = p.pings[m]
+		median = p.pings[m]
 	}
+
+	p.delta = p.median - median
+	p.median = median
 
 }

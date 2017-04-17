@@ -24,8 +24,7 @@ type Hub struct {
 func NewHub() *Hub {
 	return &Hub{
 		connections: make(map[*connect.Connect]bool),
-		//		players:     make(map[*player.Player]struct{}),
-		Terrain: terrain.NewTerrain(config.MapChunkSize*5, config.MapChunkSize*5, config.MapChunkSize, 3184627059),
+		Terrain:     terrain.NewTerrain(config.MapChunkSize*5, config.MapChunkSize*5, config.MapChunkSize, 3184627059),
 	}
 }
 
@@ -37,14 +36,12 @@ func (h *Hub) Join(ws *websocket.Conn) {
 	// Добавляем его в список коннектов
 	h.connections[c] = true
 
-	//	c.SendTerrain()
 	h.SendTerrain(c)
 }
 
 // Leave закрывает соединение и удаляет его из списка коннектов
 func (h *Hub) Leave(c *connect.Connect) {
 	delete(h.connections, c)
-	//	delete(h.players, c.Player)
 }
 
 // Count возвращает количество коннектов
@@ -61,9 +58,7 @@ func (h *Hub) Tick(tick uint) {
 		c.Player.Update(tick)
 
 		// Отправляем сообщение клиенту
-		//		c.SendMovement()
 		h.SendMovement(c)
-		c.Update()
 	}
 }
 
@@ -73,6 +68,22 @@ func (h *Hub) Handle(message *protocol.Message, connect *connect.Connect) {
 	var err error
 
 	switch message.Type {
+
+	// Chain
+	case protocol.MessageType_MsgChain:
+
+		// Декодируем сообщение
+		msgChain := new(protocol.MessageChain)
+		err = proto.Unmarshal(message.Body, msgChain)
+		if err != nil {
+			log.Println("[proto read]:", err)
+			break
+		}
+
+		// Обходим все сообщения в цепочке
+		for _, message := range msgChain.Chain {
+			h.Handle(message, connect)
+		}
 
 	// Controller
 	case protocol.MessageType_MsgController:
@@ -118,7 +129,41 @@ func (h *Hub) Handle(message *protocol.Message, connect *connect.Connect) {
 			}
 		}
 
+		/*
+			// Коннект сам себя пингует, этот функционал может потребоваться только при необходимости
+			// синхронизации времени
+
+			// PingResponse
+			case protocol.MessageType_MsgPingResponse:
+
+				timeNow := time.Now()
+
+				msgPingResponse := new(protocol.PingResponse)
+				// Декодируем сообщение
+				err = proto.Unmarshal(message.Body, msgPingResponse)
+				if err != nil {
+					log.Println("[proto read]:", err)
+					break
+				}
+
+				// Применяем сообщение
+				timeRequest := time.Unix(msgPingResponse.Time.Seconds, int64(msgPingResponse.Time.Nanos)).UTC()
+
+				ping := timeNow.Sub(c.pingTime)
+
+				c.statistics.add(ping)
+
+				if ping < c.bestPing {
+					c.bestPing = ping
+					timeLocal := c.pingTime.Add(ping / 2).UTC()
+					c.timeOffset = timeLocal.Sub(timeRequest)
+					c.SendSystemMessage(0, fmt.Sprintf("Sync: ping %s, offset %s", ping, c.timeOffset))
+				}
+
+				c.pingTime = time.Time{}
+		*/
+
 	default:
-		log.Println("[proto read]: не известное сообщение")
+		log.Println("[hub](read): неизвестное сообщение")
 	}
 }

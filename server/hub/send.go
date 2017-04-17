@@ -51,3 +51,40 @@ func (h *Hub) SendChunk(c *connect.Connect, i int) {
 	c.Send(protocol.MessageType_MsgChunk, h.Terrain.Chunks[i].Proto)
 
 }
+
+/*
+// SendPingRequest отправляет клиенту запрос пинга
+func (c *Connect) SendPingRequest() {
+	// Ничего не делаем, если еще не пришел ответ от прошлого запроса
+	if c.pingTime.IsZero() {
+
+//			t := time.Now()
+//			seconds := t.Unix()
+//			nanos := int32(t.Sub(time.Unix(seconds, 0)))
+//
+//			msgTime := &protocol.Timestamp{
+//				Seconds: seconds,
+//				Nanos:   nanos,
+//			}
+//
+//			msgPingRequest := &protocol.PingRequest{
+//				Time: msgTime,
+//				Ping: int32(c.Ping.Nanoseconds() / 1000000),
+//			}
+
+		message := &protocol.PingRequest{}
+
+		buffer, err := proto.Marshal(message)
+		if err != nil {
+			log.Println("[proto send]:", err)
+			return
+		}
+
+		// Запоминаем время отправки сообщения
+		c.pingTime = time.Now()
+
+		c.Send(protocol.MessageType_MsgPingRequest, buffer)
+
+	}
+}
+*/

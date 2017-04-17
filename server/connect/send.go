@@ -13,43 +13,62 @@ import (
 // SenderQueueLength определяет размер очереди сендера
 const SenderQueueLength = 10
 
+const (
+	// Таймаут записи
+	writeWait = 1 * time.Second
+	// Таймаут чтения
+	pongWait = 1 * time.Second
+	// Задержка между пингами
+	pingPeriod = 250 * time.Millisecond
+)
+
 // sender возвращает буферизованный канал и запускает горутину, отправляющую в сеть пришедшие
 // в этот канал сообщения. Задача этой горутины - обеспечить запись в сокет из единственного
 // конкурентного потока
 func (c *Connect) sender() chan<- []byte {
 	outbound := make(chan []byte, SenderQueueLength)
+	pinger := time.NewTicker(pingPeriod)
 	go func() {
-		defer func() { log.Println("[connect]: сендер завершился") }()
+		defer func() {
+			pinger.Stop()
+			//			c.close()
+			log.Println("[sender]: сендер завершился")
+		}()
 
-		/*
-			for {
-				message, ok := <-send
+		//		for message := range outbound {
+		for {
+
+			select {
+			case message, ok := <-outbound:
+				c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 				if !ok {
-					// Входящий канал закрыт - завершаем горутину
+					// Канал закрыт
+					c.ws.WriteMessage(websocket.CloseMessage, []byte{})
 					return
 				}
-		*/
 
-		for message := range outbound {
-			// Отправляем сообщение
-			err := c.ws.WriteMessage(websocket.BinaryMessage, message)
-			if err != nil {
-				log.Println("[ws write]:", err)
-				//ToDo: сделать полноценную обработку ошибки
-				if err == websocket.ErrCloseSent {
-					// Сокет закрыт - выход из горутины
-					// ToDo: нужно ли предпринимать еще какие-то действия, или коннект
-					// все равно закроется в ресивере, поскольку соединение закрыто?
-					return
+				// Отправляем сообщение
+				err := c.ws.WriteMessage(websocket.BinaryMessage, message)
+				if err != nil {
+					log.Println("[sender]:", err)
+					//ToDo: сделать полноценную обработку ошибки
+					if err == websocket.ErrCloseSent {
+						// Сокет закрыт - выход из горутины
+						// ToDo: нужно ли предпринимать еще какие-то действия, или коннект
+						// все равно закроется в ресивере, поскольку соединение закрыто?
+						return
+					}
+					// В этом месте сообщение теряется
+					// ToDo: возможно стоит попытаться отправить сообщение снова?
+					// ToDo: либо сразу закрывать соединение? Могут ли тут быть не критичные ошибки?
+					break
 				}
-				// В этом месте сообщение теряется
-				// ToDo: возможно стоит попытаться отправить сообщение снова?
-				// ToDo: либо сразу закрывать соединение? Могут ли тут быть не критичные ошибки?
-				break
+				// Увеличиваем счетчик отправленных байт
+				c.Sent += len(message)
+
+			case <-pinger.C:
+				c.update()
 			}
-
-			// Увеличиваем счетчик отправленных байт
-			c.Sent += len(message)
 		}
 	}()
 	return outbound
@@ -69,6 +88,7 @@ func (c *Connect) Send(msgType protocol.MessageType, msgBody []byte) {
 		return
 	}
 
+	//	if c.state != StateCLOSED {
 	// ToDo: возможна ситуация, когда канал уже закрыт
 	// Разобраться, как обрабатывать такую ситуацию
 	select {
@@ -77,7 +97,7 @@ func (c *Connect) Send(msgType protocol.MessageType, msgBody []byte) {
 		// Буфер переполнен - в этом месте сообщение теряется
 		log.Println("[connect]: очередь на отправку переполнена")
 	}
-
+	//	}
 }
 
 // SendChain упаковывает данные в цепочку из одного сообщения и отправляет его
@@ -124,43 +144,6 @@ func (c *Connect) SendSystemMessage(level int, text string) {
 
 	c.Send(protocol.MessageType_MsgSystemMessage, buffer)
 
-}
-
-// SendPingRequest отправляет клиенту запрос пинга
-func (c *Connect) SendPingRequest() {
-	// Ничего не делаем, если еще не пришел ответ от прошлого запроса
-	if c.pingTime.IsZero() {
-
-		/*
-			t := time.Now()
-			seconds := t.Unix()
-			nanos := int32(t.Sub(time.Unix(seconds, 0)))
-
-			msgTime := &protocol.Timestamp{
-				Seconds: seconds,
-				Nanos:   nanos,
-			}
-
-			msgPingRequest := &protocol.PingRequest{
-				Time: msgTime,
-				Ping: int32(c.Ping.Nanoseconds() / 1000000),
-			}
-		*/
-
-		message := &protocol.PingRequest{}
-
-		buffer, err := proto.Marshal(message)
-		if err != nil {
-			log.Println("[proto send]:", err)
-			return
-		}
-
-		// Запоминаем время отправки сообщения
-		c.pingTime = time.Now()
-
-		c.Send(protocol.MessageType_MsgPingRequest, buffer)
-
-	}
 }
 
 // SendInfo отправляет клиенту служебную информацию
