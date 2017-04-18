@@ -3,6 +3,7 @@ package player
 import (
 	"log"
 	"math"
+	"strconv"
 
 	mathgl "github.com/go-gl/mathgl/mgl64"
 
@@ -33,9 +34,34 @@ func (q *ControllerQueue) Len() int {
 	return len(*q)
 }
 
+// Unit определяет юнит
+type Unit interface {
+	// ID возвращает идентификатор юнита
+	ID() int
+	// Name определяет имя юнита
+	Name() string
+}
+
+type emptyUnit struct {
+	id       int
+	speed    float64
+	position mathgl.Vec3
+	motion   mathgl.Vec3
+	angle    float64
+	slew     float64
+}
+
+func (e emptyUnit) ID() int {
+	return e.id
+}
+
+func (e emptyUnit) Name() string {
+	return "Unit" + strconv.Itoa(e.id)
+}
+
 // Player определяет игрока
 type Player struct {
-	//	connect *connect.Connect
+	Unit
 	// Speed определяет скорость движеия и поворота игрока.
 	// Скорость движения в тайлах в секунду равно этому значение.
 	// Скорость поворота в радианах в секунду получается при деленни на PI*2 - ???
@@ -57,8 +83,11 @@ type Player struct {
 }
 
 // NewPlayer инициализирует нового игрока
-func NewPlayer() *Player {
+func NewPlayer(id int) *Player {
 	return &Player{
+		Unit: emptyUnit{
+			id: id,
+		},
 		Speed:           7.0,
 		Position:        mathgl.Vec3{0, 0, 0.01},
 		ControllerQueue: make(ControllerQueue, 10),

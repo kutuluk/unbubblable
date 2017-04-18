@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package protocol.Messaging.Messages;
+
+import "protocol/Data/Vec3.proto";
+
+// UnitInfo определяет информацию о юните
+message UnitInfo {
+	// id определяет идентификатор юнита
+	int32 id = 1;
+	// name определяет имя юнита
+    string name = 2;
+	// model_id определяет идентификатор модели юнита
+	int32 model_id = 3;
+    // self означает, что эта информация о себе
+    bool self = 4;
+}

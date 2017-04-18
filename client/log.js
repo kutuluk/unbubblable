@@ -27,7 +27,7 @@ class Log {
     }
 
     appendLog( item ) {
-        let doScroll = this.domElement.scrollTop === this.domElement.scrollHeight - this.domElement.clientHeight;
+        let doScroll = this.domElement.scrollTop > this.domElement.scrollHeight - this.domElement.clientHeight - 1;
         this.domElement.appendChild( item );
         if ( doScroll ) {
             this.domElement.scrollTop = this.domElement.scrollHeight - this.domElement.clientHeight;

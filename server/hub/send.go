@@ -6,6 +6,7 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	"github.com/kutuluk/unbubblable/server/connect"
+	"github.com/kutuluk/unbubblable/server/player"
 	"github.com/kutuluk/unbubblable/server/protocol"
 )
 
@@ -36,6 +37,22 @@ func (h *Hub) SendMovement(c *connect.Connect) {
 
 	c.Send(protocol.MessageType_MsgMovement, buffer)
 
+}
+
+// SendUnitInfo отправляет клиенту информацию о юните
+func (h *Hub) SendUnitInfo(c *connect.Connect, u player.Unit) {
+	message := &protocol.UnitInfo{
+		Id:      int32(u.ID()),
+		Name:    u.Name(),
+		ModelId: 0,
+		Self:    true,
+	}
+	buffer, err := proto.Marshal(message)
+	if err != nil {
+		log.Println("[proto send]:", err)
+		return
+	}
+	c.Send(protocol.MessageType_MsgUnitInfo, buffer)
 }
 
 // SendTerrain отправляет клиенту карту

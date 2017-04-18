@@ -4,14 +4,16 @@ package protocol.Messaging.Messages;
 
 import "protocol/Data/Vec3.proto";
 
-// Movement определяет позицию и движение игрока
+// Movement определяет позицию и движение юнита
 message Movement {
-	// position определяет положение игрока
-	protocol.Data.Vec3 position = 1;
-	// motion определяет движение игрока
-	protocol.Data.Vec3 motion = 2;
-	// angle определяет направление игрока (угол между положительным направленим оси Y и направлением игрока по часовой стрелке)
-	double angle = 3;
-	// slew определяет поворот игрока
-	double slew = 4;
+	// id определяет идентификатор юнита
+	int32 id = 1;
+	// position определяет положение юнита
+	protocol.Data.Vec3 position = 2;
+	// motion определяет движение юнита
+	protocol.Data.Vec3 motion = 3;
+	// angle определяет направление юнита (угол между положительным направленим оси Y и направлением юнита по часовой стрелке)
+	double angle = 4;
+	// slew определяет поворот юнита
+	double slew = 5;
 }

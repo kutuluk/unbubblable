@@ -9,9 +9,17 @@ import (
 
 	"github.com/kutuluk/unbubblable/server/config"
 	"github.com/kutuluk/unbubblable/server/connect"
+	"github.com/kutuluk/unbubblable/server/player"
 	"github.com/kutuluk/unbubblable/server/protocol"
 	"github.com/kutuluk/unbubblable/server/terrain"
 )
+
+var currID int
+
+func nextID() int {
+	currID++
+	return currID
+}
 
 // Hub определяет игровой мир
 type Hub struct {
@@ -28,14 +36,16 @@ func NewHub() *Hub {
 	}
 }
 
-// Join создает коннект, добавляет его в список коннектов и
-// запускает обработчик входящих сообщений
+// Join создает нового игрока, ассоциирцет его с сокетом и добавляет его в список коннектов
 func (h *Hub) Join(ws *websocket.Conn) {
+	// Создаем игрока
+	p := player.NewPlayer(nextID())
 	// Создаем коннект
-	c := connect.NewConnect(h, ws)
+	c := connect.NewConnect(ws, h, p)
 	// Добавляем его в список коннектов
 	h.connections[c] = true
 
+	h.SendUnitInfo(c, p)
 	h.SendTerrain(c)
 }
 
@@ -59,6 +69,7 @@ func (h *Hub) Tick(tick uint) {
 
 		// Отправляем сообщение клиенту
 		h.SendMovement(c)
+
 	}
 }
 

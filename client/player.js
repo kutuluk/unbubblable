@@ -14,6 +14,13 @@ class Player {
 
     }
 
+    assignModel( model ) {
+        this.unit.mesh = model;
+        model.scale.set( 0.25, 0.25, 0.25 );
+        this.mixer = new THREE.AnimationMixer( model );
+        this.mixer.clipAction( model.animations[ 0 ] ).play();
+    }
+
     animate( scalar ) {
 
         // Рассчитываем позицию игрока в этом фрейме
@@ -34,7 +41,7 @@ class Player {
         this.unit.mesh.rotateOnAxis( new THREE.Vector3( 1, 0, 0 ), Math.PI / 2 );
         // компенсация кривого создания модели
         this.unit.mesh.rotateOnAxis( new THREE.Vector3( 0, 1, 0 ), Math.PI );
-//        this.unit.mesh.position.z = 0.55;
+        //        this.unit.mesh.position.z = 0.55;
 
 
         // Рассчитываем высоту камеры в этом фрейме

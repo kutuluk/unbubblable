@@ -9,32 +9,36 @@ import (
 type pingStatistics struct {
 	pings     []time.Duration
 	pingStart time.Time
+	pending   bool
 	length    int
+	even      bool
 	head      int
-	median    time.Duration
-	delta     time.Duration
+
+	median time.Duration
+	delta  time.Duration
 }
 
 func newPingStatistics(length int) pingStatistics {
 	return pingStatistics{
 		pings:  make([]time.Duration, length),
 		length: length,
+		even:   length%2 == 0,
 	}
 }
 
-// Если пинг еще не отправлен, startPing запоминает текущее время и возвращает true
+// Если не ожидается ответ от предыдущего пинга, start запоминает текущее время и возвращает true
 func (p *pingStatistics) start() bool {
-	if p.pingStart.IsZero() {
-		p.pingStart = time.Now()
-		return true
+	if p.pending {
+		return false
 	}
-	return false
+	p.pingStart = time.Now()
+	return true
 }
 
-// donePing вычисляет продолжительность пинга и, при необходимости, запускает расчет статистики
+// done вычисляет продолжительность пинга и, при необходимости, запускает расчет статистики
 func (p *pingStatistics) done(t time.Time) {
 	p.pings[p.head] = t.Sub(p.pingStart)
-	p.pingStart = time.Time{}
+	p.pending = false
 
 	p.head++
 	if p.head == p.length {
@@ -43,7 +47,7 @@ func (p *pingStatistics) done(t time.Time) {
 	}
 }
 
-// calc вычисляет медиану и дельту от прошлой медины
+// calc обновляет медиану и дельту от предыдущей медианы
 func (p *pingStatistics) calc() {
 
 	//	log.Println("[unsort pings]:", p.pings)
@@ -52,12 +56,9 @@ func (p *pingStatistics) calc() {
 	sort.Slice(p.pings, func(i, j int) bool { return p.pings[i] < p.pings[j] })
 
 	m := p.length / 2
-	var median time.Duration
-
-	if p.length%2 == 0 {
+	median := p.pings[m]
+	if p.even {
 		median = (p.pings[m] - p.pings[m-1]) / 2
-	} else {
-		median = p.pings[m]
 	}
 
 	p.delta = p.median - median

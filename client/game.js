@@ -62,33 +62,16 @@ class Game {
 
         this.atlas = new Atlas( 16, 16, 32, 'assets/textures/atlas.png' );
 
-        // Загрузка модели
-        let loader = new THREE.ObjectLoader();
-        loader.load(
-            "assets/models/model.json",
-            // onLoad
-            ( obj ) => {
-                console.log( obj );
+        // Загрузка моделей
+        this.models = [];
+        this.loader = new THREE.ObjectLoader();
 
-                this.model = obj;
-                this.scene.add( obj );
-                this.player.unit.mesh = obj;
-                obj.scale.set( 0.25, 0.25, 0.25 );
-
-                this.player.mixer = new THREE.AnimationMixer( obj );
-                this.player.mixer.clipAction( obj.animations[ 0 ] ).play();
-                //                this.player.mixer.clipAction( obj.animations[1] ).play();
-                //                this.player.mixer.clipAction( obj.animations[2] ).play();
-            },
-            // onProgress
-            ( xhr ) => {
-                //                console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
-            },
-            // onError
-            ( xhr ) => {
-                console.error( 'An error happened' );
-            }
-        );
+        this.loadModel( 0, "assets/models/model.json", ( id ) => {
+            let model = this.models[ id ].clone();
+            console.log( model );
+            this.scene.add( model );
+            this.player.assignModel( model );
+        } );
 
         this.controller = new Controller( this.renderer.domElement );
 
@@ -104,7 +87,7 @@ class Game {
 
 
         //        this.player = new Player( this.camera, new Unit( this.createCharacter( 220 ) ) ); //219
-        this.player = new Player( this.camera, new Unit( /*this.model*/) );
+        this.player = new Player( this.camera, new Unit() );
 
         this.terrain = undefined;
 
@@ -116,6 +99,26 @@ class Game {
 
         window.addEventListener( 'resize', this.onWindowResize.bind( this ), false );
 
+    }
+
+    loadModel( id, path, handler ) {
+        // Загрузка модели
+        this.loader.load(
+            path,
+            // onLoad
+            ( model ) => {
+                this.models[ id ] = model;
+                if ( handler ) handler( id );
+            },
+            // onProgress
+            ( xhr ) => {
+                //                console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+            },
+            // onError
+            ( xhr ) => {
+                console.error( 'An error happened' );
+            }
+        );
     }
 
     // Функция создания меша юнита
@@ -176,6 +179,15 @@ class Game {
             this.scene.add( this.terrain.chunks[ msgChunk.index ].meshLandscape );
             this.scene.add( this.terrain.chunks[ msgChunk.index ].meshDetails );
 
+        }
+    }
+
+    handleUnitInfoMessage( message ) {
+        log.appendText( `ID=${message.id}, Name=${message.name}` );
+        if ( message.self ) {
+            this.player.id = message.id;
+            this.player.name = message.name;
+            this.player.modelId = message.modelId;
         }
     }
 

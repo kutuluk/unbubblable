@@ -150,7 +150,7 @@ func (c *Connect) SendSystemMessage(level int, text string) {
 func (c *Connect) SendInfo() {
 
 	message := &protocol.Info{
-		Ping: int32(c.statistics.median),
+		Ping: int32(c.ping.median),
 	}
 
 	buffer, err := proto.Marshal(message)

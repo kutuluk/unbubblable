@@ -40,11 +40,11 @@ type Connect struct {
 }
 
 // NewConnect создает коннект
-func NewConnect(h Handler, ws *websocket.Conn) *Connect {
-	p := player.NewPlayer()
+func NewConnect(ws *websocket.Conn, h Handler, p *player.Player) *Connect {
+	//	p := player.NewPlayer(1)
 	c := &Connect{
-		handler: h,
 		ws:      ws,
+		handler: h,
 		Player:  p,
 		// Медиана рассчитывается на основании 4 последних пингов
 		ping: newPingStatistics(4),

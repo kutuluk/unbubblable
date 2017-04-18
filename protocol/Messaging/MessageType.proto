@@ -17,4 +17,5 @@ enum MessageType {
 	MsgPingResponse = 7;
 	MsgInfo = 8;
 	MsgSystemMessage = 9;
+	MsgUnitInfo = 10;
 }

@@ -113,9 +113,16 @@ class Connect {
             this.sendPingResponse();
             break;
 
+        case this.protobuf.Messaging.MessageType.MsgUnitInfo:
+
+            // Декодируем сообщение
+            let msgUnitInfo = this.protobuf.Messaging.Messages.UnitInfo.decode( message.body ).toObject( { defaults: true } );
+            this.game.handleUnitInfoMessage( msgUnitInfo );
+            break;
+
         default:
 
-            log.appendText( '[proto read]: неизвестное сообщение' );
+            log.appendText( `[proto read]: неизвестное сообщение MessageType=${message.type}` );
             break;
 
         }
