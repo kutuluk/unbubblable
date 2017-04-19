@@ -11,22 +11,40 @@ import (
 )
 
 // SendMovement отправляет клиенту позицию персонажа
-func (h *Hub) SendMovement(c *connect.Connect) {
+func (h *Hub) SendMovement(c *connect.Connect, u player.Entity) {
 
+	m := u.Movement()
 	// Формируем сообщение
+	/*
+		message := &protocol.Movement{
+			Position: &protocol.Vec3{
+				X: c.Player.Position.X(),
+				Y: c.Player.Position.Y(),
+				Z: c.Player.Position.Z(),
+			},
+			Motion: &protocol.Vec3{
+				X: c.Player.Motion.X(),
+				Y: c.Player.Motion.Y(),
+				Z: c.Player.Motion.Z(),
+			},
+			Angle: c.Player.Angle,
+			Slew:  c.Player.Slew,
+		}
+	*/
 	message := &protocol.Movement{
+		Id: int32(u.ID()),
 		Position: &protocol.Vec3{
-			X: c.Player.Position.X(),
-			Y: c.Player.Position.Y(),
-			Z: c.Player.Position.Z(),
+			X: m.Position.X(),
+			Y: m.Position.Y(),
+			Z: m.Position.Z(),
 		},
 		Motion: &protocol.Vec3{
-			X: c.Player.Motion.X(),
-			Y: c.Player.Motion.Y(),
-			Z: c.Player.Motion.Z(),
+			X: m.Motion.X(),
+			Y: m.Motion.Y(),
+			Z: m.Motion.Z(),
 		},
-		Angle: c.Player.Angle,
-		Slew:  c.Player.Slew,
+		Angle: m.Angle,
+		Slew:  m.Slew,
 	}
 
 	buffer, err := proto.Marshal(message)
@@ -40,7 +58,7 @@ func (h *Hub) SendMovement(c *connect.Connect) {
 }
 
 // SendUnitInfo отправляет клиенту информацию о юните
-func (h *Hub) SendUnitInfo(c *connect.Connect, u player.Unit) {
+func (h *Hub) SendUnitInfo(c *connect.Connect, u player.Entity) {
 	message := &protocol.UnitInfo{
 		Id:      int32(u.ID()),
 		Name:    u.Name(),

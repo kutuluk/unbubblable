@@ -34,34 +34,27 @@ func (q *ControllerQueue) Len() int {
 	return len(*q)
 }
 
-// Unit определяет юнит
-type Unit interface {
-	// ID возвращает идентификатор юнита
+type Movement struct {
+	// Position определяет положение юнита
+	Position mathgl.Vec3
+	// Motion определяет движение юнита
+	Motion mathgl.Vec3
+	// Angle определяет направление юнита (угол между положительным направленим оси Y и направлением юнита по часовой стрелке)
+	Angle float64
+	// Slew определяет поворот юнита
+	Slew float64
+}
+
+// Entity определяет игровую сущность
+type Entity interface {
 	ID() int
-	// Name определяет имя юнита
 	Name() string
+	Movement() Movement
 }
 
-type emptyUnit struct {
-	id       int
-	speed    float64
-	position mathgl.Vec3
-	motion   mathgl.Vec3
-	angle    float64
-	slew     float64
-}
-
-func (e emptyUnit) ID() int {
-	return e.id
-}
-
-func (e emptyUnit) Name() string {
-	return "Unit" + strconv.Itoa(e.id)
-}
-
-// Player определяет игрока
-type Player struct {
-	Unit
+// Unit определяет юнит
+type Unit struct {
+	id int
 	// Speed определяет скорость движеия и поворота игрока.
 	// Скорость движения в тайлах в секунду равно этому значение.
 	// Скорость поворота в радианах в секунду получается при деленни на PI*2 - ???
@@ -74,6 +67,31 @@ type Player struct {
 	Angle float64
 	// Slew определяет поворот игрока
 	Slew float64
+}
+
+// Movement возвращает движение игрока
+func (u Unit) Movement() Movement {
+	return Movement{
+		Position: u.Position,
+		Motion:   u.Motion,
+		Angle:    u.Angle,
+		Slew:     u.Slew,
+	}
+}
+
+// ID возвращает идентификатор юнита
+func (u Unit) ID() int {
+	return u.id
+}
+
+// Name возвращает имя юнита
+func (u Unit) Name() string {
+	return "Unit" + strconv.Itoa(u.id)
+}
+
+// Player определяет игрока
+type Player struct {
+	Unit
 
 	// Controller определяет слайс состояний контроллера игрока
 	//	Controller *protocol.ApplyControllerMessage
@@ -82,14 +100,18 @@ type Player struct {
 	//	instance *world.Instance
 }
 
+// Name возвращает имя игрока
+func (p Player) Name() string {
+	return "Player" + strconv.Itoa(p.id)
+}
+
 // NewPlayer инициализирует нового игрока
 func NewPlayer(id int) *Player {
 	return &Player{
-		Unit: emptyUnit{
-			id: id,
+		Unit: Unit{
+			id:    id,
+			Speed: 7.0,
 		},
-		Speed:           7.0,
-		Position:        mathgl.Vec3{0, 0, 0.01},
 		ControllerQueue: make(ControllerQueue, 10),
 	}
 }

@@ -67,8 +67,10 @@ func (h *Hub) Tick(tick uint) {
 		// Осуществляем перерасчет
 		c.Player.Update(tick)
 
-		// Отправляем сообщение клиенту
-		h.SendMovement(c)
+		// Отправляем сообщение всем клиентам
+		for d := range h.connections {
+			h.SendMovement(d, c.Player)
+		}
 
 	}
 }

@@ -60,6 +60,10 @@ class Unit {
 
         if ( mesh !== undefined ) {
             this.mesh = mesh;
+            if ( this.mesh.animations ) {
+                this.mixer = new THREE.AnimationMixer( this.mesh );
+                this.mixer.clipAction( this.mesh.animations[ 0 ] ).play();
+            }
         }
 
     }

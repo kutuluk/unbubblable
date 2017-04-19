@@ -6,6 +6,8 @@ import (
 )
 
 // pingStatistics определяет статистику о пинге
+// ToDo: в случае необходимости можно добавить вложенные аналогичные структуры
+// любого уровня вложенности для получения более длительной статистики
 type pingStatistics struct {
 	pings     []time.Duration
 	pingStart time.Time

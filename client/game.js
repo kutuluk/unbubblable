@@ -1,6 +1,7 @@
 import { log } from './log';
 import { Controller } from './controller';
 import { Movement, Unit } from './unit';
+import { Entities } from './entities';
 import { Player } from './player';
 import { Atlas } from './atlas';
 import { Loop } from './loop';
@@ -68,9 +69,10 @@ class Game {
 
         this.loadModel( 0, "assets/models/model.json", ( id ) => {
             let model = this.models[ id ].clone();
-            console.log( model );
             this.scene.add( model );
-            this.player.assignModel( model );
+            model.scale.set( 0.25, 0.25, 0.25 );
+            this.player.setMesh( model );
+            console.log( model );
         } );
 
         this.controller = new Controller( this.renderer.domElement );
@@ -87,13 +89,15 @@ class Game {
 
 
         //        this.player = new Player( this.camera, new Unit( this.createCharacter( 220 ) ) ); //219
-        this.player = new Player( this.camera, new Unit() );
+        this.player = new Player( this.camera );
 
         this.terrain = undefined;
 
         //    this.createTexture();
 
         this.connect = new Connect( this );
+
+        this.entities = new Entities();
 
         this.loop = new Loop( 20, () => { this.update(); } );
 
@@ -153,7 +157,13 @@ class Game {
 
     handleMovementMessage( msgMovement ) {
 
-        this.player.unit.next = new Movement( msgMovement );
+        this.entities.updateMovement( msgMovement );
+
+        if ( this.player.id == msgMovement.id ) {
+            this.player.next = new Movement( msgMovement );
+        } else {
+//            log.appendText( `ID=${msgMovement.id}, Pos=${msgMovement.position.x}:${msgMovement.position.y}:${msgMovement.position.z}` );
+        }
 
     }
 
@@ -202,14 +212,16 @@ class Game {
 
     update() {
 
+        this.entities.removeExpired();
+
         // Передвигаем игрока
-        if ( this.player.unit.next ) {
-            this.player.unit.movement = this.player.unit.next;
-            this.player.unit.next = undefined;
+        if ( this.player.next ) {
+            this.player.movement = this.player.next;
+            this.player.next = undefined;
         } else {
-            this.player.unit.movement.position.add( this.player.unit.movement.motion );
-            this.player.unit.movement.motion.set( 0, 0, 0 );
-            this.player.unit.movement.angle += this.player.unit.movement.slew;
+            this.player.movement.position.add( this.player.movement.motion );
+            this.player.movement.motion.set( 0, 0, 0 );
+            this.player.movement.angle += this.player.movement.slew;
             this.slew = 0;
         }
 
@@ -235,8 +247,8 @@ class Game {
         // Запрашиваем недостающие чанки ландшафта
         if ( !( this.terrain === undefined || this.terrain === null ) ) {
             let indecies = [];
-            let cx = Math.floor( this.player.unit.movement.position.x / this.terrain.chunkSize );
-            let cy = Math.floor( this.player.unit.movement.position.y / this.terrain.chunkSize );
+            let cx = Math.floor( this.player.movement.position.x / this.terrain.chunkSize );
+            let cy = Math.floor( this.player.movement.position.y / this.terrain.chunkSize );
             // Перебор 9 смежных чанков
             for ( let y = cy - 1; y < cy + 2; y++ ) {
                 for ( let x = cx - 1; x < cx + 2; x++ ) {
