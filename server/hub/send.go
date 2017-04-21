@@ -58,12 +58,12 @@ func (h *Hub) SendMovement(c *connect.Connect, u player.Entity) {
 }
 
 // SendUnitInfo отправляет клиенту информацию о юните
-func (h *Hub) SendUnitInfo(c *connect.Connect, u player.Entity) {
+func (h *Hub) SendUnitInfo(c *connect.Connect, u player.Entity, self bool) {
 	message := &protocol.UnitInfo{
 		Id:      int32(u.ID()),
 		Name:    u.Name(),
 		ModelId: 0,
-		Self:    true,
+		Self:    self,
 	}
 	buffer, err := proto.Marshal(message)
 	if err != nil {

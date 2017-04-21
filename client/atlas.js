@@ -14,12 +14,12 @@ class Atlas {
         let vOff = 1 / this.rows / ( this.resolution + 2 );
 
         // Создаем канву увеличенного размера
-        let canvas = document.createElement( "canvas" );
+        let canvas = document.createElement( 'canvas' );
         canvas.width = this.cols * ( this.resolution + 2 );
         canvas.height = this.rows * ( this.resolution + 2 );
         let ctx = canvas.getContext( '2d' );
 
-        // Создаем текстуру из созданной канвы
+        // Создаем текстуру
         this.texture = new THREE.Texture( canvas );
         this.texture.magFilter = THREE.NearestFilter;
         this.texture.minFilter = THREE.NearestFilter;
@@ -73,7 +73,7 @@ class Atlas {
 
         // Обработчик ошибки загрузки исходного изображения текстуры
         img.onerror = () => {
-            log.appendText( `[IMG] Ошибка загрузки файла: ${this.src}` );
+            log.appendText( `[atlas]: Ошибка загрузки файла ${this.src}` );
         };
 
         // Загружаем исходную текстуру

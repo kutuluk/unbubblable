@@ -68,11 +68,9 @@ class Game {
         this.loader = new THREE.ObjectLoader();
 
         this.loadModel( 0, "assets/models/model.json", ( id ) => {
-            let model = this.models[ id ].clone();
-            this.scene.add( model );
-            model.scale.set( 0.25, 0.25, 0.25 );
-            this.player.setMesh( model );
-            console.log( model );
+            // ToDo: может ли во время создания плейера модель быть еще не загруженной
+            //            let model = this.models[ id ].clone();
+            //            console.log( model );
         } );
 
         this.controller = new Controller( this.renderer.domElement );
@@ -87,8 +85,6 @@ class Game {
         this.screen.container.appendChild( this.stats.domElement );
         this.screen.container.appendChild( log.domElement );
 
-
-        //        this.player = new Player( this.camera, new Unit( this.createCharacter( 220 ) ) ); //219
         this.player = new Player( this.camera );
 
         this.terrain = undefined;
@@ -97,7 +93,7 @@ class Game {
 
         this.connect = new Connect( this );
 
-        this.entities = new Entities();
+        this.entities = new Entities( this );
 
         this.loop = new Loop( 20, () => { this.update(); } );
 
@@ -111,7 +107,10 @@ class Game {
             path,
             // onLoad
             ( model ) => {
+                // ToDo: делать модели сразу в правильном масштабе
+                model.scale.set( 0.25, 0.25, 0.25 );
                 this.models[ id ] = model;
+
                 if ( handler ) handler( id );
             },
             // onProgress
@@ -157,13 +156,7 @@ class Game {
 
     handleMovementMessage( msgMovement ) {
 
-        this.entities.updateMovement( msgMovement );
-
-        if ( this.player.id == msgMovement.id ) {
-            this.player.next = new Movement( msgMovement );
-        } else {
-//            log.appendText( `ID=${msgMovement.id}, Pos=${msgMovement.position.x}:${msgMovement.position.y}:${msgMovement.position.z}` );
-        }
+        this.entities.handleMovement( msgMovement );
 
     }
 
@@ -193,12 +186,9 @@ class Game {
     }
 
     handleUnitInfoMessage( message ) {
-        log.appendText( `ID=${message.id}, Name=${message.name}` );
-        if ( message.self ) {
-            this.player.id = message.id;
-            this.player.name = message.name;
-            this.player.modelId = message.modelId;
-        }
+
+        this.entities.handleUnitInfo( message );
+
     }
 
     animate() {
@@ -213,21 +203,7 @@ class Game {
     update() {
 
         this.entities.removeExpired();
-
-        // Передвигаем игрока
-        if ( this.player.next ) {
-            this.player.movement = this.player.next;
-            this.player.next = undefined;
-        } else {
-            this.player.movement.position.add( this.player.movement.motion );
-            this.player.movement.motion.set( 0, 0, 0 );
-            this.player.movement.angle += this.player.movement.slew;
-            this.slew = 0;
-        }
-
-        // Изменяем высоту камеры
-        this.player.camHeight += this.player.camMotion;
-        this.player.camMotion = 0;
+        this.entities.moveEntities();
 
         // Обрабатываем контроллер на изменение высоты камеры
         if ( this.controller.zoomIn ) {
@@ -281,12 +257,13 @@ class Game {
             frame = 1;
         }
 
-        this.player.animate( frame );
-
+        this.entities.animate( frame );
         //---
+        /*
         if ( this.player.mixer ) {
             this.player.mixer.update( 0.01 );
         }
+        */
         //---
 
         this.renderer.render( this.scene, this.camera );

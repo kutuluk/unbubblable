@@ -220,6 +220,19 @@ class Connect {
         this.sendMessage( this.protobuf.Messaging.MessageType.MsgPingResponse, this.protobuf.Messaging.Response.PingResponse.encode( msg ).finish() );
 
     }
+
+    sendUnitInfoRequest( id ) {
+
+        // Формируем сообщение
+        let message = this.protobuf.Messaging.Request.UnitInfoRequest.create( {
+            id: id
+        } );
+
+        // Отправляем сообщение
+        this.sendMessage( this.protobuf.Messaging.MessageType.MsgUnitInfoRequest, this.protobuf.Messaging.Request.UnitInfoRequest.encode( message ).finish() );
+
+    }
+
 }
 
 export { Connect };

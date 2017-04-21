@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package protocol.Messaging.Request;
+
+// UnitInfoRequest определяет список необходимых чанков
+message	UnitInfoRequest {
+    int32 id = 1;
+}

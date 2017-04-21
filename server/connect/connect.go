@@ -1,7 +1,6 @@
 package connect
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -145,7 +144,7 @@ func (c *Connect) update() {
 	// Раз в секунду отправляем служебную информацию
 	if c.frame%4 == 0 {
 		c.SendInfo()
-		c.SendSystemMessage(0, fmt.Sprintf("Ping: %v, status: %v", c.ping.median, c.state))
+		//		c.SendSystemMessage(0, fmt.Sprintf("Ping: %v, status: %v", c.ping.median, c.state))
 	}
 
 	if c.frame == 4*4 {

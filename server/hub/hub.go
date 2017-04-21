@@ -45,7 +45,7 @@ func (h *Hub) Join(ws *websocket.Conn) {
 	// Добавляем его в список коннектов
 	h.connections[c] = true
 
-	h.SendUnitInfo(c, p)
+	//	h.SendUnitInfo(c, p, true)
 	h.SendTerrain(c)
 }
 
@@ -142,6 +142,27 @@ func (h *Hub) Handle(message *protocol.Message, connect *connect.Connect) {
 			}
 		}
 
+	// ChunkRequest
+	case protocol.MessageType_MsgUnitInfoRequest:
+
+		// Декодируем сообщение
+		msgUnitInfoRequest := new(protocol.UnitInfoRequest)
+		err = proto.Unmarshal(message.Body, msgUnitInfoRequest)
+		if err != nil {
+			log.Println("[proto read]:", err)
+			break
+		}
+
+		id := int(msgUnitInfoRequest.Id)
+
+		// Ищем нужного игрока и отправляем информацию о нем
+		for c := range h.connections {
+			if c.Player.ID() == id {
+				h.SendUnitInfo(connect, c.Player, connect.Player == c.Player)
+				break
+			}
+		}
+
 		/*
 			// Коннект сам себя пингует, этот функционал может потребоваться только при необходимости
 			// синхронизации времени
@@ -177,6 +198,6 @@ func (h *Hub) Handle(message *protocol.Message, connect *connect.Connect) {
 		*/
 
 	default:
-		log.Println("[hub](read): неизвестное сообщение")
+		log.Println("[hub](read): неизвестное сообщение", message.Type)
 	}
 }

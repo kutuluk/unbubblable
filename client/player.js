@@ -5,29 +5,27 @@ class Player extends Unit {
     constructor( camera, mesh ) {
 
         super( mesh );
+        this.name = "Player";
 
         this.camera = camera;
         this.camHeight = 14;
         this.camMotion = 0;
 
-        this.oX = new THREE.Vector3( 1, 0, 0 );
-        this.oY = new THREE.Vector3( 0, 1, 0 );
-        this.oZ = new THREE.Vector3( 0, 0, 1 );
+    }
+
+    move() {
+
+        super.move();
+
+        // Изменяем высоту камеры
+        this.camHeight += this.camMotion;
+        this.camMotion = 0;
 
     }
 
     animate( multiplier ) {
 
         super.animate( multiplier );
-
-        // ToDo: разобраться зачем эти странные повороты/развороты ------------------------------
-
-        // разворот головой вверх
-        this.mesh.rotateOnAxis( this.oX, Math.PI / 2 );
-        // компенсация кривого создания модели
-        this.mesh.rotateOnAxis( this.oY, Math.PI );
-
-        // --------------------------------------------------------------------------------------
 
         this.animateCamera( multiplier );
 
