@@ -55,14 +55,11 @@ class Unit {
 
     constructor( mesh ) {
 
-        this.name = "Unit Игрок Третий";
+        this.name = "Unit";
         this.mesh = mesh !== undefined ? mesh : new THREE.Mesh();
         this.movement = new Movement();
         this.next = new Movement();
         this.updated = false;
-
-        //        this.label = this.newLabel( this.name, { fontsize: 14, fontface: "Hobo", bgColor: "rgba(0, 0, 0, 1.0)" } );
-
 
         // ToDo: константы для оптимизации - вынести из полей класса
         // (используются также в Player)
@@ -74,15 +71,17 @@ class Unit {
 
     setName( name ) {
         this.name = name ? name : "Unknown";
-        this.label = this.newLabel( this.name, { fontsize: 14, fontface: "Hobo" } );
+        this.label = this.newLabel( this.name );
+        //        this.label = this.newLabel( this.name, { bgColor: "rgba(0, 0, 0, 1.0)" } );
     }
 
-    // ToDo: излишняя высота канвы, но если изменять - шрифт искажается
+    // ToDo: излишняя высота канвы (равная ширине), но если изменять - шрифт искажается
+    // разобраться, можно ли создавать спрайт из разносторонних текстур
     newLabel( text, parameters ) {
 
         if ( parameters === undefined ) parameters = {};
         let fontsize = parameters.fontsize ? parameters.fontsize : 14;
-        let fontface = parameters.fontface ? parameters.fontface : "Arial";
+        let fontface = parameters.fontface ? parameters.fontface : "Hobo";
         let bgColor = parameters.bgColor ? parameters.bgColor : "rgba(0, 0, 0, 0)";
         let color = parameters.color ? parameters.color : "rgba(255, 255, 255, 1.0)";
 
@@ -90,37 +89,31 @@ class Unit {
         let ctx = canvas.getContext( '2d' );
 
         // Вычисляем ширину канвы
-        ctx.font = `${fontsize}px ${fontface}`;
-        let width = ctx.measureText( text ).width + 4;
-        canvas.width = width;
+        //        ctx.font = `${fontsize}px ${fontface}`;
+        //        let width = ctx.measureText( text ).width;
+
+        canvas.width = 256;
+        canvas.height = 256;
 
         ctx.fillStyle = bgColor;
         ctx.fillRect( 0, 0, canvas.width, canvas.height );
 
         // Рисуем текст
         ctx.font = `${fontsize}px ${fontface}`;
-        ctx.textBaseline = "top";
         ctx.fillStyle = color;
-        ctx.fillText( text, 2, 0 );
+        ctx.textAlign = "center";
+        ctx.fillText( text, canvas.width / 2, canvas.height / 2 );
 
-/*
-        let canvas2 = document.createElement( 'canvas' );
-        let ctx2 = canvas2.getContext( '2d' );
-        canvas2.width = canvas.width;
-        canvas2.height = fontsize * 20;
-
-        ctx2.drawImage( canvas, 0, 0, canvas2.width, canvas2.height );
-*/
-        // canvas contents will be used for a texture
+        // Создаем текстуру из канвы
         let texture = new THREE.Texture( canvas );
         texture.magFilter = THREE.NearestFilter;
         texture.minFilter = THREE.NearestFilter;
         texture.needsUpdate = true;
 
-        let spriteMaterial = new THREE.SpriteMaterial( { map: texture, color: 0xffffff } );
+        // Создаем спрайт
+        let spriteMaterial = new THREE.SpriteMaterial( { map: texture } );
         let sprite = new THREE.Sprite( spriteMaterial );
-        //        sprite.scale.set( 1, 0.3, 1.0 );
-        sprite.scale.set( 1.5, 1.5, 1.0 );
+        sprite.scale.set( 3, 3, 1 );
         return sprite;
     }
 
@@ -152,7 +145,6 @@ class Unit {
     }
 
     animate( multiplier ) {
-
 
         // Рассчитываем изменение позициии в этом фрейме
         let motion = this.movement.motion.clone().multiplyScalar( multiplier );

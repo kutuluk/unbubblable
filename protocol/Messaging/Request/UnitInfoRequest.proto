@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package protocol.Messaging.Request;
 
-// UnitInfoRequest определяет список необходимых чанков
-message	UnitInfoRequest {
+// UnitInfoRequest определяет запрос на информацию об юните
+message UnitInfoRequest {
     int32 id = 1;
 }
