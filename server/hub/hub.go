@@ -4,7 +4,6 @@ import (
 	"log"
 	"math"
 
-	mathgl "github.com/go-gl/mathgl/mgl64"
 	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"
 
@@ -65,69 +64,12 @@ func (h *Hub) Tick(tick uint) {
 
 	// Перебираем все соединения
 	for c := range h.connections {
+
 		// Осуществляем перерасчет
 		c.Player.Update(tick)
 
-		// Контроль столкновений со стенами
-		// newPosition - координата юнита в следующем тике
-		newPosition := c.Player.Position.Add(c.Player.Motion)
-
-		x := newPosition.X()
-		y := newPosition.Y()
-
-		if x < 0 || x > float64(h.Terrain.Width) || y < 0 || y > float64(h.Terrain.Height) {
-			// Выход за границы ландшафта
-			c.Player.Motion = mathgl.Vec3{}
-		} else {
-
-			// Индекс блока ландшафта, в котором окажется юнит
-			i := int(x) + int(y)*h.Terrain.Width
-
-			// Размер ограничивающей сферы
-			// ToDo: возможна оптимизация исключением рассчета квадратного корня,
-			// если возвести это значение в квадрат
-			bound := 0.2
-
-			if h.Terrain.Map[i].Block != 0 {
-				c.Player.Motion = mathgl.Vec3{}
-			}
-
-			// Проверка на пересечение с левым блоком
-			if newPosition.X() < 1 || h.Terrain.Map[i-1].Block != 0 {
-				x := math.Floor(newPosition.X())
-				r := math.Sqrt((newPosition.X() - x) * (newPosition.X() - x))
-				if r < bound {
-					c.Player.Motion = mathgl.Vec3{}
-				}
-			}
-
-			// Проверка на пересечение с правым блоком
-			if newPosition.X() > float64(h.Terrain.Width-1) || h.Terrain.Map[i+1].Block != 0 {
-				x := math.Floor(newPosition.X()) + 1
-				r := math.Sqrt((newPosition.X() - x) * (newPosition.X() - x))
-				if r < bound {
-					c.Player.Motion = mathgl.Vec3{}
-				}
-			}
-
-			// Проверка на пересечение с нижним блоком
-			if newPosition.Y() < 1 || h.Terrain.Map[i-h.Terrain.Height].Block != 0 {
-				y := math.Floor(newPosition.Y())
-				r := math.Sqrt((newPosition.Y() - y) * (newPosition.Y() - y))
-				if r < bound {
-					c.Player.Motion = mathgl.Vec3{}
-				}
-			}
-
-			// Проверка на пересечение с верхним блоком
-			if newPosition.Y() > float64(h.Terrain.Height-1) || h.Terrain.Map[i+h.Terrain.Height].Block != 0 {
-				y := math.Floor(newPosition.Y()) + 1
-				r := math.Sqrt((newPosition.Y() - y) * (newPosition.Y() - y))
-				if r < bound {
-					c.Player.Motion = mathgl.Vec3{}
-				}
-			}
-		}
+		// Проверка столкновений со стенами
+		h.checkCollision(c.Player, true)
 
 		// Отправляем сообщение всем клиентам
 		for d := range h.connections {
