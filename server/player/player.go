@@ -109,8 +109,9 @@ func (p Player) Name() string {
 func NewPlayer(id int) *Player {
 	return &Player{
 		Unit: Unit{
-			id:    id,
-			Speed: 7.0,
+			id:       id,
+			Speed:    7.0,
+			Position: mathgl.Vec3{1, 1, 0},
 		},
 		ControllerQueue: make(ControllerQueue, 10),
 	}

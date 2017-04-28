@@ -1,43 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 
-	<head>
-		<title>Unbubblable</title>
-		<link rel="icon" type="image/png" sizes="32x32" href="/img/icon/favicon-32x32.png">
-		<link rel="icon" type="image/png" sizes="96x96" href="/img/icon/favicon-96x96.png">
-		<link rel="icon" type="image/png" sizes="16x16" href="/img/icon/favicon-16x16.png">
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-		<style>
+<head>
+	<title>Unbubblable</title>
+	<link rel="icon" type="image/png" sizes="32x32" href="/img/icon/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="96x96" href="/img/icon/favicon-96x96.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/img/icon/favicon-16x16.png">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<style>
+		@font-face {
+			font-family: Hobo;
+			src: url(assets/font/hobo.ttf);
+		}
 
-			@font-face {
-				font-family: Hobo;
-				src: url(assets/font/hobo.ttf);
-			}
+		body {
+			color: #ffffff;
+			font-family: Monospace;
+			font-size: 13px;
+			text-align: center;
+			font-weight: bold;
 
-			body {
-				color: #ffffff;
-				font-family:Monospace;
-				font-size:13px;
-				text-align:center;
-				font-weight: bold;
+			background-color: #000000;
+			margin: 0px;
+			overflow: hidden;
+		}
+	</style>
+</head>
 
-				background-color: #000000;
-				margin: 0px;
-				overflow: hidden;
-			}
+<body>
+	<div id="container"></div>
 
-		</style>
-	</head>
+	<script src="js/vendor/three/build/three.min.js"></script>
+	<script src="js/vendor/three/libs/stats.min.js"></script>
+	<script src="js/vendor/Detector.js"></script>
 
-	<body>
-		<div id="container"></div>
-
-		<script src="js/vendor/three/build/three.min.js"></script>
-		<script src="js/vendor/three/libs/stats.min.js"></script>
-		<script src="js/vendor/Detector.js"></script>
-
-		<script defer src='js/app.js'></script>
-	</body>
+	<script defer src='js/app.js'></script>
+</body>
 
 </html>
