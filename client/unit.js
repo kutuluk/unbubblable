@@ -55,6 +55,7 @@ class Unit {
 
     constructor( mesh ) {
 
+        this.id = 0;
         this.name = "Unit";
         this.mesh = mesh !== undefined ? mesh : new THREE.Mesh();
         this.movement = new Movement();

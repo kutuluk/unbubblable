@@ -12,6 +12,8 @@ class Game {
 
     constructor() {
 
+        log.setGame( this );
+
         this.playable = false;
 
         if ( !Detector.webgl ) {
@@ -74,6 +76,7 @@ class Game {
         } );
 
         this.controller = new Controller( this.renderer.domElement );
+        //        this.controller = new Controller( this.screen.container );
 
         this.stats = new Stats();
         this.stats.showPanel( 1 );
@@ -83,7 +86,7 @@ class Game {
 
         this.screen.container.appendChild( this.renderer.domElement );
         this.screen.container.appendChild( this.stats.domElement );
-        this.screen.container.appendChild( log.domElement );
+        this.screen.container.appendChild( log.chatBox );
 
         this.player = new Player( this.camera );
 
@@ -188,6 +191,25 @@ class Game {
     handleUnitInfoMessage( message ) {
 
         this.entities.handleUnitInfo( message );
+
+    }
+
+    handleSayMessage( message ) {
+
+        let sender = message.sender;
+
+        if ( this.entities.list.has( message.sender ) ) {
+            let info = this.entities.list.get( message.sender );
+            sender = this.entities.list.get( message.sender ).unit.name;
+        }
+
+        let level = "common";
+
+        if ( message.sender == this.player.id ) {
+            level = "own";
+        }
+
+        log.appendText( `${sender}: ${message.text}`, level );
 
     }
 

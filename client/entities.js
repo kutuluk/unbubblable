@@ -58,6 +58,7 @@ class Entities {
             }
 
             n.unit.setName( info.name );
+            n.unit.id = info.id;
             this.game.scene.add( n.unit.label );
 
             n.unit.modelId = info.modelId;

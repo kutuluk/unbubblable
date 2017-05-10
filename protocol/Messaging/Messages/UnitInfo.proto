@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package protocol.Messaging.Messages;
 
-import "protocol/Data/Vec3.proto";
-
 // UnitInfo определяет информацию о юните
 message UnitInfo {
 	// id определяет идентификатор юнита

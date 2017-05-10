@@ -1,20 +1,10 @@
+import { log } from './log';
+
 class Controller {
 
     constructor( dom ) {
 
-        this.moveForward = false;
-        this.moveBackward = false;
-
-        this.moveLeft = false;
-        this.moveRight = false;
-
-        this.rotateLeft = false;
-        this.rotateRight = false;
-
-        this.zoomIn = false;
-        this.zoomOut = false;
-
-        this.modifiers = { shift: false, ctrl: false, alt: false, meta: false };
+        this.clear();
 
         dom.addEventListener( 'contextmenu', event => event.preventDefault(), false );
         window.addEventListener( 'keydown', event => this.onKeyChange( event, true ), false );
@@ -44,46 +34,76 @@ class Controller {
         }
     */
 
+    clear() {
+
+        this.moveForward = false;
+        this.moveBackward = false;
+
+        this.moveLeft = false;
+        this.moveRight = false;
+
+        this.rotateLeft = false;
+        this.rotateRight = false;
+
+        this.zoomIn = false;
+        this.zoomOut = false;
+
+        this.modifiers = { shift: false, ctrl: false, alt: false, meta: false };
+
+    }
+
     onKeyChange( event, pressed ) {
 
-        switch ( event.keyCode ) {
+        if ( event.target == document.body ) {
 
-            // https://www.cambiaresearch.com/articles/15/javascript-char-codes-key-codes
+            switch ( event.keyCode ) {
 
-        case 87:
-            this.moveForward = pressed;
-            break; // W
-        case 83:
-            this.moveBackward = pressed;
-            break; // S
+                // https://www.cambiaresearch.com/articles/15/javascript-char-codes-key-codes
+                // http://keycode.info/
 
-        case 65:
-            this.moveLeft = pressed;
-            break; // A
-        case 68:
-            this.moveRight = pressed;
-            break; // D
+            case 13:
+                if ( pressed ) {
+                    this.clear();
+                    log.focus();
+                }
+                break;
 
-        case 81:
-            this.rotateLeft = pressed;
-            break; // Q
-        case 69:
-            this.rotateRight = pressed;
-            break; // E
+            case 87:
+                this.moveForward = pressed;
+                break; // W
+            case 83:
+                this.moveBackward = pressed;
+                break; // S
 
-        case 33:
-            this.zoomIn = pressed;
-            break; // PageUp
-        case 34:
-            this.zoomOut = pressed;
-            break; // PageDown
+            case 65:
+                this.moveLeft = pressed;
+                break; // A
+            case 68:
+                this.moveRight = pressed;
+                break; // D
+
+            case 81:
+                this.rotateLeft = pressed;
+                break; // Q
+            case 69:
+                this.rotateRight = pressed;
+                break; // E
+
+            case 33:
+                this.zoomIn = pressed;
+                break; // PageUp
+            case 34:
+                this.zoomOut = pressed;
+                break; // PageDown
+
+            }
+
+            this.modifiers.shift = event.shiftKey;
+            this.modifiers.ctrl = event.ctrlKey;
+            this.modifiers.alt = event.altKey;
+            this.modifiers.meta = event.metaKey;
 
         }
-
-        this.modifiers.shift = event.shiftKey;
-        this.modifiers.ctrl = event.ctrlKey;
-        this.modifiers.alt = event.altKey;
-        this.modifiers.meta = event.metaKey;
 
     }
 

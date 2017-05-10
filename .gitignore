@@ -3,8 +3,8 @@ files/
 *.exe
 *.blend1
 public/js/app.js
-server/proto/*
 server/protocol/*
 server/.idea
 client/protocol.js
+yarn.lock
 *~

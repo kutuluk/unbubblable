@@ -146,7 +146,7 @@ func (h *Hub) Handle(message *protocol.Message, connect *connect.Connect) {
 			}
 		}
 
-	// ChunkRequest
+	// UnitInfoRequest
 	case protocol.MessageType_MsgUnitInfoRequest:
 
 		// Декодируем сообщение
@@ -200,6 +200,32 @@ func (h *Hub) Handle(message *protocol.Message, connect *connect.Connect) {
 
 				c.pingTime = time.Time{}
 		*/
+
+	// Say
+	case protocol.MessageType_MsgSay:
+
+		// Декодируем сообщение
+		msgSay := new(protocol.Say)
+		err = proto.Unmarshal(message.Body, msgSay)
+		if err != nil {
+			log.Println("[proto read]:", err)
+			break
+		}
+
+		if msgSay.Sender == 0 {
+			msgSay.Sender = int32(connect.Player.ID())
+
+			buffer, err := proto.Marshal(msgSay)
+			if err != nil {
+				log.Println("[proto send]:", err)
+				return
+			}
+
+			// Отправляем сообщение во все коннекты
+			for c := range h.connections {
+				c.Send(protocol.MessageType_MsgSay, buffer)
+			}
+		}
 
 	default:
 		log.Println("[hub](read): неизвестное сообщение", message.Type)

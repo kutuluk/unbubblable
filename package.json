@@ -1,0 +1,18 @@
+{
+  "name": "unbubblable",
+  "version": "0.7",
+  "scripts": {
+    "webpack": "webpack",
+    "protocol": "pbjs -t static-module -w es6 ./protocol/Messaging/*.proto ./protocol/Messaging/Messages/*.proto ./protocol/Messaging/Response/*.proto ./protocol/Messaging/Request/*.proto ./protocol/Data/*.proto -o ./client/protocol.js"
+  },
+  "dependencies": {
+    "optiscroll": "^3.0.0",
+    "protobufjs": "^6.7.3"
+  },
+  "devDependencies": {
+    "babel-core": "^6.24.1",
+    "babel-loader": "^7.0.0",
+    "babel-preset-es2015": "^6.24.1",
+    "webpack": "^2.5.1"
+  }
+}

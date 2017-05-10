@@ -16,10 +16,9 @@ go build
 
 cd ..
 
-call pbjs -t static-module -w es6 ./protocol/Messaging/*.proto ./protocol/Messaging/Messages/*.proto ./protocol/Messaging/Response/*.proto ./protocol/Messaging/Request/*.proto ./protocol/Data/*.proto -o ./client/protocol.js
-call browserify ./client/main.js -o ./public/js/app.js
+call yarn run protocol
+call yarn run webpack
 
 cd server
 start server.exe
-::start http://localhost:8080
 cd ..

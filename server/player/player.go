@@ -177,6 +177,6 @@ func (p *Player) Update(tick uint) {
 			p.Slew *= 0.25
 		}
 	} else {
-		log.Println("[player]:", tick, "- не получено сообщение контроллера")
+		//		log.Println("[player]:", tick, "- не получено сообщение контроллера")
 	}
 }

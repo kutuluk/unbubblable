@@ -120,6 +120,13 @@ class Connect {
             this.game.handleUnitInfoMessage( msgUnitInfo );
             break;
 
+        case this.protobuf.Messaging.MessageType.MsgSay:
+
+            // Декодируем сообщение
+            let msgSay = this.protobuf.Messaging.Messages.Say.decode( message.body ).toObject( { defaults: true } );
+            this.game.handleSayMessage( msgSay );
+            break;
+
         default:
 
             log.appendText( `[proto read]: неизвестное сообщение MessageType=${message.type}` );
@@ -230,6 +237,19 @@ class Connect {
 
         // Отправляем сообщение
         this.sendMessage( this.protobuf.Messaging.MessageType.MsgUnitInfoRequest, this.protobuf.Messaging.Request.UnitInfoRequest.encode( message ).finish() );
+
+    }
+
+    sendSay( text ) {
+
+        // Формируем сообщение
+        let message = this.protobuf.Messaging.Messages.Say.create( {
+            sender: 0,
+            text: text
+        } );
+
+        // Отправляем сообщение
+        this.sendMessage( this.protobuf.Messaging.MessageType.MsgSay, this.protobuf.Messaging.Messages.Say.encode( message ).finish() );
 
     }
 
