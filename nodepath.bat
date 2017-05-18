@@ -1,0 +1,1 @@
+@for /f %%i in ('npm bin') do set PATH=%PATH%;%%i

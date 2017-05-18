@@ -212,8 +212,11 @@ func (h *Hub) Handle(message *protocol.Message, connect *connect.Connect) {
 			break
 		}
 
-		if msgSay.Sender == 0 {
-			msgSay.Sender = int32(connect.Player.ID())
+		log.Println("[msgSay.SenderId]:", msgSay.SenderId)
+
+		if msgSay.SenderId == 0 {
+			msgSay.SenderId = int32(connect.Player.ID())
+			msgSay.SenderName = connect.Player.Name()
 
 			buffer, err := proto.Marshal(msgSay)
 			if err != nil {

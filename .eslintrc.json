@@ -1,0 +1,15 @@
+{
+    "extends": "standard",
+    "plugins": [
+        "standard",
+        "promise"
+    ],
+    "env": {
+        "browser": true,
+        "es6": true
+    },
+    "globals": {
+        "THREE": true,
+        "Stats": true
+    }
+}

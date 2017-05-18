@@ -16,8 +16,9 @@ go build
 
 cd ..
 
-call yarn run protocol
-call yarn run webpack
+call npm run protocol-json-module
+call npm run webpack
+call npm run style
 
 cd server
 start server.exe

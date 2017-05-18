@@ -6,5 +6,6 @@ public/js/app.js
 server/protocol/*
 server/.idea
 client/protocol.js
-yarn.lock
+client/protocol.json
+client/protocol.json.js
 *~

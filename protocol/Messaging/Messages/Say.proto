@@ -4,8 +4,10 @@ package protocol.Messaging.Messages;
 
 // Say определяет сообщение в чат
 message Say {
-	// sender определяет идентификатор отправителя сообщения
-	int32 sender = 1;
+	// sender_id определяет идентификатор отправителя сообщения
+	int32 sender_id = 1;
+	// sender_name определяет имя отправителя сообщения
+    string sender_name = 2;
 	// text определяет текст сообщения
-    string text = 2;
+    string text = 3;
 }

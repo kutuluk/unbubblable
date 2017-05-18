@@ -1,0 +1,24 @@
+@font-face {
+  font-family: Hobo;
+  src: url("../assets/font/hobo.ttf");
+}
+body {
+  color: #fff;
+  background-color: #000;
+  margin: 0px;
+  overflow: hidden;
+}
+input:focus {
+  outline: 0;
+}
+.chatBox {
+  position: absolute;
+  left: 10px;
+  font: normal 14px Hobo;
+}
+.chatContent {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  text-shadow: 0px 1px 0px #000;
+}
