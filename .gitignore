@@ -1,5 +1,6 @@
 node_modules/
 files/
+.vscode/
 *.exe
 *.blend1
 public/js/app.js
@@ -7,5 +8,5 @@ server/protocol/*
 server/.idea
 client/protocol.js
 client/protocol.json
-client/protocol.json.js
+client/protocol-json.js
 *~

@@ -1,8 +1,7 @@
 {
-    "extends": "standard",
+    "extends": "airbnb-base",
     "plugins": [
-        "standard",
-        "promise"
+        "import"
     ],
     "env": {
         "browser": true,
@@ -11,5 +10,10 @@
     "globals": {
         "THREE": true,
         "Stats": true
+    },
+    "rules": {
+        "no-mixed-operators": "off",
+        "default-case": "off",
+        "no-plusplus": "off"
     }
 }
