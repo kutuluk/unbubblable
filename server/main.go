@@ -18,7 +18,7 @@ var l = loop.NewLoop(config.LoopFrequency, h)
 
 // Информационная страница о статусе сервера
 func status(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintln(w, "Unbubblable v. 0.7")
+	fmt.Fprintln(w, "Unbubblable "+VERSION+" ("+BUILD+") "+BUILD_DATE)
 	fmt.Fprintln(w, "Коннектов: ", h.Count())
 }
 

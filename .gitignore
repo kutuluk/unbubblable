@@ -10,3 +10,5 @@ client/protocol.js
 client/protocol.json
 client/protocol-json.js
 *~
+client/version.js
+server/version.go

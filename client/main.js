@@ -1,15 +1,18 @@
 import WebFont from 'webfontloader';
+import version from './version';
 import log from './log';
 import manager from './manager';
 import Game from './game';
 
-const start = function () {
+console.log(`Unbubblable ${version.version} (${version.build}) ${version.date}`);
+
+const start = function start() {
   const game = new Game();
   console.log(game);
   game.animate();
 };
 
-const fail = function () {
+const fail = function fail() {
   // Браузер не соответствует требованиям
   const container = document.getElementById('container');
   // FIX: log.domElement может измениться

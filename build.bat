@@ -1,3 +1,5 @@
+call version.bat
+
 rd server\protocol /q /s
 
 protoc --go_out=import_path=protocol:./server ./protocol/*/*.proto ./protocol/*/*/*.proto
