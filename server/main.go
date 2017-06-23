@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -22,6 +23,16 @@ func status(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintln(w, "Коннектов: ", h.Count())
 }
 
+// API для клиентских логов
+func logger(w http.ResponseWriter, req *http.Request) {
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		panic(err)
+	}
+	log.Println("Client ->", string(body))
+	fmt.Fprintln(w, "OK")
+}
+
 // Обработчик запросов на соединения по протоколу Websocket
 func ws(w http.ResponseWriter, r *http.Request) {
 	// Создаем соединение
@@ -38,6 +49,7 @@ func main() {
 	// Определяем обработчики
 	http.Handle("/", http.StripPrefix("/", http.FileServer(http.Dir("../public"))))
 	http.HandleFunc("/status", status)
+	http.HandleFunc("/logger", logger)
 	http.HandleFunc("/ws", ws)
 
 	// Запускаем http-сервер

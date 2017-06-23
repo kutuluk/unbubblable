@@ -1,4 +1,4 @@
-import log from './log';
+import chat from './chat';
 
 class Controller {
   constructor(dom) {
@@ -52,7 +52,7 @@ class Controller {
         case 13:
           if (pressed) {
             this.clear();
-            log.focus();
+            chat.focus();
           }
           break;
 

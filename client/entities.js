@@ -1,4 +1,4 @@
-import log from './log';
+import chat from './chat';
 import Unit from './unit';
 
 const expireTime = 1000;
@@ -61,7 +61,7 @@ class Entities {
       n.unit.mixer.clipAction(n.unit.mesh.animations[0]).play();
 
       this.list.set(info.id, n);
-      log.appendText(`[entities] add ${movement.id}`);
+      chat.appendText(`[entities] add ${movement.id}`);
     }
 
     /*
@@ -94,7 +94,7 @@ class Entities {
         this.game.scene.remove(entity.unit.mesh);
         this.game.scene.remove(entity.unit.label);
         this.list.delete(id);
-        log.appendText(`[entities] remove ${id}`);
+        chat.appendText(`[entities] remove ${id}`);
       }
     });
   }

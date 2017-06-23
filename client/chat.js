@@ -24,7 +24,7 @@ function scrollbarWidth () {
 }
 */
 
-class Log {
+class Chat {
   constructor() {
     this.game = undefined;
 
@@ -206,4 +206,4 @@ class Log {
   }
 }
 
-export default new Log();
+export default new Chat();

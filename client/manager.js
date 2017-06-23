@@ -1,41 +1,47 @@
-import log from './log';
+import loglevel from 'loglevel';
+
+const logger = loglevel.getLogger('manager');
 
 class Manager {
-  constructor() {
-    this.canvas = !!window.CanvasRenderingContext2D;
-    if (!this.canvas) {
-      log.appendText('[ERROR] Браузер не поддерживает Canvas.');
+  constructor(onReady, onFail) {
+    this.hasCanvas = !!window.CanvasRenderingContext2D;
+    if (!this.hasCanvas) {
+      logger.error('Браузер не поддерживает Canvas.');
     }
 
-    this.webgl = false;
-    if (this.canvas) {
+    this.hasWebGL = false;
+    if (this.hasCanvas) {
       const canvas = document.createElement('canvas');
-      this.webgl = !!(window.WebGLRenderingContext &&
+      this.hasWebGL = !!(window.WebGLRenderingContext &&
         (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
     }
-    if (!this.webgl) {
-      log.appendText('[ERROR] Браузер не поддерживает WebGL.');
+    if (!this.hasWebGL) {
+      logger.error('Браузер не поддерживает WebGL.');
     }
 
-    this.websocket = !!window.WebSocket;
-    if (!this.websocket) {
-      log.appendText('[ERROR] Браузер не поддерживает WebSockets.');
+    this.hasWebSocket = !!window.WebSocket;
+    if (!this.hasWebSocket) {
+      logger.error('Браузер не поддерживает WebSockets.');
     }
 
-    this.workers = !!window.Worker;
-    this.fileapi = !!(window.File && window.FileReader && window.FileList && window.Blob);
+    this.hasWorkers = !!window.Worker;
+    this.hasFileAPI = !!(window.File && window.FileReader && window.FileList && window.Blob);
+    this.hasLocalStorage = !!window.localStorage;
 
     this.windowLoad = false;
     this.fontLoad = false;
+
+    this.onReady = onReady;
+    this.onFail = onFail;
   }
 
   require() {
-    return this.canvas && this.webgl && this.websocket;
+    return this.hasCanvas && this.hasWebGL && this.hasWebSocket;
   }
 
   check() {
     if (this.require() && this.fontLoad && this.windowLoad) {
-      this.onready();
+      this.onReady();
     }
   }
 
@@ -49,10 +55,10 @@ class Manager {
       this.fontLoad = true;
       this.check();
     } else {
-      log.appendText('[ERROR] Ошибка загрузки шрифта.');
-      this.onfail();
+      logger.error('Ошибка загрузки шрифта.');
+      this.onFail();
     }
   }
 }
 
-export default new Manager();
+export default Manager;

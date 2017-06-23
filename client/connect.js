@@ -1,3 +1,4 @@
+import loglevel from 'loglevel';
 // Скомпилированное описание протокола в формате json
 import protobufjs from 'protobufjs';
 import protocolJSON from './protocol-json';
@@ -5,7 +6,9 @@ import protocolJSON from './protocol-json';
 // import protocol from './protocol'
 
 import { time } from './time';
-import log from './log';
+import chat from './chat';
+
+const logger = loglevel.getLogger('connect');
 
 class Connect {
   constructor(game) {
@@ -23,22 +26,24 @@ class Connect {
     this.ws.binaryType = 'arraybuffer';
 
     this.ws.onopen = () => {
-      log.appendText('[WS] Соединение установлено.');
+      logger.info('[WS] Соединение успешно установлено.');
     };
 
     this.ws.onerror = (error) => {
-      log.appendText(`[WS] Ошибка: ${error.message}`);
+      logger.error(`[WS] ${error.message}`);
     };
 
     this.ws.onclose = (event) => {
       let text = '';
       if (event.wasClean) {
         text = 'Соединение закрыто чисто.';
+        logger.info(`[WS] ${text} Код: ${event.code}`);
       } else {
         text = 'Обрыв соединения.';
+        logger.error(`[WS] ${text} Код: ${event.code}`);
       }
       // http://stackoverflow.com/questions/18803971/websocket-onerror-how-to-read-error-description
-      log.appendText(`[WS] ${text} Код: ${event.code}`);
+      // log.appendText(`[WS] ${text} Код: ${event.code}`);
     };
 
     this.ws.onmessage = (event) => {
@@ -81,7 +86,7 @@ class Connect {
           .decode(message.body)
           .toObject({ defaults: true });
         // FIXME: Выводим сообщение в чат, а не в лог
-        log.systemMessage(msg.text);
+        chat.systemMessage(msg.text);
         break;
       }
 
@@ -131,7 +136,8 @@ class Connect {
       }
 
       default:
-        log.appendText(`[proto read]: неизвестное сообщение MessageType=${message.type}`);
+        // chat.appendText(`[proto read]: неизвестное сообщение MessageType=${message.type}`);
+        logger.error(`[proto read]: неизвестное сообщение MessageType=${message.type}`);
         break;
     }
   }

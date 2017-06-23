@@ -1,31 +1,34 @@
 import WebFont from 'webfontloader';
+import loglevel from 'loglevel';
+
+import './loginit';
 import version from './version';
-import log from './log';
-import manager from './manager';
+import Manager from './manager';
 import Game from './game';
 
-console.log(`Unbubblable ${version.version} (${version.build}) ${version.date}`);
+const logger = loglevel.getLogger('main');
+
+logger.info(`Unbubblable ${version.version} (${version.build}) ${version.date}`);
 
 const start = function start() {
   const game = new Game();
-  console.log(game);
+  logger.info(game);
   game.animate();
 };
 
 const fail = function fail() {
   // Браузер не соответствует требованиям
-  const container = document.getElementById('container');
+  // const container = document.getElementById('container');
   // FIX: log.domElement может измениться
-  container.appendChild(log.box);
+  // container.appendChild(log.box);
 };
 
+const manager = new Manager(start, fail);
 if (!manager.require()) {
   fail();
   throw new Error('Браузер не соответствует требованиям');
 }
 
-manager.onready = start;
-manager.onfail = fail;
 // FIX: Странная конструкция
 window.onload = manager.windowload.bind(manager);
 

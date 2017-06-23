@@ -9,6 +9,9 @@
     "protocol-json": "pbjs -t json ./protocol/Messaging/*.proto ./protocol/Messaging/Messages/*.proto ./protocol/Messaging/Response/*.proto ./protocol/Messaging/Request/*.proto ./protocol/Data/*.proto -o ./client/protocol.json"
   },
   "dependencies": {
+    "loglevel": "^1.4.1",
+    "loglevel-plugin-prefix": "^0.5.3",
+    "loglevel-plugin-remote": "^0.1.2",
     "optiscroll": "^3.0.0",
     "protobufjs": "^6.7.3",
     "webfontloader": "^1.6.27"

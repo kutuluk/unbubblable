@@ -1,4 +1,5 @@
-import log from './log';
+import loglevel from 'loglevel';
+import chat from './chat';
 import Controller from './controller';
 import Entities from './entities';
 import Player from './player';
@@ -7,14 +8,17 @@ import Loop from './loop';
 import Connect from './connect';
 import Terrain from './terrain';
 
+const logger = loglevel.getLogger('game');
+
 class Game {
   constructor() {
-    log.init(this);
+    chat.init(this);
 
-    this.screen = {};
-    this.screen.width = window.innerWidth;
-    this.screen.height = window.innerHeight;
-    this.screen.container = document.getElementById('container');
+    this.screen = {
+      width: window.innerWidth,
+      height: window.innerHeight,
+      container: document.getElementById('container'),
+    };
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setClearColor(0x111111);
@@ -53,7 +57,7 @@ class Game {
     this.loadModel(0, 'assets/models/model.json', (id) => {
       // ToDo: может ли во время создания плейера модель быть еще не загруженной
       //            let model = this.models[ id ].clone();
-      //            console.log( model );
+      //            console.chat( model );
     });
 
     this.controller = new Controller(this.renderer.domElement);
@@ -67,7 +71,7 @@ class Game {
 
     this.screen.container.appendChild(this.renderer.domElement);
     this.screen.container.appendChild(this.stats.domElement);
-    this.screen.container.appendChild(log.box);
+    this.screen.container.appendChild(chat.box);
 
     this.player = new Player(this.camera);
 
@@ -99,12 +103,10 @@ class Game {
         if (handler) handler(id);
       },
       // onProgress
-      (xhr) => {
-        //                console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
-      },
+      () => {},
       // onError
       (xhr) => {
-        console.error('An error happened');
+        logger.error('XHR error', xhr.status, xhr.statusText);
       },
     );
   }
@@ -135,7 +137,7 @@ class Game {
     this.camera.aspect = this.screen.width / this.screen.height;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(this.screen.width, this.screen.height);
-    log.resize();
+    chat.resize();
   }
 
   handleMovementMessage(msgMovement) {
@@ -183,7 +185,7 @@ class Game {
       level = 'own';
     }
 
-    log.appendText(`<span>${message.senderName}:</span> ${message.text}`, level);
+    chat.appendText(`<span>${message.senderName}:</span> ${message.text}`, level);
   }
 
   animate() {

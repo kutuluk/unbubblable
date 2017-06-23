@@ -1,4 +1,6 @@
-import log from './log';
+import loglevel from 'loglevel';
+
+const logger = loglevel.getLogger('atlas');
 
 class Atlas {
   constructor(cols, rows, resolution, src) {
@@ -98,7 +100,7 @@ class Atlas {
 
     // Обработчик ошибки загрузки исходного изображения текстуры
     img.onerror = () => {
-      log.appendText(`[atlas]: Ошибка загрузки файла ${this.src}`);
+      logger.error(`Ошибка загрузки файла ${this.src}`);
     };
 
     // Загружаем исходную текстуру
