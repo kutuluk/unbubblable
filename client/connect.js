@@ -6,9 +6,10 @@ import protocolJSON from './protocol-json';
 // import protocol from './protocol'
 
 import { time } from './time';
-import chat from './chat';
 
 const logger = loglevel.getLogger('connect');
+logger.setLevel('warn');
+const wsLogger = loglevel.getLogger('websocket');
 
 class Connect {
   constructor(game) {
@@ -22,94 +23,87 @@ class Connect {
 
     this.ping = 0;
 
-    this.ws = new WebSocket(`ws://${window.location.host}/ws`);
-    this.ws.binaryType = 'arraybuffer';
+    const ws = new WebSocket(`ws://${window.location.host}/ws`);
 
-    this.ws.onopen = () => {
-      logger.info('[WS] Соединение успешно установлено.');
+    ws.binaryType = 'arraybuffer';
+
+    ws.onopen = () => {
+      wsLogger.info('Соединение успешно установлено');
     };
 
-    this.ws.onerror = (error) => {
-      logger.error(`[WS] ${error.message}`);
-    };
-
-    this.ws.onclose = (event) => {
-      let text = '';
-      if (event.wasClean) {
-        text = 'Соединение закрыто чисто.';
-        logger.info(`[WS] ${text} Код: ${event.code}`);
-      } else {
-        text = 'Обрыв соединения.';
-        logger.error(`[WS] ${text} Код: ${event.code}`);
-      }
+    ws.onerror = () => {
       // http://stackoverflow.com/questions/18803971/websocket-onerror-how-to-read-error-description
-      // log.appendText(`[WS] ${text} Код: ${event.code}`);
+      wsLogger.error('Произошла какая-то ошибка');
     };
 
-    this.ws.onmessage = (event) => {
+    ws.onclose = (event) => {
+      // if (event.code === 1000) {
+      if (event.wasClean) {
+        wsLogger.info('Соединение закрыто чисто');
+      } else {
+        // https://tools.ietf.org/html/rfc6455#section-7.4
+        wsLogger.error(`Обрыв соединения c кодом ${event.code}`);
+      }
+    };
+
+    ws.onmessage = (event) => {
       try {
         // Декодируем сообщение
-        const msg = this.protobuf.Messaging.Message
-          .decode(new Uint8Array(event.data))
-          .toObject({ defaults: true });
+        const msg = this.protobuf.Messaging.Message.decode(new Uint8Array(event.data));
+        //          .toObject({ defaults: true });
         // Обрабатываем сообщение
         this.handleMessage(msg);
       } catch (err) {
-        // log.appendText(`[PROTO read]: ${err}`);
+        logger.error(err.message);
         throw err;
       }
     };
+
+    this.ws = ws;
   }
 
   handleMessage(message) {
     switch (message.type) {
       case this.protobuf.Messaging.MessageType.MsgChain: {
-        const msg = this.protobuf.Messaging.MessageChain
-          .decode(message.body)
-          .toObject({ defaults: true });
+        const msg = this.protobuf.Messaging.MessageChain.decode(message.body);
+        //          .toObject({ defaults: true });
         // Запускаем обработчик для всех сообщений в цепочке
-        msg.chain.forEach(() => this.handleMessage(message));
+        msg.chain.forEach(m => this.handleMessage(m));
         break;
       }
 
       case this.protobuf.Messaging.MessageType.MsgInfo: {
-        const msg = this.protobuf.Messaging.Messages.Info
-          .decode(message.body)
-          .toObject({ defaults: true });
+        const msg = this.protobuf.Messaging.Messages.Info.decode(message.body);
+        //          .toObject({ defaults: true });
         // Переводим нанасекунды в миллисекунды
         this.ping = msg.ping / 1000000;
         break;
       }
 
       case this.protobuf.Messaging.MessageType.MsgSystemMessage: {
-        const msg = this.protobuf.Messaging.Messages.SystemMessage
-          .decode(message.body)
-          .toObject({ defaults: true });
-        // FIXME: Выводим сообщение в чат, а не в лог
-        chat.systemMessage(msg.text);
+        const msg = this.protobuf.Messaging.Messages.SystemMessage.decode(message.body);
+        //          .toObject({ defaults: true });
+        this.game.handleSystemMessage(msg);
         break;
       }
 
       case this.protobuf.Messaging.MessageType.MsgMovement: {
-        const msg = this.protobuf.Messaging.Messages.Movement
-          .decode(message.body)
-          .toObject({ defaults: true });
+        const msg = this.protobuf.Messaging.Messages.Movement.decode(message.body);
+        //          .toObject({ defaults: true });
         this.game.handleMovementMessage(msg);
         break;
       }
 
       case this.protobuf.Messaging.MessageType.MsgTerrain: {
-        const msg = this.protobuf.Messaging.Messages.Terrain
-          .decode(message.body)
-          .toObject({ defaults: true });
+        const msg = this.protobuf.Messaging.Messages.Terrain.decode(message.body);
+        //          .toObject({ defaults: true });
         this.game.handleTerrainMessage(msg);
         break;
       }
 
       case this.protobuf.Messaging.MessageType.MsgChunk: {
-        const msg = this.protobuf.Messaging.Response.GetChunksResponse
-          .decode(message.body)
-          .toObject({ defaults: true });
+        const msg = this.protobuf.Messaging.Response.GetChunksResponse.decode(message.body);
+        //          .toObject({ defaults: true });
         this.game.handleChunkMessage(msg);
         break;
       }
@@ -120,24 +114,21 @@ class Connect {
         break;
 
       case this.protobuf.Messaging.MessageType.MsgUnitInfo: {
-        const msg = this.protobuf.Messaging.Messages.UnitInfo
-          .decode(message.body)
-          .toObject({ defaults: true });
+        const msg = this.protobuf.Messaging.Messages.UnitInfo.decode(message.body);
+        //          .toObject({ defaults: true });
         this.game.handleUnitInfoMessage(msg);
         break;
       }
 
       case this.protobuf.Messaging.MessageType.MsgSay: {
-        const msg = this.protobuf.Messaging.Messages.Say
-          .decode(message.body)
-          .toObject({ defaults: true });
+        const msg = this.protobuf.Messaging.Messages.Say.decode(message.body);
+        //          .toObject({ defaults: true });
         this.game.handleSayMessage(msg);
         break;
       }
 
       default:
-        // chat.appendText(`[proto read]: неизвестное сообщение MessageType=${message.type}`);
-        logger.error(`[proto read]: неизвестное сообщение MessageType=${message.type}`);
+        logger.warn(`Неизвестное сообщение. MessageType=${message.type}`);
         break;
     }
   }
@@ -196,6 +187,8 @@ class Connect {
       this.protobuf.Messaging.MessageType.MsgController,
       this.protobuf.Messaging.Messages.ApplyControllerMessage.encode(msg).finish(),
     );
+
+    logger.info('Контроллер отправлен');
   }
 
   sendChanksRequest(indecies) {

@@ -1,8 +1,9 @@
 package loop
 
 import (
-	"log"
 	"time"
+
+	"github.com/kutuluk/unbubblable/server/logger"
 )
 
 // Ticker определяет интерфейс обработчика тиков
@@ -29,14 +30,15 @@ type Loop struct {
 }
 
 // NewLoop создает и запускает цикл в отдельной горутине
-func NewLoop(f int, t Ticker) Loop {
-	l := Loop{
+func NewLoop(f int, t Ticker) *Loop {
+	l := &Loop{
 		frequency: f,
 		ticker:    t,
 		interval:  time.Second / time.Duration(f),
 	}
 	go l.Entry()
-	log.Printf("[loop]: цикл запущен с интервалом %v\n", l.interval)
+	logger.Info("Игровой цикл запущен с интервалом", l.interval)
+
 	return l
 }
 
@@ -48,16 +50,15 @@ func (l *Loop) Entry() {
 	for {
 		l.start = time.Now()
 		calc := entry.Add(l.interval * time.Duration(l.tick))
-		delta := calc.Sub(l.start)
+		delta := l.start.Sub(calc)
 
+		logger.Debug("Тик:", l.tick, "delta:", delta)
 		l.ticker.Tick(l.tick)
-
-		//		log.Printf("[loop]: tick %d, delta %s\n", l.tick, delta)
 
 		busy := time.Since(l.start)
 		l.busy = int(busy * 100 / l.interval)
 
-		time.Sleep(l.interval - busy + delta)
+		time.Sleep(l.interval - busy - delta)
 		l.tick++
 	}
 }

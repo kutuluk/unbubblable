@@ -86,6 +86,7 @@ class Game {
     this.loop = new Loop(20, () => {
       this.update();
     });
+    this.loop.restart();
 
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
   }
@@ -176,6 +177,14 @@ class Game {
 
   handleUnitInfoMessage(message) {
     this.entities.handleUnitInfo(message);
+  }
+
+  handleConnectInfoMessage(message) {
+    // this.entities.handleUnitInfo(message);
+  }
+
+  handleSystemMessage(msg) {
+    chat.systemMessage(msg.text);
   }
 
   handleSayMessage(message) {

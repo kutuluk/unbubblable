@@ -1,7 +1,6 @@
 package hub
 
 import (
-	"log"
 	"math"
 
 	"github.com/golang/protobuf/proto"
@@ -37,14 +36,26 @@ func NewHub() *Hub {
 }
 
 // Join создает нового игрока, ассоциирцет его с сокетом и добавляет его в список коннектов
-func (h *Hub) Join(ws *websocket.Conn) {
+func (h *Hub) Join(ws *websocket.Conn, suuid string) {
 	// Создаем игрока
-	p := player.NewPlayer(nextID())
+	id := nextID()
+	p := player.NewPlayer(id)
+	/*
+		db.DB.Update(func(tx *bolt.Tx) error {
+			b, err := tx.CreateBucketIfNotExists([]byte("players"))
+			if err != nil {
+				return err
+			}
+			return b.Put([]byte(string(id)), []byte(p.Name()))
+		})
+	*/
+
 	// Создаем коннект
-	c := connect.NewConnect(ws, h, p)
+	c := connect.NewConnect(ws, suuid, h, p)
 	// Добавляем его в список коннектов
 	h.connections[c] = true
 
+	h.SendConnectInfo(c, p)
 	//	h.SendUnitInfo(c, p, true)
 	h.SendTerrain(c)
 }
@@ -84,6 +95,8 @@ func (h *Hub) Handle(message *protocol.Message, connect *connect.Connect) {
 
 	var err error
 
+	logger := connect.Logger
+
 	switch message.Type {
 
 	// Chain
@@ -93,7 +106,7 @@ func (h *Hub) Handle(message *protocol.Message, connect *connect.Connect) {
 		msgChain := new(protocol.MessageChain)
 		err = proto.Unmarshal(message.Body, msgChain)
 		if err != nil {
-			log.Println("[proto read]:", err)
+			logger.Error("Ошибка декодирования сообщения:", err)
 			break
 		}
 
@@ -109,10 +122,13 @@ func (h *Hub) Handle(message *protocol.Message, connect *connect.Connect) {
 		// Декодируем сообщение
 		err = proto.Unmarshal(message.Body, msgController)
 		if err != nil {
-			log.Println("[proto read]:", err)
+			logger.Error("Ошибка декодирования сообщения:", err)
 			break
 		}
+
 		// Применяем сообщение
+		logger.Debug("Контроллер получен")
+
 		//c.Player.Controller = msgController
 		connect.Player.ControllerQueue.Push(msgController)
 
@@ -123,7 +139,7 @@ func (h *Hub) Handle(message *protocol.Message, connect *connect.Connect) {
 		// Декодируем сообщение
 		err = proto.Unmarshal(message.Body, msgChunksRequest)
 		if err != nil {
-			log.Println("[proto read]:", err)
+			logger.Error("Ошибка декодирования сообщения:", err)
 			break
 		}
 
@@ -153,7 +169,7 @@ func (h *Hub) Handle(message *protocol.Message, connect *connect.Connect) {
 		msgUnitInfoRequest := new(protocol.UnitInfoRequest)
 		err = proto.Unmarshal(message.Body, msgUnitInfoRequest)
 		if err != nil {
-			log.Println("[proto read]:", err)
+			logger.Error("Ошибка декодирования сообщения:", err)
 			break
 		}
 
@@ -208,11 +224,11 @@ func (h *Hub) Handle(message *protocol.Message, connect *connect.Connect) {
 		msgSay := new(protocol.Say)
 		err = proto.Unmarshal(message.Body, msgSay)
 		if err != nil {
-			log.Println("[proto read]:", err)
+			logger.Error("Ошибка декодирования сообщения:", err)
 			break
 		}
 
-		log.Println("[msgSay.SenderId]:", msgSay.SenderId)
+		logger.Debug("msgSay.SenderId:", msgSay.SenderId)
 
 		if msgSay.SenderId == 0 {
 			msgSay.SenderId = int32(connect.Player.ID())
@@ -220,7 +236,7 @@ func (h *Hub) Handle(message *protocol.Message, connect *connect.Connect) {
 
 			buffer, err := proto.Marshal(msgSay)
 			if err != nil {
-				log.Println("[proto send]:", err)
+				logger.Error("Ошибка сериализации сообщения:", err)
 				return
 			}
 
@@ -231,6 +247,6 @@ func (h *Hub) Handle(message *protocol.Message, connect *connect.Connect) {
 		}
 
 	default:
-		log.Println("[hub](read): неизвестное сообщение", message.Type)
+		logger.Warn("Неизвестное сообщение:", message.Type)
 	}
 }

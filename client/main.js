@@ -1,18 +1,20 @@
 import WebFont from 'webfontloader';
 import loglevel from 'loglevel';
 
-import './loginit';
+import session from './loginit';
 import version from './version';
 import Manager from './manager';
 import Game from './game';
 
 const logger = loglevel.getLogger('main');
 
-logger.info(`Unbubblable ${version.version} (${version.build}) ${version.date}`);
+logger.info(
+  `Unbubblable v. ${version.version} (build ${version.build}) released on ${version.date}, session: ${session}`,
+);
 
 const start = function start() {
   const game = new Game();
-  logger.info(game);
+  // logger.info(game);
   game.animate();
 };
 

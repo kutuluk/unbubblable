@@ -1,12 +1,12 @@
 package terrain
 
 import (
-	"log"
 	"math/rand"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 
+	"github.com/kutuluk/unbubblable/server/logger"
 	"github.com/kutuluk/unbubblable/server/protocol"
 )
 
@@ -202,7 +202,7 @@ func (t Terrain) NewChank(i int) *Chunk {
 	// Сериализуем данные протобафом
 	buffer, err := proto.Marshal(msgChunk)
 	if err != nil {
-		log.Fatal("[proto chunk]:", err)
+		logger.Fatal("Ошибка сериализации сообщения:", err)
 	}
 
 	return &Chunk{
@@ -305,7 +305,7 @@ func NewTerrain(width, height, chunkSize int, seed int64) *Terrain {
 	// Сериализуем данные протобафом
 	buffer, err := proto.Marshal(msgTerrain)
 	if err != nil {
-		log.Fatal("[proto terrain]:", err)
+		logger.Fatal("Ошибка сериализации сообщения:", err)
 	}
 
 	t.Proto = buffer

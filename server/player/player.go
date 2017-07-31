@@ -1,13 +1,13 @@
 package player
 
 import (
-	"log"
 	"math"
 	"strconv"
 
 	mathgl "github.com/go-gl/mathgl/mgl64"
 
 	"github.com/kutuluk/unbubblable/server/config"
+	"github.com/kutuluk/unbubblable/server/logger"
 	"github.com/kutuluk/unbubblable/server/protocol"
 )
 
@@ -17,7 +17,7 @@ func (q *ControllerQueue) Push(n *protocol.ApplyControllerMessage) {
 	if q.Len() < 1 {
 		*q = append(*q, n)
 	} else {
-		log.Println("[player]: сообщение контроллера не уместилось в очередь")
+		logger.Warn("Сообщение контроллера не уместилось в очередь")
 	}
 }
 

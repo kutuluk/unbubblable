@@ -4,8 +4,13 @@ files/
 *.exe
 *.blend1
 public/js/app.js
-server/protocol/*
+public/js/logs.js
+public/js/app.min.js
+public/bootstrap/
+server/protocol/
 server/.idea
+server/data.db
+server/data.db.lock
 client/protocol.js
 client/protocol.json
 client/protocol-json.js

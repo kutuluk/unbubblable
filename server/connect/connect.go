@@ -1,12 +1,13 @@
 package connect
 
 import (
-	"log"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"
+	"github.com/satori/go.uuid"
 
+	"github.com/kutuluk/unbubblable/server/logger"
 	"github.com/kutuluk/unbubblable/server/player"
 	"github.com/kutuluk/unbubblable/server/protocol"
 )
@@ -29,6 +30,9 @@ type Connect struct {
 	Player   *player.Player
 	Received int
 	Sent     int
+	UUID     uuid.UUID
+	SUUID    string
+	Logger   *logger.Logger
 
 	handler  Handler
 	ws       *websocket.Conn
@@ -39,12 +43,23 @@ type Connect struct {
 }
 
 // NewConnect создает коннект
-func NewConnect(ws *websocket.Conn, h Handler, p *player.Player) *Connect {
+func NewConnect(ws *websocket.Conn, suuid string, h Handler, p *player.Player) *Connect {
 	//	p := player.NewPlayer(1)
+
+	/*
+		const alphabet = "0123456789abcdefghijklmnopqrstuvwxyz"
+		sid, _ := shortid.New(1, alphabet, 2342)
+		suuid, _ := sid.Generate()
+	*/
+	//suuid, _ := shortid.Generate()
 	c := &Connect{
 		ws:      ws,
 		handler: h,
 		Player:  p,
+		UUID:    uuid.NewV4(),
+		SUUID:   suuid,
+		Logger:  logger.New(suuid, "server"),
+
 		// Медиана рассчитывается на основании 4 последних пингов
 		ping: newPingStatistics(4),
 	}
@@ -56,7 +71,7 @@ func NewConnect(ws *websocket.Conn, h Handler, p *player.Player) *Connect {
 	// Запускаем обработчик исходящих сообщений
 	c.outbound = c.sender()
 
-	log.Print("[connect]: новое подключение с адреса ", c.ws.RemoteAddr())
+	c.Logger.Info("Соединение для сессии", suuid, "с адреса", c.ws.RemoteAddr(), "успешно установлено")
 
 	return c
 }
@@ -67,6 +82,7 @@ func (c *Connect) pongHandler(string) error {
 	c.ping.done(now)
 	// Продляем Deadline сокета
 	c.ws.SetReadDeadline(now.Add(pongWait))
+	c.Logger.Debug("Получен Pong")
 	return nil
 }
 
@@ -81,7 +97,7 @@ func (c *Connect) close() {
 	c.handler.Leave(c)
 	c.ws.Close()
 	close(c.outbound)
-	log.Print("[connect]: подключение с адреса ", c.ws.RemoteAddr(), " завершено")
+	c.Logger.Info("Подключение с адреса", c.ws.RemoteAddr(), "завершено")
 }
 
 // receiver обрабатывает входящие сообщения
@@ -89,7 +105,7 @@ func (c *Connect) receiver() {
 	go func() {
 		defer func() {
 			c.close()
-			log.Println("[connect]: ресивер завершился")
+			c.Logger.Info("Ресивер завершился")
 		}()
 
 		for {
@@ -97,7 +113,7 @@ func (c *Connect) receiver() {
 			messageType, messageData, err := c.ws.ReadMessage()
 			if err != nil {
 				// Завершение ресивера
-				log.Println("[receiver]:", err)
+				c.Logger.Error("Ошибка чтения из сокета:", err)
 				break
 			}
 
@@ -105,7 +121,7 @@ func (c *Connect) receiver() {
 			c.Received += len(messageData)
 
 			if messageType != websocket.BinaryMessage {
-				log.Println("[receiver]: не ожидаемое текстовое сообщение -", messageData)
+				c.Logger.Warn("Не ожидаемое входящее текстовое сообщение:", messageData)
 				// Игнорируем сообщение
 				continue
 			}
@@ -114,7 +130,7 @@ func (c *Connect) receiver() {
 			message := new(protocol.Message)
 			err = proto.Unmarshal(messageData, message)
 			if err != nil {
-				log.Println("[proto read]:", err)
+				c.Logger.Error("Ошибка декодирования сообщения:", err)
 				// Игнорируем сообщение
 				continue
 			}
@@ -135,6 +151,7 @@ func (c *Connect) update() {
 		if err := c.ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
 			return
 		}
+		c.Logger.Debug("Отправлен Ping")
 	}
 
 	if c.state == StateSYNC && c.frame%(4*4) == 0 {

@@ -1,7 +1,6 @@
 package connect
 
 import (
-	"log"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -32,7 +31,7 @@ func (c *Connect) sender() chan<- []byte {
 		defer func() {
 			pinger.Stop()
 			//			c.close()
-			log.Println("[sender]: сендер завершился")
+			c.Logger.Info("Сендер завершился")
 		}()
 
 		//		for message := range outbound {
@@ -50,7 +49,8 @@ func (c *Connect) sender() chan<- []byte {
 				// Отправляем сообщение
 				err := c.ws.WriteMessage(websocket.BinaryMessage, message)
 				if err != nil {
-					log.Println("[sender]:", err)
+					c.Logger.Error("Ошибка записи в сокет:", err)
+
 					//ToDo: сделать полноценную обработку ошибки
 					if err == websocket.ErrCloseSent {
 						// Сокет закрыт - выход из горутины
@@ -84,7 +84,7 @@ func (c *Connect) Send(msgType protocol.MessageType, msgBody []byte) {
 
 	buffer, err := proto.Marshal(message)
 	if err != nil {
-		log.Println("[proto send]:", err)
+		c.Logger.Error("Ошибка сериализации сообщения:", err)
 		return
 	}
 
@@ -95,7 +95,7 @@ func (c *Connect) Send(msgType protocol.MessageType, msgBody []byte) {
 	case c.outbound <- buffer:
 	default:
 		// Буфер переполнен - в этом месте сообщение теряется
-		log.Println("[connect]: очередь на отправку переполнена")
+		c.Logger.Warn("Очередь на отправку переполнена")
 	}
 	//	}
 }
@@ -119,7 +119,7 @@ func (c *Connect) SendChain(msgType protocol.MessageType, msgBody []byte) {
 	// Сериализуем сообщение протобафом
 	buffer, err := proto.Marshal(chain)
 	if err != nil {
-		log.Println("[proto send]:", err)
+		c.Logger.Error("Ошибка сериализации сообщения:", err)
 		return
 	}
 
@@ -138,7 +138,7 @@ func (c *Connect) SendSystemMessage(level int, text string) {
 
 	buffer, err := proto.Marshal(message)
 	if err != nil {
-		log.Println("[proto send]:", err)
+		c.Logger.Error("Ошибка сериализации сообщения:", err)
 		return
 	}
 
@@ -155,7 +155,7 @@ func (c *Connect) SendInfo() {
 
 	buffer, err := proto.Marshal(message)
 	if err != nil {
-		log.Println("[proto send]:", err)
+		c.Logger.Error("Ошибка сериализации сообщения:", err)
 		return
 	}
 

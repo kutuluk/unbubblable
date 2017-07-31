@@ -20,4 +20,5 @@ enum MessageType {
 	MsgUnitInfoRequest = 10;
 	MsgUnitInfo = 11;
 	MsgSay = 12;
+	MsgConnectInfo = 13;
 }

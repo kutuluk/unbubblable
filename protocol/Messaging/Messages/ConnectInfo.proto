@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package protocol.Messaging.Messages;
+
+import "protocol/Messaging/Messages/UnitInfo.proto";
+
+// ConnectInfo определяет информацию о юните
+message ConnectInfo {
+	// player определяет информацио об игроке
+    protocol.Messaging.Messages.UnitInfo player = 1;
+	// uuid определяет идентификатор коннекта
+    string uuid = 2;
+}

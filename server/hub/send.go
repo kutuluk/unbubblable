@@ -1,8 +1,6 @@
 package hub
 
 import (
-	"log"
-
 	"github.com/golang/protobuf/proto"
 
 	"github.com/kutuluk/unbubblable/server/connect"
@@ -15,22 +13,6 @@ func (h *Hub) SendMovement(c *connect.Connect, u player.Entity) {
 
 	m := u.Movement()
 	// Формируем сообщение
-	/*
-		message := &protocol.Movement{
-			Position: &protocol.Vec3{
-				X: c.Player.Position.X(),
-				Y: c.Player.Position.Y(),
-				Z: c.Player.Position.Z(),
-			},
-			Motion: &protocol.Vec3{
-				X: c.Player.Motion.X(),
-				Y: c.Player.Motion.Y(),
-				Z: c.Player.Motion.Z(),
-			},
-			Angle: c.Player.Angle,
-			Slew:  c.Player.Slew,
-		}
-	*/
 	message := &protocol.Movement{
 		Id: int32(u.ID()),
 		Position: &protocol.Vec3{
@@ -49,7 +31,7 @@ func (h *Hub) SendMovement(c *connect.Connect, u player.Entity) {
 
 	buffer, err := proto.Marshal(message)
 	if err != nil {
-		log.Println("[proto send]:", err)
+		c.Logger.Error("Ошибка сериализации сообщения:", err)
 		return
 	}
 
@@ -67,10 +49,31 @@ func (h *Hub) SendUnitInfo(c *connect.Connect, u player.Entity, self bool) {
 	}
 	buffer, err := proto.Marshal(message)
 	if err != nil {
-		log.Println("[proto send]:", err)
+		c.Logger.Error("Ошибка сериализации сообщения:", err)
 		return
 	}
 	c.Send(protocol.MessageType_MsgUnitInfo, buffer)
+}
+
+// SendConnectInfo отправляет клиенту информацию о юните
+func (h *Hub) SendConnectInfo(c *connect.Connect, p player.Entity) {
+	u := &protocol.UnitInfo{
+		Id:      int32(p.ID()),
+		Name:    p.Name(),
+		ModelId: 0,
+	}
+
+	message := &protocol.ConnectInfo{
+		Player: u,
+		Uuid:   c.UUID.String(),
+	}
+
+	buffer, err := proto.Marshal(message)
+	if err != nil {
+		c.Logger.Error("Ошибка сериализации сообщения:", err)
+		return
+	}
+	c.Send(protocol.MessageType_MsgConnectInfo, buffer)
 }
 
 // SendTerrain отправляет клиенту карту
