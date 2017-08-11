@@ -9,8 +9,8 @@ public/js/app.min.js
 public/bootstrap/
 server/protocol/
 server/.idea
-server/data.db
-server/data.db.lock
+server/data/data.db
+server/data/data.db.lock
 client/protocol.js
 client/protocol.json
 client/protocol-json.js

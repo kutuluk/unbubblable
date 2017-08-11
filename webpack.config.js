@@ -10,7 +10,7 @@ module.exports = {
     // filename: './public/js/app.js',
     filename: './public/js/[name].js',
   },
-
+  // devtool: 'source-map',
   module: {
     rules: [
       {

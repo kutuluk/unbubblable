@@ -34,6 +34,7 @@ func (p *pingStatistics) start() bool {
 		return false
 	}
 	p.pingStart = time.Now()
+	p.pending = true
 	return true
 }
 
@@ -58,9 +59,11 @@ func (p *pingStatistics) calc() {
 	sort.Slice(p.pings, func(i, j int) bool { return p.pings[i] < p.pings[j] })
 
 	m := p.length / 2
-	median := p.pings[m]
+	var median time.Duration
 	if p.even {
 		median = (p.pings[m] - p.pings[m-1]) / 2
+	} else {
+		median = p.pings[m]
 	}
 
 	p.delta = p.median - median

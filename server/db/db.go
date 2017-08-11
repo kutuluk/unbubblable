@@ -12,7 +12,7 @@ var DB *bolt.DB
 
 // Init инициализирует базу данных
 func Init() (err error) {
-	DB, err = bolt.Open("data.db", 0644, nil)
+	DB, err = bolt.Open("./data/data.db", 0644, nil)
 	if err != nil {
 		return err
 	}
@@ -101,6 +101,30 @@ func AddSession(suuid string) error {
 	})
 }
 
+func UpdateSessionOffset(suuid string, t time.Duration) error {
+	return DB.Update(func(tx *bolt.Tx) error {
+		sessions := tx.Bucket([]byte("sessions"))
+		if sessions == nil {
+			//return errors.New("Баккет сессий отсутствует")
+			return bolt.ErrBucketNotFound
+		}
+
+		session := sessions.Bucket([]byte(suuid))
+		if session == nil {
+			//return errors.New("Баккет сессии " + suuid + " отсутствует")
+			return bolt.ErrBucketNotFound
+		}
+
+		// Записываем информацию о временном смещении между сервером и клиентом
+		err := session.Put([]byte("offset"), []byte(t.String()))
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
 func addLog(bucket *bolt.Bucket, t time.Time, message []byte) error {
 	// Проверяем наличие ключа в баккете
 	key := t.Format(fmtRFC3339Micro)
@@ -113,7 +137,8 @@ func addLog(bucket *bolt.Bucket, t time.Time, message []byte) error {
 	}
 
 	// Записываем сообщение в баккет
-	return bucket.Put([]byte(key), message)
+	err := bucket.Put([]byte(key), message)
+	return err
 }
 
 func AddSessionLog(suuid string, key time.Time, source string, message []byte) error {
@@ -140,16 +165,66 @@ func AddSessionLog(suuid string, key time.Time, source string, message []byte) e
 	})
 }
 
+/*
 func AddGlobalLog(key time.Time, message []byte) error {
 	return DB.Update(func(tx *bolt.Tx) error {
-		log := tx.Bucket([]byte("log"))
-		if log == nil {
+		b := time.Now()
+
+		log2 := tx.Bucket([]byte("log"))
+		if log2 == nil {
 			//return errors.New("Баккет лога отсутствует")
 			return bolt.ErrBucketNotFound
 		}
+		log.Println("Время поиска баккета:", time.Since(b))
 
-		return addLog(log, key, message)
+		return addLog(log2, key, message)
 	})
+}
+*/
+
+func AddGlobalLog(key time.Time, message []byte) error {
+
+	//b := time.Now()
+	tx, err := DB.Begin(true)
+	if err != nil {
+		return err
+	}
+	//defer tx.Rollback()
+	defer func() {
+		//b4 := time.Now()
+		tx.Rollback()
+		//log.Println("Длительность Rollback:", time.Since(b4))
+	}()
+	//log.Println("Длительность Begin:", time.Since(b))
+
+	//b1 := time.Now()
+	log2 := tx.Bucket([]byte("log"))
+	if log2 == nil {
+		//return errors.New("Баккет лога отсутствует")
+		return bolt.ErrBucketNotFound
+	}
+	//log.Println("Длительность поиска баккета:", time.Since(b1))
+
+	//b2 := time.Now()
+	err = addLog(log2, key, message)
+	if err != nil {
+		return err
+	}
+	//log.Println("Длительность addLog:", time.Since(b2))
+
+	//b3 := time.Now()
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	//log.Println("Длительность Commit:", time.Since(b3))
+
+	//bl := time.Now()
+	//log.Println("test")
+	//be := time.Since(bl)
+	//log.Println("Длительность log:", be)
+
+	return nil
 }
 
 /*

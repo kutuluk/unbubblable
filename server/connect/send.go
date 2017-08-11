@@ -21,6 +21,17 @@ const (
 	pingPeriod = 250 * time.Millisecond
 )
 
+func pingRequest() []byte {
+	message := &protocol.PingRequest{}
+	buffer, err := proto.Marshal(message)
+	if err != nil {
+		panic(err)
+	}
+	return buffer
+}
+
+var pingRequestBuffer = pingRequest()
+
 // sender возвращает буферизованный канал и запускает горутину, отправляющую в сеть пришедшие
 // в этот канал сообщения. Задача этой горутины - обеспечить запись в сокет из единственного
 // конкурентного потока
@@ -72,6 +83,45 @@ func (c *Connect) sender() chan<- []byte {
 		}
 	}()
 	return outbound
+}
+
+func (c *Connect) update() {
+
+	c.frame++
+
+	// Отправляем пинг
+	if c.ping.start() {
+		if err := c.ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
+			c.Logger.Error("Не удалось отправить Ping")
+			// return
+		}
+		c.Logger.Debug("Отправлен Ping")
+	}
+
+	if c.state == StateSYNC && c.frame%(4*4) == 0 {
+		c.state = StateTRANSFER
+	}
+
+	// Раз в секунду отправляем служебную информацию
+	if c.frame%4 == 0 {
+		c.SendInfo()
+		//		c.SendSystemMessage(0, fmt.Sprintf("Ping: %v, status: %v", c.ping.median, c.state))
+
+		if c.sync.check() {
+			c.sync.begin()
+			c.SendPingRequest()
+			// FIXIT:
+			// c.sync.begin() - если оставить здесь, то этот код может выполниться в момент получения ответа
+			// и пинг будет равен 0 - разобраться почему
+			c.Logger.Info("Отправлен запрос на синхронизацию")
+		}
+
+	}
+
+	if c.frame == 4*4 {
+		c.frame = 0
+	}
+
 }
 
 // Send сериализует сообщение и отправляет его в исходящий канал
@@ -161,4 +211,59 @@ func (c *Connect) SendInfo() {
 
 	c.Send(protocol.MessageType_MsgInfo, buffer)
 
+}
+
+// SendPingRequest отправляет клиенту запрос пинга
+func (c *Connect) SendPingRequest() {
+
+	//			t := time.Now()
+	//			seconds := t.Unix()
+	//			nanos := int32(t.Sub(time.Unix(seconds, 0)))
+	//
+	//			msgTime := &protocol.Timestamp{
+	//				Seconds: seconds,
+	//				Nanos:   nanos,
+	//			}
+	//
+	//			msgPingRequest := &protocol.PingRequest{
+	//				Time: msgTime,
+	//				Ping: int32(c.Ping.Nanoseconds() / 1000000),
+	//			}
+
+	/*
+		message := &protocol.PingRequest{}
+
+		buffer, err := proto.Marshal(message)
+		if err != nil {
+			c.Logger.Error("Ошибка сериализации сообщения:", err)
+			return
+		}
+
+		c.Send(protocol.MessageType_MsgPingRequest, buffer)
+	*/
+
+	c.Send(protocol.MessageType_MsgPingRequest, pingRequestBuffer)
+
+	/*
+		message := &protocol.Message{
+			Type: protocol.MessageType_MsgPingRequest,
+			Body: pingRequestBuffer,
+		}
+
+		buffer, err := proto.Marshal(message)
+		if err != nil {
+			c.Logger.Error("Ошибка сериализации сообщения:", err)
+			return
+		}
+
+		// Отправляем сообщение
+		err = c.ws.WriteMessage(websocket.BinaryMessage, buffer)
+		if err != nil {
+			c.Logger.Error("Ошибка записи в сокет:", err)
+			return
+		}
+
+		// Увеличиваем счетчик отправленных байт
+		c.Sent += len(buffer)
+	*/
 }

@@ -15,9 +15,19 @@ const now =
     return new Date().getTime();
   };
 
+let offset = now();
+if (performance) {
+  let t = offset;
+  // Ожидание начала следующей миллисекунды
+  for (; t === offset; t = now());
+  offset = t - performance.now();
+}
+
+/*
 const offset = performance.timing && performance.timing.navigationStart
   ? performance.timing.navigationStart
   : now();
+*/
 
 const perf = function perf() {
   return now() - offset;
@@ -30,11 +40,18 @@ const perfNow = function perfNow() {
 class Time {
   constructor() {
     this.perf = performance ? performance.now : perf;
-    this.now = performance.timing && performance.timing.navigationStart ? perfNow : now;
+    this.now = performance ? perfNow : now;
   }
 
-  timestamp() {
-    const date = this.now();
+  iso(t) {
+    const n = t || this.now();
+    const d = Math.floor(n);
+    const m = `${(n - d).toFixed(3)}`.slice(2, 5);
+    const str = new Date(d).toISOString();
+    return `${str.slice(0, -1) + m}Z`;
+  }
+
+  timestamp(date = this.now()) {
     const seconds = Math.floor(date / 1000);
     const nanos = Math.floor((date - seconds * 1000) * 1000000);
     return new Timestamp(seconds, nanos);

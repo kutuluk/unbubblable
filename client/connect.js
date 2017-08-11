@@ -5,10 +5,9 @@ import protocolJSON from './protocol-json';
 // Скомпилированный модуль
 // import protocol from './protocol'
 
-import { time } from './time';
+import time from './time';
 
 const logger = loglevel.getLogger('connect');
-logger.setLevel('warn');
 const wsLogger = loglevel.getLogger('websocket');
 
 class Connect {
@@ -47,12 +46,13 @@ class Connect {
     };
 
     ws.onmessage = (event) => {
+      const msgTime = time.now();
       try {
         // Декодируем сообщение
         const msg = this.protobuf.Messaging.Message.decode(new Uint8Array(event.data));
         //          .toObject({ defaults: true });
         // Обрабатываем сообщение
-        this.handleMessage(msg);
+        this.handleMessage(msg, msgTime);
       } catch (err) {
         logger.error(err.message);
         throw err;
@@ -62,7 +62,7 @@ class Connect {
     this.ws = ws;
   }
 
-  handleMessage(message) {
+  handleMessage(message, msgTime) {
     switch (message.type) {
       case this.protobuf.Messaging.MessageType.MsgChain: {
         const msg = this.protobuf.Messaging.MessageChain.decode(message.body);
@@ -110,6 +110,9 @@ class Connect {
 
       case this.protobuf.Messaging.MessageType.MsgPingRequest:
         // Отвечаем на пинг
+        logger.debug('Получен запрос на синхронизацию');
+        // FIXIT: Перевести время в UTC
+        this.sendPingResponse(msgTime);
         this.sendPingResponse();
         break;
 
@@ -188,7 +191,7 @@ class Connect {
       this.protobuf.Messaging.Messages.ApplyControllerMessage.encode(msg).finish(),
     );
 
-    logger.info('Контроллер отправлен');
+    logger.debug('Контроллер отправлен');
   }
 
   sendChanksRequest(indecies) {
@@ -204,8 +207,8 @@ class Connect {
     }
   }
 
-  sendPingResponse() {
-    const timestamp = time.timestamp();
+  sendPingResponse(t = time.now()) {
+    const timestamp = time.timestamp(t);
     const msg = this.protobuf.Messaging.Response.PingResponse.create({
       time: this.protobuf.Data.Timestamp.create({
         seconds: timestamp.seconds,
@@ -217,6 +220,7 @@ class Connect {
       this.protobuf.Messaging.MessageType.MsgPingResponse,
       this.protobuf.Messaging.Response.PingResponse.encode(msg).finish(),
     );
+    // logger.debug('Отправлен ответ на синхронизацию');
   }
 
   sendUnitInfoRequest(id) {

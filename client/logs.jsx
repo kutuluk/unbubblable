@@ -3,10 +3,13 @@ import { h, render, Component } from "preact";
 class LogItem extends Component {
   render({ time, source, msg }, state) {
     // Укорачиваем время
-    time = time.slice(11, -4);
+    const timeShort = time.slice(11, -4);
+    //time = time.slice(11, -1);
+    const timeMicro = time.slice(-4, -1);
 
     // Задаем класс иконки в зависимости от источника
-    let icon = `glyphicon ${source == "client" ? "glyphicon-user" : "glyphicon-hdd"}`;
+    //let icon = `glyphicon ${source == "client" ? "glyphicon-user" : "glyphicon-hdd"}`;
+    let icon = `fa ${source == "client" ? "fa-user-circle-o" : "fa-server"} fa-lg`;
 
     // Получаем уровень сообщения
     let level = msg.slice(0, msg.indexOf(" "));
@@ -37,7 +40,7 @@ class LogItem extends Component {
     return (
       <div>
         <samp>
-          <span class={timeClass}>{time}</span>&nbsp;
+          <span class={timeClass}>{timeShort}<small>.{timeMicro}</small></span>&nbsp;
           <span class={levelClass}><span class={icon} aria-hidden="true" />&nbsp;{r}</span>
           <small>
             &nbsp;{line}
@@ -53,6 +56,7 @@ class LogList extends Component {
     return (
       <div>
         <div>Session:{props.session}</div>
+        <div>Offset:{props.offset}</div>
         {props.logs.map(log => (
           <LogItem key={log.time + log.source} time={log.time} source={log.source} msg={log.msg} />
         ))}
@@ -94,7 +98,7 @@ fetchWithTimeout("http://localhost:8080/log", 1000, {
       }
       return 1;
     });
-    render(<LogList session={data.session} logs={logs} />, document.getElementById("container"));
+    render(<LogList offset={data.offset} session={data.session} logs={logs} />, document.getElementById("container"));
   })
   .catch(error => {
     console.log(error);

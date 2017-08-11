@@ -52,7 +52,12 @@ func (l *Loop) Entry() {
 		calc := entry.Add(l.interval * time.Duration(l.tick))
 		delta := l.start.Sub(calc)
 
-		logger.Debug("Тик:", l.tick, "delta:", delta)
+		if delta < time.Millisecond*5 {
+			logger.Debug("Тик:", l.tick, "delta:", delta)
+		} else {
+			logger.Warn("Тик:", l.tick, "delta:", delta)
+		}
+
 		l.ticker.Tick(l.tick)
 
 		busy := time.Since(l.start)

@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/satori/go.uuid"
 
+	"github.com/kutuluk/unbubblable/server/db"
 	"github.com/kutuluk/unbubblable/server/logger"
 	"github.com/kutuluk/unbubblable/server/player"
 	"github.com/kutuluk/unbubblable/server/protocol"
@@ -40,6 +41,7 @@ type Connect struct {
 	state    int
 	frame    int
 	ping     pingStatistics
+	sync     *synchronizer
 }
 
 // NewConnect создает коннект
@@ -62,6 +64,7 @@ func NewConnect(ws *websocket.Conn, suuid string, h Handler, p *player.Player) *
 
 		// Медиана рассчитывается на основании 4 последних пингов
 		ping: newPingStatistics(4),
+		sync: NewSynchronizer(),
 	}
 
 	// Назначаем обработчик понгов
@@ -91,12 +94,20 @@ func (c *Connect) Ping() time.Duration {
 	return c.ping.median
 }
 
+func (c *Connect) updateClientOffset() {
+	err := db.UpdateSessionOffset(c.SUUID, c.sync.offset)
+	if err != nil {
+		c.Logger.Error("Не удалось обновить смещение времени:", err)
+	}
+}
+
 // close закрывает коннект
 func (c *Connect) close() {
 	c.state = StateCLOSED
 	c.handler.Leave(c)
 	c.ws.Close()
 	close(c.outbound)
+	c.updateClientOffset()
 	c.Logger.Info("Подключение с адреса", c.ws.RemoteAddr(), "завершено")
 }
 
@@ -117,6 +128,8 @@ func (c *Connect) receiver() {
 				break
 			}
 
+			now := time.Now()
+
 			// Увеличиваем счетчик принятых байт
 			c.Received += len(messageData)
 
@@ -136,36 +149,32 @@ func (c *Connect) receiver() {
 			}
 
 			// Обрабатываем сообщение
-			//			c.handle(message)
-			c.handler.Handle(message, c)
+			if message.Type == protocol.MessageType_MsgPingResponse {
+
+				c.Logger.Info("Получен ответ синхронизации", now)
+
+				msgPingResponse := new(protocol.PingResponse)
+				// Декодируем сообщение
+				err = proto.Unmarshal(message.Body, msgPingResponse)
+				if err != nil {
+					c.Logger.Error("Ошибка декодирования сообщения:", err)
+					break
+				}
+
+				// Применяем сообщение
+				//timeClient := time.Unix(msgPingResponse.Time.Seconds, int64(msgPingResponse.Time.Nanos)).UTC()
+				timeClient := time.Unix(msgPingResponse.Time.Seconds, int64(msgPingResponse.Time.Nanos))
+
+				if c.sync.handle(now, timeClient) {
+					c.updateClientOffset()
+				}
+
+			} else {
+
+				//			c.handle(message)
+				// FIXIT: обработка сообщений не должна выполняться в горутине ресивера
+				c.handler.Handle(message, c)
+			}
 		}
 	}()
-}
-
-func (c *Connect) update() {
-
-	c.frame++
-
-	// Отправляем пинг
-	if c.ping.start() {
-		if err := c.ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
-			return
-		}
-		c.Logger.Debug("Отправлен Ping")
-	}
-
-	if c.state == StateSYNC && c.frame%(4*4) == 0 {
-		c.state = StateTRANSFER
-	}
-
-	// Раз в секунду отправляем служебную информацию
-	if c.frame%4 == 0 {
-		c.SendInfo()
-		//		c.SendSystemMessage(0, fmt.Sprintf("Ping: %v, status: %v", c.ping.median, c.state))
-	}
-
-	if c.frame == 4*4 {
-		c.frame = 0
-	}
-
 }

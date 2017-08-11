@@ -27,6 +27,7 @@ const (
 
 	//RFC3339Milli = "2006-01-02T15:04:05.000Z"
 	//RFC3339Micro = "2006-01-02T15:04:05.000000Z"
+	fmtRFC3339Micro = "2006-01-02T15:04:05.000000Z"
 )
 
 var upgrader = websocket.Upgrader{}
@@ -110,6 +111,19 @@ func logs(w http.ResponseWriter, r *http.Request) {
 			return bolt.ErrBucketNotFound
 		}
 
+		offsetValue := session.Get([]byte("offset"))
+		var offset string
+		if offsetValue != nil {
+			offset = string(offsetValue)
+		} else {
+			offset = "nil"
+		}
+		offsetDuration, err := time.ParseDuration(offset)
+		if err != nil {
+			offsetDuration = 0
+
+		}
+
 		clientLog := session.Bucket([]byte("client"))
 		if clientLog == nil {
 			return bolt.ErrBucketNotFound
@@ -136,8 +150,15 @@ func logs(w http.ResponseWriter, r *http.Request) {
 		var source string
 
 		appender := func(k, v []byte) error {
+			// TODO: сделать рассчет на клиенте
+			t, err := time.Parse(fmtRFC3339Micro, string(k))
+			if err != nil {
+				return err
+			}
+			t.Add(offsetDuration)
 			message := logMessage{
-				Time:   string(k),
+				//Time:   string(k),
+				Time:   t.Format(fmtRFC3339Micro),
 				Source: source,
 				Msg:    string(v),
 			}
@@ -148,6 +169,7 @@ func logs(w http.ResponseWriter, r *http.Request) {
 		source = "client"
 		clientLog.ForEach(appender)
 		source = "server"
+		offsetDuration = 0
 		serverLog.ForEach(appender)
 
 		c := globalLog.Cursor()
@@ -173,6 +195,7 @@ func logs(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Fprintln(w, `{`)
 		fmt.Fprintln(w, `"session":"`+suuid.Value+`",`)
+		fmt.Fprintln(w, `"offset":"`+offset+`",`)
 		fmt.Fprintln(w, `"logs":`)
 		fmt.Fprintln(w, string(buf))
 		fmt.Fprintln(w, `}`)
