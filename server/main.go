@@ -12,6 +12,7 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/gorilla/websocket"
+	"github.com/pkg/profile"
 	"github.com/ventu-io/go-shortid"
 
 	"github.com/kutuluk/unbubblable/server/config"
@@ -169,6 +170,7 @@ func logs(w http.ResponseWriter, r *http.Request) {
 		source = "client"
 		clientLog.ForEach(appender)
 		source = "server"
+		// FIXME: убрать нулевое смещение
 		offsetDuration = 0
 		serverLog.ForEach(appender)
 
@@ -281,6 +283,7 @@ func play(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	defer profile.Start().Stop()
 	log.SetFlags(log.LUTC | log.Ldate | log.Lmicroseconds | log.Lshortfile)
 
 	err := db.Init()

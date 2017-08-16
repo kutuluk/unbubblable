@@ -30,7 +30,20 @@ func pingRequest() []byte {
 	return buffer
 }
 
+func pingRequestMessage(prb []byte) []byte {
+	message := &protocol.Message{
+		Type: protocol.MessageType_MsgPingRequest,
+		Body: prb,
+	}
+	buffer, err := proto.Marshal(message)
+	if err != nil {
+		panic(err)
+	}
+	return buffer
+}
+
 var pingRequestBuffer = pingRequest()
+var pingRequestMessageBuffer = pingRequestMessage(pingRequestBuffer)
 
 // sender возвращает буферизованный канал и запускает горутину, отправляющую в сеть пришедшие
 // в этот канал сообщения. Задача этой горутины - обеспечить запись в сокет из единственного
@@ -50,14 +63,15 @@ func (c *Connect) sender() chan<- []byte {
 
 			select {
 			case message, ok := <-outbound:
-				c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 				if !ok {
 					// Канал закрыт
-					c.ws.WriteMessage(websocket.CloseMessage, []byte{})
+					//c.ws.WriteMessage(websocket.CloseMessage, []byte{})
+					c.ws.WriteControl(websocket.CloseMessage, []byte{}, time.Now().Add(writeWait))
 					return
 				}
 
 				// Отправляем сообщение
+				c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 				err := c.ws.WriteMessage(websocket.BinaryMessage, message)
 				if err != nil {
 					c.Logger.Error("Ошибка записи в сокет:", err)
@@ -91,7 +105,8 @@ func (c *Connect) update() {
 
 	// Отправляем пинг
 	if c.ping.start() {
-		if err := c.ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
+		//if err := c.ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
+		if err := c.ws.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(writeWait)); err != nil {
 			c.Logger.Error("Не удалось отправить Ping")
 			// return
 		}
@@ -108,12 +123,13 @@ func (c *Connect) update() {
 		//		c.SendSystemMessage(0, fmt.Sprintf("Ping: %v, status: %v", c.ping.median, c.state))
 
 		if c.sync.check() {
+			b := time.Now()
 			c.sync.begin()
 			c.SendPingRequest()
-			// FIXIT:
+			// FIXME:
 			// c.sync.begin() - если оставить здесь, то этот код может выполниться в момент получения ответа
 			// и пинг будет равен 0 - разобраться почему
-			c.Logger.Info("Отправлен запрос на синхронизацию")
+			c.Logger.Info("Отправлен запрос на синхронизацию", b)
 		}
 
 	}
@@ -230,40 +246,16 @@ func (c *Connect) SendPingRequest() {
 	//				Ping: int32(c.Ping.Nanoseconds() / 1000000),
 	//			}
 
-	/*
-		message := &protocol.PingRequest{}
+	//c.Send(protocol.MessageType_MsgPingRequest, pingRequestBuffer)
 
-		buffer, err := proto.Marshal(message)
-		if err != nil {
-			c.Logger.Error("Ошибка сериализации сообщения:", err)
-			return
-		}
+	// Отправляем сообщение
+	c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+	err := c.ws.WriteMessage(websocket.BinaryMessage, pingRequestMessageBuffer)
+	if err != nil {
+		c.Logger.Error("Ошибка записи в сокет:", err)
+		return
+	}
 
-		c.Send(protocol.MessageType_MsgPingRequest, buffer)
-	*/
-
-	c.Send(protocol.MessageType_MsgPingRequest, pingRequestBuffer)
-
-	/*
-		message := &protocol.Message{
-			Type: protocol.MessageType_MsgPingRequest,
-			Body: pingRequestBuffer,
-		}
-
-		buffer, err := proto.Marshal(message)
-		if err != nil {
-			c.Logger.Error("Ошибка сериализации сообщения:", err)
-			return
-		}
-
-		// Отправляем сообщение
-		err = c.ws.WriteMessage(websocket.BinaryMessage, buffer)
-		if err != nil {
-			c.Logger.Error("Ошибка записи в сокет:", err)
-			return
-		}
-
-		// Увеличиваем счетчик отправленных байт
-		c.Sent += len(buffer)
-	*/
+	// Увеличиваем счетчик отправленных байт
+	c.Sent += len(pingRequestMessageBuffer)
 }

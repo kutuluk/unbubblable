@@ -63,19 +63,27 @@ func (s *synchronizer) handle(serverTime, clientTime time.Time) bool {
 }
 
 func (s *synchronizer) calc(t, clientEnd time.Time) bool {
+	s.pending = false
+	s.pendingCorrect = false
+
 	clientBuzy := clientEnd.Sub(s.clientStart)
 	ping := s.metricEnd.Sub(s.metricStart) - clientBuzy
+
+	// FIXME: Разобраться в следующем:
+	// Бывают ситуации, когда ping равен 0 (clientBuzy > ping или s.metricEnd.Sub(s.metricStart)=0 )
+	// В этих случаях скорректированный пинг оказывается меньше 0
+	// Напрашивающееся решение - отсеивать подозрительно короткие пинги
 	if ping < 0 {
 		logger.Error("ping:", ping)
+		return false
 	}
+
 	m := metric{
 		ping: ping,
 		// при положительном значении клиентское время отстает от серверного
 		offset: s.metricStart.Add(ping / 2).Sub(s.clientStart),
 	}
 	logger.Info("clientBuzy:", clientBuzy, "ping:", s.metricEnd.Sub(s.metricStart), "correct ping:", ping, "offset:", m.offset)
-	s.pending = false
-	s.pendingCorrect = false
 
 	l := len(s.metrics)
 	if l < metricLength {
@@ -83,7 +91,8 @@ func (s *synchronizer) calc(t, clientEnd time.Time) bool {
 		if ping > s.metrics[s.maxPingIndex].ping {
 			s.maxPingIndex = l
 		}
-		return s.update(false)
+		s.update()
+		return false
 	}
 
 	if !s.stable {
@@ -106,22 +115,23 @@ func (s *synchronizer) calc(t, clientEnd time.Time) bool {
 				s.stable = true
 				log.Println("Stable")
 				logger.Warn("Получена выборка синхронизирующих метрик со стабильныи пингом", meanPingValue)
-				return s.update(true)
+				s.update()
+				return true
 			}
 
 			log.Println(s.metrics)
-			return s.update(false)
+			s.update()
+			return false
 		}
 	}
 
 	return false
 }
 
-func (s *synchronizer) update(done bool) bool {
+func (s *synchronizer) update() {
 	var sumOffsets time.Duration
 	for i := 0; i < len(s.metrics); i++ {
 		sumOffsets += s.metrics[i].offset
 	}
 	s.offset = sumOffsets / time.Duration(len(s.metrics))
-	return done
 }

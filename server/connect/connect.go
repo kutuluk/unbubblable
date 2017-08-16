@@ -83,8 +83,9 @@ func (c *Connect) pongHandler(string) error {
 	// Вычисляем пинг
 	now := time.Now()
 	c.ping.done(now)
-	// Продляем Deadline сокета
-	c.ws.SetReadDeadline(now.Add(pongWait))
+	// Продляем ReadDeadline сокета
+	// FIXME Надо ли? Пока убрал таймаут на чтение
+	// c.ws.SetReadDeadline(now.Add(pongWait))
 	c.Logger.Debug("Получен Pong")
 	return nil
 }
@@ -109,14 +110,15 @@ func (c *Connect) close() {
 	close(c.outbound)
 	c.updateClientOffset()
 	c.Logger.Info("Подключение с адреса", c.ws.RemoteAddr(), "завершено")
+	c.Logger.Close()
 }
 
 // receiver обрабатывает входящие сообщения
 func (c *Connect) receiver() {
 	go func() {
 		defer func() {
-			c.close()
 			c.Logger.Info("Ресивер завершился")
+			c.close()
 		}()
 
 		for {

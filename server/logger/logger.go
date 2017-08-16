@@ -1,6 +1,23 @@
 package logger
 
+// FIXME: Писать логи в файлы, используя KVS только для мета-информации (offset)
+// или вообще не использовать, чтобы логи были максимально изолированы от сервера
+// и могли бы анализироваться/просматриваться без его использования.
+// Свод логов из разных источников в одно место станет чуть сложнее, но производительность
+// и переносимость увеличится в разы. Можно будет анализировать логи в оффлайн режиме,
+// не нагружая сервер
+
+// Пока оставить как есть, для "поиграться" с BoltDB
+//
+// Логгирование - не задача сервера! Код для этих целей должен быть минимален.
+
+// Необходимо сделать возможность логирования и "из коробки", и на удаленной машине.
+// Для этого оформить логгер в виде интерфейса.
+
+// TODO: Придумать, как хранить метаинформацию о логах вне BoltDB
+
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -10,59 +27,64 @@ import (
 	"github.com/kutuluk/unbubblable/server/db"
 )
 
+const queueLength = 100
+
 type logMessage struct {
-	now time.Time
-	msg string
+	time time.Time
+	text string
 }
 
 type Logger struct {
-	//mu     sync.Mutex
 	suuid    string
 	source   string
-	outbound chan logMessage
+	outbound chan<- logMessage
+	cancel   context.CancelFunc
 }
 
 func New(suuid, source string) *Logger {
 	l := &Logger{
 		suuid:  suuid,
 		source: source,
-		//outbound: make(chan message, length),
-		outbound: make(chan logMessage, 100),
 	}
 
-	go l.writer()
+	var ctx context.Context
+	ctx, l.cancel = context.WithCancel(context.Background())
+	ch := make(chan logMessage, queueLength)
+	l.outbound = (chan<- logMessage)(ch)
+
+	go l.writer(ctx, (<-chan logMessage)(ch))
 	return l
 }
 
-func (l *Logger) writer() {
+// TODO: Сделать writer общим для всех логгеров, так как параллельная запись в базу все равно не возможна
+
+func (l *Logger) writer(ctx context.Context, inbound <-chan logMessage) {
 	for {
-
 		select {
-		case message, ok := <-l.outbound:
-			if !ok {
-				// Канал закрыт
-				return
-			}
-
-			// Пишем лог
+		case <-ctx.Done():
+			return
+		case message := <-inbound:
 			var err error
 			if l.source == "global" {
 				//b := time.Now()
-				err = db.AddGlobalLog(message.now, []byte(message.msg))
+				err = db.AddGlobalLog(message.time, []byte(message.text))
 				//log.Println("Длительность AddGlobalLog:", time.Since(b))
 			} else {
 				//b := time.Now()
-				err = db.AddSessionLog(l.suuid, message.now, l.source, []byte(message.msg))
+				err = db.AddSessionLog(l.suuid, message.time, l.source, []byte(message.text))
 				//log.Println("Длительность AddSessionLog:", time.Since(b))
 			}
 
 			if err != nil {
 				log.Println("Ошибка записи лога:", err)
-				log.Printf("Cообщение (suuid=%s, source=%s): %s", l.suuid, l.source, message.msg)
+				log.Printf("Cообщение (suuid=%s, source=%s): %s", l.suuid, l.source, message.text)
 			}
-
 		}
 	}
+}
+
+func (l *Logger) Close() {
+	l.cancel()
 }
 
 func (l *Logger) output(level, message string) {
@@ -71,8 +93,6 @@ func (l *Logger) output(level, message string) {
 	trace := "???"
 
 	_, file, line, ok := runtime.Caller(2)
-	//l.mu.Lock()
-	//defer l.mu.Unlock()
 	if ok {
 		short := file
 		for i := len(file) - 1; i > 0; i-- {
@@ -91,34 +111,14 @@ func (l *Logger) output(level, message string) {
 		trace = fmt.Sprint(short, ":", line)
 	}
 
-	msg := fmt.Sprint(level, " (", trace, "): ", message)
+	msg := logMessage{time: now, text: fmt.Sprint(level, " (", trace, "): ", message)}
 
-	//log.Println("Длительность подготовки строки для лога:", time.Since(b))
-
-	l.outbound <- logMessage{now: now, msg: msg}
-	/*
-		go func(now time.Time, msg string) {
-			b := time.Now()
-
-			var err error
-			if l.source == "global" {
-				//b := time.Now()
-				err = db.AddGlobalLog(now, []byte(msg))
-				//log.Println("Длительность AddGlobalLog:", time.Since(b))
-			} else {
-				//b := time.Now()
-				err = db.AddSessionLog(l.suuid, now, l.source, []byte(msg))
-				//log.Println("Длительность AddSessionLog:", time.Since(b))
-			}
-
-			if err != nil {
-				log.Println("Ошибка записи лога:", err)
-				log.Printf("Cообщение (suuid=%s, source=%s): %s", l.suuid, l.source, msg)
-			}
-
-			log.Println("Длительность output:", time.Since(b))
-		}(now, msg)
-	*/
+	select {
+	case l.outbound <- msg:
+	default:
+		log.Println("Ошибка записи лога: буфер переполнен")
+		log.Printf("Cообщение (suuid=%s, source=%s): %s", l.suuid, l.source, msg.text)
+	}
 }
 
 func (l *Logger) Debug(a ...interface{}) {
