@@ -31,7 +31,10 @@ class Connect {
     };
 
     ws.onerror = () => {
+      // WebSockets не имеют нормальной обработки ошибок. Все ошибки приводят к закрытию соединения
+      // и вызову обработчика onclose
       // http://stackoverflow.com/questions/18803971/websocket-onerror-how-to-read-error-description
+      // Этот код по идее не должен исполняться ни когда
       wsLogger.error('Произошла какая-то ошибка');
     };
 
@@ -43,6 +46,7 @@ class Connect {
         // https://tools.ietf.org/html/rfc6455#section-7.4
         wsLogger.error(`Обрыв соединения c кодом ${event.code}`);
       }
+      this.game.loop.stop();
     };
 
     ws.onmessage = (event) => {
@@ -136,18 +140,25 @@ class Connect {
     }
   }
 
-  // Отправляет сообщение
+  // sendMessage отправляет сообщение на сервер
+  // WebSockets не имеют нормальной обработки ошибок. Все ошибки приводят к закрытию соединения
+  // и вызову обработчика onclose
+  // http://stackoverflow.com/questions/18803971/websocket-onerror-how-to-read-error-description
+  // Поэтому при отправке мы просто проверяем, что сокет открыт и если это не так, возвращаем false.
   sendMessage(type, body) {
-    if (this.ws.readyState === WebSocket.OPEN) {
-      // Упаковываем данные в сообщение-обертку
-      const message = this.protobuf.Messaging.Message.create({
-        type,
-        body,
-      });
-
-      // Отправляем сообщение
-      this.ws.send(this.protobuf.Messaging.Message.encode(message).finish());
+    if (this.ws.readyState !== WebSocket.OPEN) {
+      return false;
     }
+
+    // Упаковываем данные в сообщение-обертку
+    const message = this.protobuf.Messaging.Message.create({
+      type,
+      body,
+    });
+
+    // Отправляем сообщение
+    this.ws.send(this.protobuf.Messaging.Message.encode(message).finish());
+    return true;
   }
 
   // Отправляет сообщение, упакованное в цепочку
@@ -186,12 +197,14 @@ class Connect {
       }),
     });
 
-    this.sendMessage(
-      this.protobuf.Messaging.MessageType.MsgController,
-      this.protobuf.Messaging.Messages.ApplyControllerMessage.encode(msg).finish(),
-    );
-
-    logger.debug('Контроллер отправлен');
+    if (
+      this.sendMessage(
+        this.protobuf.Messaging.MessageType.MsgController,
+        this.protobuf.Messaging.Messages.ApplyControllerMessage.encode(msg).finish(),
+      )
+    ) {
+      logger.debug('Контроллер отправлен');
+    }
   }
 
   sendChanksRequest(indecies) {

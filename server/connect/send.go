@@ -1,6 +1,7 @@
 package connect
 
 import (
+	"context"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -45,58 +46,63 @@ func pingRequestMessage(prb []byte) []byte {
 var pingRequestBuffer = pingRequest()
 var pingRequestMessageBuffer = pingRequestMessage(pingRequestBuffer)
 
-// sender возвращает буферизованный канал и запускает горутину, отправляющую в сеть пришедшие
-// в этот канал сообщения. Задача этой горутины - обеспечить запись в сокет из единственного
-// конкурентного потока
-func (c *Connect) sender() chan<- []byte {
-	outbound := make(chan []byte, SenderQueueLength)
+// sender запускается в виде горутины и отправляет в сокет пришедшие
+// в канал сообщения. Попутно с интервалом в pingPeriod отправляет пинги. Задача этой горутины - обеспечить
+// запись в сокет из единственного конкурентного потока
+func (c *Connect) sender(ctx context.Context, inbound <-chan []byte) {
 	pinger := time.NewTicker(pingPeriod)
-	go func() {
-		defer func() {
-			pinger.Stop()
-			//			c.close()
-			c.Logger.Info("Сендер завершился")
-		}()
+	defer func() {
+		pinger.Stop()
+		c.close()
+	}()
 
-		//		for message := range outbound {
-		for {
+	for {
 
-			select {
-			case message, ok := <-outbound:
-				if !ok {
-					// Канал закрыт
-					//c.ws.WriteMessage(websocket.CloseMessage, []byte{})
-					c.ws.WriteControl(websocket.CloseMessage, []byte{}, time.Now().Add(writeWait))
-					return
-				}
+		select {
+		case <-ctx.Done():
+			c.Logger.Info("Получена команда на завершение сендера")
+			// TODO: Это сообщение по идее нужно отправлять только когда сервер инициирует закрытие соединения.
+			// На всякий случай отправляю всегда. Надо ли?
+			// c.ws.WriteControl(websocket.CloseMessage, []byte{}, time.Now().Add(writeWait))
+			//c.ws.WriteMessage(websocket.CloseMessage, []byte{})
+			return
 
-				// Отправляем сообщение
-				c.ws.SetWriteDeadline(time.Now().Add(writeWait))
-				err := c.ws.WriteMessage(websocket.BinaryMessage, message)
-				if err != nil {
-					c.Logger.Error("Ошибка записи в сокет:", err)
-
-					//ToDo: сделать полноценную обработку ошибки
-					if err == websocket.ErrCloseSent {
-						// Сокет закрыт - выход из горутины
-						// ToDo: нужно ли предпринимать еще какие-то действия, или коннект
-						// все равно закроется в ресивере, поскольку соединение закрыто?
+			/*
+				case message, ok := <-inbound:
+					if !ok {
+						// Канал закрыт
+						//c.ws.WriteMessage(websocket.CloseMessage, []byte{})
+						c.ws.WriteControl(websocket.CloseMessage, []byte{}, time.Now().Add(writeWait))
 						return
 					}
-					// В этом месте сообщение теряется
-					// ToDo: возможно стоит попытаться отправить сообщение снова?
-					// ToDo: либо сразу закрывать соединение? Могут ли тут быть не критичные ошибки?
-					break
-				}
-				// Увеличиваем счетчик отправленных байт
-				c.Sent += len(message)
+			*/
 
-			case <-pinger.C:
-				c.update()
+		case message := <-inbound:
+			// Отправляем сообщение
+			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+			err := c.ws.WriteMessage(websocket.BinaryMessage, message)
+			if err != nil {
+				c.Logger.Error("Ошибка записи в сокет:", err)
+				/*
+					if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
+						c.Logger.Error("Ошибка записи в сокет:", err)
+					}
+				*/
+
+				// TODO: В этом месте сендер завершается
+				// Могут ли тут быть не критичные ошибки?
+				// Возможно стоит попытаться отправить сообщение снова?
+				// Пока не отловил ни одной такой ошибки, нужно собрать статистику по ним.
+				return
 			}
+
+			// Увеличиваем счетчик отправленных байт
+			c.Sent += len(message)
+
+		case <-pinger.C:
+			c.update()
 		}
-	}()
-	return outbound
+	}
 }
 
 func (c *Connect) update() {
@@ -248,7 +254,7 @@ func (c *Connect) SendPingRequest() {
 
 	//c.Send(protocol.MessageType_MsgPingRequest, pingRequestBuffer)
 
-	// Отправляем сообщение
+	// Отправляем сообщение без очереди
 	c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 	err := c.ws.WriteMessage(websocket.BinaryMessage, pingRequestMessageBuffer)
 	if err != nil {

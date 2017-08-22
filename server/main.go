@@ -20,6 +20,7 @@ import (
 	"github.com/kutuluk/unbubblable/server/hub"
 	"github.com/kutuluk/unbubblable/server/logger"
 	"github.com/kutuluk/unbubblable/server/loop"
+	"github.com/kutuluk/unbubblable/server/timeid"
 )
 
 const (
@@ -122,7 +123,6 @@ func logs(w http.ResponseWriter, r *http.Request) {
 		offsetDuration, err := time.ParseDuration(offset)
 		if err != nil {
 			offsetDuration = 0
-
 		}
 
 		clientLog := session.Bucket([]byte("client"))
@@ -150,37 +150,41 @@ func logs(w http.ResponseWriter, r *http.Request) {
 
 		var source string
 
-		appender := func(k, v []byte) error {
-			// TODO: сделать рассчет на клиенте
-			t, err := time.Parse(fmtRFC3339Micro, string(k))
-			if err != nil {
-				return err
+		appender := func(offset time.Duration) func(k, v []byte) error {
+			return func(k, v []byte) error {
+				tid, err := timeid.FromBytes(k)
+				if err != nil {
+					return err
+				}
+				t := tid.Time()
+				// TODO: сделать коррекцию времени на клиенте
+				t = t.Add(offset)
+				message := logMessage{
+					Time:   t.Format(fmtRFC3339Micro),
+					Source: source,
+					Msg:    string(v),
+				}
+				messages = append(messages, message)
+				return nil
 			}
-			t.Add(offsetDuration)
-			message := logMessage{
-				//Time:   string(k),
-				Time:   t.Format(fmtRFC3339Micro),
-				Source: source,
-				Msg:    string(v),
-			}
-			messages = append(messages, message)
-			return nil
 		}
 
 		source = "client"
-		clientLog.ForEach(appender)
+		clientLog.ForEach(appender(offsetDuration))
 		source = "server"
-		// FIXME: убрать нулевое смещение
-		offsetDuration = 0
-		serverLog.ForEach(appender)
+		serverLog.ForEach(appender(0))
 
 		c := globalLog.Cursor()
 		min, _ := serverLog.Cursor().First()
 		max, _ := serverLog.Cursor().Last()
 
 		for k, v := c.Seek(min); k != nil && bytes.Compare(k, max) <= 0; k, v = c.Next() {
+			tid, err := timeid.FromBytes(k)
+			if err != nil {
+				break
+			}
 			message := logMessage{
-				Time:   string(k),
+				Time:   tid.Time().Format(fmtRFC3339Micro),
 				Source: "global",
 				Msg:    string(v),
 			}
@@ -283,7 +287,9 @@ func play(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	defer profile.Start().Stop()
+	p := profile.Start(profile.ProfilePath("./prof"))
+	defer p.Stop()
+
 	log.SetFlags(log.LUTC | log.Ldate | log.Lmicroseconds | log.Lshortfile)
 
 	err := db.Init()

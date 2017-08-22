@@ -1,9 +1,12 @@
 package db
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/boltdb/bolt"
+
+	"github.com/kutuluk/unbubblable/server/timeid"
 )
 
 const fmtRFC3339Micro = "2006-01-02T15:04:05.000000Z"
@@ -42,10 +45,9 @@ func Close() {
 }
 
 func AddSession(suuid string) error {
-	return DB.Update(func(tx *bolt.Tx) error {
+	return DB.Batch(func(tx *bolt.Tx) error {
 		sessions := tx.Bucket([]byte("sessions"))
 		if sessions == nil {
-			//return errors.New("Баккет сессий отсутствует")
 			return bolt.ErrBucketNotFound
 		}
 
@@ -101,22 +103,29 @@ func AddSession(suuid string) error {
 	})
 }
 
-func UpdateSessionOffset(suuid string, t time.Duration) error {
-	return DB.Update(func(tx *bolt.Tx) error {
-		sessions := tx.Bucket([]byte("sessions"))
-		if sessions == nil {
-			//return errors.New("Баккет сессий отсутствует")
-			return bolt.ErrBucketNotFound
-		}
+func getSessionBucket(suuid string, tx *bolt.Tx) (*bolt.Bucket, error) {
+	sessions := tx.Bucket([]byte("sessions"))
+	if sessions == nil {
+		return nil, bolt.ErrBucketNotFound
+	}
 
-		session := sessions.Bucket([]byte(suuid))
-		if session == nil {
-			//return errors.New("Баккет сессии " + suuid + " отсутствует")
-			return bolt.ErrBucketNotFound
+	session := sessions.Bucket([]byte(suuid))
+	if session == nil {
+		return nil, bolt.ErrBucketNotFound
+	}
+
+	return session, nil
+}
+
+func UpdateSessionOffset(suuid string, offset time.Duration) error {
+	return DB.Batch(func(tx *bolt.Tx) error {
+		session, err := getSessionBucket(suuid, tx)
+		if err != nil {
+			return err
 		}
 
 		// Записываем информацию о временном смещении между сервером и клиентом
-		err := session.Put([]byte("offset"), []byte(t.String()))
+		err = session.Put([]byte("offset"), []byte(offset.String()))
 		if err != nil {
 			return err
 		}
@@ -125,127 +134,55 @@ func UpdateSessionOffset(suuid string, t time.Duration) error {
 	})
 }
 
-func addLog(bucket *bolt.Bucket, t time.Time, message []byte) error {
-	// Проверяем наличие ключа в баккете
-	key := t.Format(fmtRFC3339Micro)
-	v := bucket.Get([]byte(key))
-	for v != nil {
-		// Увеличиваем ключ на микросекунду до тех пор, пока он не станет уникальным в баккете
-		t = t.Add(time.Microsecond)
-		key = t.Format(fmtRFC3339Micro)
-		v = bucket.Get([]byte(key))
-	}
+func SaveSession(suuid string, offset time.Duration, received, sent int) error {
+	return DB.Batch(func(tx *bolt.Tx) error {
+		session, err := getSessionBucket(suuid, tx)
+		if err != nil {
+			return err
+		}
 
-	// Записываем сообщение в баккет
-	err := bucket.Put([]byte(key), message)
-	return err
+		// Записываем информацию о сессии
+		err = session.Put([]byte("offset"), []byte(offset.String()))
+		if err != nil {
+			return err
+		}
+		err = session.Put([]byte("received"), []byte(strconv.Itoa(received)))
+		if err != nil {
+			return err
+		}
+		err = session.Put([]byte("sent"), []byte(strconv.Itoa(received)))
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
 
 func AddSessionLog(suuid string, key time.Time, source string, message []byte) error {
-	return DB.Update(func(tx *bolt.Tx) error {
-		sessions := tx.Bucket([]byte("sessions"))
-		if sessions == nil {
-			//return errors.New("Баккет сессий отсутствует")
+	//	return DB.Update(func(tx *bolt.Tx) error {
+	return DB.Batch(func(tx *bolt.Tx) error {
+		session, err := getSessionBucket(suuid, tx)
+		if err != nil {
+			return err
+		}
+
+		bucket := session.Bucket([]byte(source))
+		if bucket == nil {
 			return bolt.ErrBucketNotFound
 		}
 
-		connect := sessions.Bucket([]byte(suuid))
-		if connect == nil {
-			//return errors.New("Баккет сессии " + suuid + " отсутствует")
-			return bolt.ErrBucketNotFound
-		}
-
-		log := connect.Bucket([]byte(source))
-		if log == nil {
-			//return errors.New("Баккет лога сессии " + suuid + "." + source + " отсутствует")
-			return bolt.ErrBucketNotFound
-		}
-
-		return addLog(log, key, message)
+		return bucket.Put(timeid.FromTime(key).Bytes(), message)
 	})
 }
 
-/*
 func AddGlobalLog(key time.Time, message []byte) error {
-	return DB.Update(func(tx *bolt.Tx) error {
-		b := time.Now()
-
-		log2 := tx.Bucket([]byte("log"))
-		if log2 == nil {
-			//return errors.New("Баккет лога отсутствует")
+	return DB.Batch(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("log"))
+		if bucket == nil {
 			return bolt.ErrBucketNotFound
 		}
-		log.Println("Время поиска баккета:", time.Since(b))
 
-		return addLog(log2, key, message)
+		return bucket.Put(timeid.FromTime(key).Bytes(), message)
 	})
 }
-*/
-
-func AddGlobalLog(key time.Time, message []byte) error {
-
-	//b := time.Now()
-	tx, err := DB.Begin(true)
-	if err != nil {
-		return err
-	}
-	//defer tx.Rollback()
-	defer func() {
-		//b4 := time.Now()
-		tx.Rollback()
-		//log.Println("Длительность Rollback:", time.Since(b4))
-	}()
-	//log.Println("Длительность Begin:", time.Since(b))
-
-	//b1 := time.Now()
-	log2 := tx.Bucket([]byte("log"))
-	if log2 == nil {
-		//return errors.New("Баккет лога отсутствует")
-		return bolt.ErrBucketNotFound
-	}
-	//log.Println("Длительность поиска баккета:", time.Since(b1))
-
-	//b2 := time.Now()
-	err = addLog(log2, key, message)
-	if err != nil {
-		return err
-	}
-	//log.Println("Длительность addLog:", time.Since(b2))
-
-	//b3 := time.Now()
-	err = tx.Commit()
-	if err != nil {
-		return err
-	}
-	//log.Println("Длительность Commit:", time.Since(b3))
-
-	//bl := time.Now()
-	//log.Println("test")
-	//be := time.Since(bl)
-	//log.Println("Длительность log:", be)
-
-	return nil
-}
-
-/*
-	seq, err := session.NextSequence()
-	if err != nil {
-		err := errors.New("Не удалось получить NextSequence")
-		log.Println(err)
-		return err
-	}
-	key := strconv.FormatUint(seq, 10)
-
-		//return session.Put([]byte(key), []byte(msg))
-	err = session.Put([]byte(key), buf)
-	log.Println(err)
-	return err
-*/
-
-/*
-func itob(v int) []byte {
-	b := make([]byte, 8)
-	binary.BigEndian.PutUint64(b, uint64(v))
-	return b
-}
-*/

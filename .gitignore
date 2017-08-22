@@ -8,6 +8,7 @@ public/js/logs.js
 public/js/app.min.js
 public/bootstrap/
 server/protocol/
+server/prof/
 server/.idea
 server/data/data.db
 server/data/data.db.lock
