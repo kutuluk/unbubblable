@@ -6,7 +6,7 @@ import (
 )
 
 // pingStatistics определяет статистику о пинге
-// ToDo: в случае необходимости можно добавить вложенные аналогичные структуры
+// TODO: в случае необходимости можно добавить вложенные аналогичные структуры
 // любого уровня вложенности для получения более длительной статистики
 type pingStatistics struct {
 	pings     []time.Duration
@@ -52,10 +52,6 @@ func (p *pingStatistics) done(t time.Time) {
 
 // calc обновляет медиану и дельту от предыдущей медианы
 func (p *pingStatistics) calc() {
-
-	//	log.Println("[unsort pings]:", p.pings)
-	//	defer log.Println("[sort pings]:", p.pings)
-
 	sort.Slice(p.pings, func(i, j int) bool { return p.pings[i] < p.pings[j] })
 
 	m := p.length / 2
@@ -68,5 +64,4 @@ func (p *pingStatistics) calc() {
 
 	p.delta = p.median - median
 	p.median = median
-
 }

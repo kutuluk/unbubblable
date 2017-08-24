@@ -2,6 +2,7 @@ package connect
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -36,10 +37,12 @@ type Connect struct {
 	ws       *websocket.Conn
 	outbound chan<- []byte
 	cancel   context.CancelFunc
-	state    int
-	frame    int
-	ping     pingStatistics
-	sync     *synchronizer
+	wg       sync.WaitGroup
+
+	state int
+	frame int
+	ping  pingStatistics
+	sync  *synchronizer
 
 	// Статистика
 	Received int
@@ -83,6 +86,8 @@ func NewConnect(ws *websocket.Conn, suuid string, h Handler, p *player.Player) *
 	c.outbound = (chan<- []byte)(ch)
 	go c.sender(ctx, (<-chan []byte)(ch))
 
+	c.wg.Add(2)
+
 	c.Logger.Info("Соединение для сессии", suuid, "с адреса", c.ws.RemoteAddr(), "успешно установлено")
 
 	return c
@@ -113,18 +118,22 @@ func (c *Connect) updateClientOffset() {
 
 // close закрывает коннект
 func (c *Connect) close() {
-	c.cancel()
-	c.state = StateCLOSED
-	c.handler.Leave(c)
-	c.ws.Close()
+	if c.state != StateCLOSED {
+		c.cancel()
+		c.state = StateCLOSED
+		c.handler.Leave(c)
+		c.ws.Close()
 
-	err := db.SaveSession(c.SUUID, c.sync.offset, c.Received, c.Sent)
-	if err != nil {
-		c.Logger.Error("Не удалось записать информацию о коннекте:", err)
+		err := db.SaveSession(c.SUUID, c.sync.offset, c.Received, c.Sent)
+		if err != nil {
+			c.Logger.Error("Не удалось записать информацию о коннекте:", err)
+		}
+
+		c.wg.Wait()
+
+		c.Logger.Info("Подключение с адреса", c.ws.RemoteAddr(), "завершено")
+		c.Logger.Close()
 	}
-
-	c.Logger.Info("Подключение с адреса", c.ws.RemoteAddr(), "завершено")
-	c.Logger.Close()
 }
 
 // receiver запускается в виде горутины, вычитывает из сокета входящие сообщения и обрабатывает их.
@@ -132,7 +141,12 @@ func (c *Connect) close() {
 // чтение из сокета из единственного конкурентного потока
 // TODO: обработку сообщений нужно вынести из этой горутины
 func (c *Connect) receiver() {
-	defer c.close()
+	defer func() {
+		c.wg.Done()
+		c.Logger.Debug("Ресивер завершен")
+		c.close()
+	}()
+
 	for {
 		// Читаем из сокета
 		messageType, messageData, err := c.ws.ReadMessage()

@@ -52,7 +52,9 @@ var pingRequestMessageBuffer = pingRequestMessage(pingRequestBuffer)
 func (c *Connect) sender(ctx context.Context, inbound <-chan []byte) {
 	pinger := time.NewTicker(pingPeriod)
 	defer func() {
+		c.wg.Done()
 		pinger.Stop()
+		c.Logger.Debug("Сендер завершен")
 		c.close()
 	}()
 
@@ -60,22 +62,11 @@ func (c *Connect) sender(ctx context.Context, inbound <-chan []byte) {
 
 		select {
 		case <-ctx.Done():
-			c.Logger.Info("Получена команда на завершение сендера")
 			// TODO: Это сообщение по идее нужно отправлять только когда сервер инициирует закрытие соединения.
 			// На всякий случай отправляю всегда. Надо ли?
 			// c.ws.WriteControl(websocket.CloseMessage, []byte{}, time.Now().Add(writeWait))
 			//c.ws.WriteMessage(websocket.CloseMessage, []byte{})
 			return
-
-			/*
-				case message, ok := <-inbound:
-					if !ok {
-						// Канал закрыт
-						//c.ws.WriteMessage(websocket.CloseMessage, []byte{})
-						c.ws.WriteControl(websocket.CloseMessage, []byte{}, time.Now().Add(writeWait))
-						return
-					}
-			*/
 
 		case message := <-inbound:
 			// Отправляем сообщение
@@ -83,12 +74,6 @@ func (c *Connect) sender(ctx context.Context, inbound <-chan []byte) {
 			err := c.ws.WriteMessage(websocket.BinaryMessage, message)
 			if err != nil {
 				c.Logger.Error("Ошибка записи в сокет:", err)
-				/*
-					if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
-						c.Logger.Error("Ошибка записи в сокет:", err)
-					}
-				*/
-
 				// TODO: В этом месте сендер завершается
 				// Могут ли тут быть не критичные ошибки?
 				// Возможно стоит попытаться отправить сообщение снова?
@@ -160,16 +145,12 @@ func (c *Connect) Send(msgType protocol.MessageType, msgBody []byte) {
 		return
 	}
 
-	//	if c.state != StateCLOSED {
-	// ToDo: возможна ситуация, когда канал уже закрыт
-	// Разобраться, как обрабатывать такую ситуацию
 	select {
 	case c.outbound <- buffer:
 	default:
 		// Буфер переполнен - в этом месте сообщение теряется
 		c.Logger.Warn("Очередь на отправку переполнена")
 	}
-	//	}
 }
 
 // SendChain упаковывает данные в цепочку из одного сообщения и отправляет его
