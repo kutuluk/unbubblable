@@ -3,6 +3,7 @@ package connect
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -16,8 +17,8 @@ import (
 
 // Набор состояний соединения
 const (
-	StateSYNC = iota
-	StateTRANSFER
+	StateSYNC int32 = iota
+	StateOPEN
 	StateCLOSED
 )
 
@@ -27,19 +28,19 @@ type Handler interface {
 	Leave(connect *Connect)
 }
 
-// Connect связывает коннект с персонажем
+// Connect определяет структуру коннекта
 type Connect struct {
 	Player *player.Player
 	SUUID  string
 	Logger *logger.Logger
 
-	handler  Handler
-	ws       *websocket.Conn
-	outbound chan<- []byte
-	cancel   context.CancelFunc
-	wg       sync.WaitGroup
+	handler      Handler
+	ws           *websocket.Conn
+	outbound     chan<- []byte
+	cancelSender context.CancelFunc
+	wg           sync.WaitGroup
 
-	state int
+	state int32
 	frame int
 	ping  pingStatistics
 	sync  *synchronizer
@@ -49,16 +50,9 @@ type Connect struct {
 	Sent     int
 }
 
-// NewConnect создает коннект
+// NewConnect привязывает WebSocket-коннект с персонажем и запускает две горутины
+// для отправки и получения сообщений
 func NewConnect(ws *websocket.Conn, suuid string, h Handler, p *player.Player) *Connect {
-	//	p := player.NewPlayer(1)
-
-	/*
-		const alphabet = "0123456789abcdefghijklmnopqrstuvwxyz"
-		sid, _ := shortid.New(1, alphabet, 2342)
-		suuid, _ := sid.Generate()
-	*/
-	//suuid, _ := shortid.Generate()
 	c := &Connect{
 		ws:      ws,
 		handler: h,
@@ -66,25 +60,25 @@ func NewConnect(ws *websocket.Conn, suuid string, h Handler, p *player.Player) *
 		SUUID:   suuid,
 		Logger:  logger.New(suuid, "server"),
 
+		sync: NewSynchronizer(),
 		// Медиана рассчитывается на основании 4 последних пингов
 		ping: newPingStatistics(4),
-		sync: NewSynchronizer(),
 	}
 
 	// Назначаем обработчик понгов
 	c.ws.SetPongHandler(c.pongHandler)
 
-	// Создаем контекст
-	var ctx context.Context
-	ctx, c.cancel = context.WithCancel(context.Background())
-
 	// Запускаем обработчик входящих сообщений
 	go c.receiver()
 
-	// Запускаем обработчик исходящих сообщений
+	// Создаем контекст для прерывания обработчика исходящих сообщений
+	var ctx context.Context
+	ctx, c.cancelSender = context.WithCancel(context.Background())
+	// Создаем канал исходящих сообщений
 	ch := make(chan []byte, SenderQueueLength)
 	c.outbound = (chan<- []byte)(ch)
-	go c.sender(ctx, (<-chan []byte)(ch))
+	// Запускаем обработчик исходящих сообщений
+	go c.sender(ctx, ch)
 
 	c.wg.Add(2)
 
@@ -109,30 +103,28 @@ func (c *Connect) Ping() time.Duration {
 	return c.ping.median
 }
 
-func (c *Connect) updateClientOffset() {
-	err := db.UpdateSessionOffset(c.SUUID, c.sync.offset)
-	if err != nil {
-		c.Logger.Error("Не удалось обновить смещение времени:", err)
-	}
-}
-
 // close закрывает коннект
 func (c *Connect) close() {
-	if c.state != StateCLOSED {
-		c.cancel()
-		c.state = StateCLOSED
+	oldState := atomic.SwapInt32(&c.state, StateCLOSED)
+	if oldState != StateCLOSED {
 		c.handler.Leave(c)
+
+		// TODO: Сендер благополучно завершается по ошибке при закрытии сокета
+		// Возможно имеет смысл вообще обойтись без контекста и позволить
+		// сендеру, как и ресиверу, выходить при ошибке?
+		c.cancelSender()
+
 		c.ws.Close()
+
+		c.wg.Wait()
 
 		err := db.SaveSession(c.SUUID, c.sync.offset, c.Received, c.Sent)
 		if err != nil {
 			c.Logger.Error("Не удалось записать информацию о коннекте:", err)
 		}
 
-		c.wg.Wait()
-
 		c.Logger.Info("Подключение с адреса", c.ws.RemoteAddr(), "завершено")
-		c.Logger.Close()
+		//c.Logger.Close()
 	}
 }
 
@@ -142,8 +134,8 @@ func (c *Connect) close() {
 // TODO: обработку сообщений нужно вынести из этой горутины
 func (c *Connect) receiver() {
 	defer func() {
-		c.wg.Done()
 		c.Logger.Debug("Ресивер завершен")
+		c.wg.Done()
 		c.close()
 	}()
 
@@ -179,31 +171,39 @@ func (c *Connect) receiver() {
 			continue
 		}
 
-		// Обрабатываем сообщение
-		if message.Type == protocol.MessageType_MsgPingResponse {
-
-			c.Logger.Info("Получен ответ синхронизации", now)
-
-			msgPingResponse := new(protocol.PingResponse)
-			err = proto.Unmarshal(message.Body, msgPingResponse)
-			if err != nil {
-				c.Logger.Warn("Ошибка декодирования сообщения:", err)
-				// Игнорируем сообщение
-				continue
-			}
-
-			// Применяем сообщение
-			//timeClient := time.Unix(msgPingResponse.Time.Seconds, int64(msgPingResponse.Time.Nanos)).UTC()
-			timeClient := time.Unix(msgPingResponse.Time.Seconds, int64(msgPingResponse.Time.Nanos))
-
-			if c.sync.handle(now, timeClient) {
-				c.updateClientOffset()
-			}
-
-		} else {
-
-			//			c.handle(message)
+		if c.handle(message, now) {
 			c.handler.Handle(message, c)
 		}
 	}
+}
+
+func (c *Connect) handle(message *protocol.Message, now time.Time) bool {
+	// Если получен ответ на пинг, то обрабатываем его
+	if message.Type == protocol.MessageType_MsgPingResponse {
+
+		c.Logger.Info("Получен ответ синхронизации", now)
+
+		msgPingResponse := new(protocol.PingResponse)
+		err := proto.Unmarshal(message.Body, msgPingResponse)
+		if err != nil {
+			c.Logger.Warn("Ошибка декодирования сообщения:", err)
+			// Игнорируем сообщение
+			return false
+		}
+
+		// Применяем сообщение
+		//timeClient := time.Unix(msgPingResponse.Time.Seconds, int64(msgPingResponse.Time.Nanos)).UTC()
+		timeClient := time.Unix(msgPingResponse.Time.Seconds, int64(msgPingResponse.Time.Nanos))
+
+		if c.sync.handle(now, timeClient) {
+			err := db.UpdateSessionOffset(c.SUUID, c.sync.offset)
+			if err != nil {
+				c.Logger.Error("Не удалось обновить смещение времени:", err)
+			}
+		}
+
+		return false
+	}
+
+	return true
 }

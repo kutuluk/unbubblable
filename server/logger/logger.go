@@ -26,7 +26,66 @@ import (
 	"github.com/kutuluk/unbubblable/server/db"
 )
 
-const queueLength = 100
+const queueLength = 1000
+
+func writer(outbound <-chan db.LogMessage) {
+	queue := make([]db.LogMessage, 0, queueLength)
+	timer := time.NewTicker(1 * time.Second)
+
+	update := func() {
+		b := time.Now()
+		l := len(queue)
+		err := db.AddLogsQueue(queue)
+		log.Println("Длительность записи логов:", time.Since(b), "записано:", l)
+		if err != nil {
+			log.Println("Ошибка записи логов:", err)
+		}
+		queue = queue[:0]
+	}
+
+	defer func() {
+		timer.Stop()
+		update()
+	}()
+
+	for {
+		select {
+		case message, ok := <-outbound:
+			if !ok {
+				// Канал закрыт
+				return
+			}
+
+			queue = append(queue, message)
+			if len(queue) == queueLength {
+				// Если очередь заполнилась - пишем
+				update()
+			}
+
+		case <-timer.C:
+			// Если настало время - пишем
+			update()
+		}
+	}
+}
+
+var outbound chan<- db.LogMessage
+
+func Write(source, suuid string, timestamp time.Time, text string) {
+	msg := db.LogMessage{
+		Source:    source,
+		Suuid:     suuid,
+		Timestamp: timestamp,
+		Text:      text,
+	}
+
+	select {
+	case outbound <- msg:
+	default:
+		log.Println("Ошибка записи лога: буфер переполнен")
+		log.Printf("Cообщение (suuid=\"%s\", source=\"%s\"): [%s] %s", msg.Suuid, msg.Source, msg.Timestamp, msg.Text)
+	}
+}
 
 type Level int
 
@@ -44,29 +103,17 @@ func (l Level) String() string {
 	return printLevel[l]
 }
 
-type logMessage struct {
-	time time.Time
-	text string
-}
-
 type Logger struct {
-	level    Level
-	suuid    string
-	source   string
-	outbound chan<- logMessage
+	level  Level
+	suuid  string
+	source string
 }
 
 func New(suuid, source string) *Logger {
-	l := &Logger{
+	return &Logger{
 		suuid:  suuid,
 		source: source,
 	}
-
-	ch := make(chan logMessage, queueLength)
-	l.outbound = (chan<- logMessage)(ch)
-
-	go l.writer((<-chan logMessage)(ch))
-	return l
 }
 
 func (l *Logger) GetLevel() Level {
@@ -75,32 +122,6 @@ func (l *Logger) GetLevel() Level {
 
 func (l *Logger) SetLevel(level Level) {
 	l.level = level
-}
-
-// TODO: Сделать writer общим для всех логгеров, так как параллельная запись в базу все равно не возможна
-
-func (l *Logger) writer(inbound <-chan logMessage) {
-	for message := range inbound {
-		var err error
-		if l.source == "global" {
-			//b := time.Now()
-			err = db.AddGlobalLog(message.time, []byte(message.text))
-			//log.Println("Длительность AddGlobalLog:", time.Since(b))
-		} else {
-			//b := time.Now()
-			err = db.AddSessionLog(l.suuid, message.time, l.source, []byte(message.text))
-			//log.Println("Длительность AddSessionLog:", time.Since(b))
-		}
-
-		if err != nil {
-			log.Println("Ошибка записи лога:", err)
-			log.Printf("Cообщение (suuid=%s, source=%s): %s", l.suuid, l.source, message.text)
-		}
-	}
-}
-
-func (l *Logger) Close() {
-	close(l.outbound)
 }
 
 func (l *Logger) output(level Level, message string) {
@@ -128,14 +149,7 @@ func (l *Logger) output(level Level, message string) {
 			trace = fmt.Sprint(short, ":", line)
 		}
 
-		msg := logMessage{time: now, text: fmt.Sprint(level, " (", trace, "): ", message)}
-
-		select {
-		case l.outbound <- msg:
-		default:
-			log.Println("Ошибка записи лога: буфер переполнен")
-			log.Printf("Cообщение (suuid=%s, source=%s): %s", l.suuid, l.source, msg.text)
-		}
+		Write(l.source, l.suuid, now, fmt.Sprint(level, " (", trace, "): ", message))
 	}
 }
 
@@ -201,4 +215,11 @@ func Panic(a ...interface{}) {
 func Fatal(a ...interface{}) {
 	std.output(FatalLevel, fmt.Sprintln(a...))
 	os.Exit(1)
+}
+
+func init() {
+	ch := make(chan db.LogMessage, queueLength)
+	outbound = (chan<- db.LogMessage)(ch)
+
+	go writer((<-chan db.LogMessage)(ch))
 }

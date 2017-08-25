@@ -1,1 +1,1 @@
-go tool pprof -web ./server/server.exe ./server/prof/cpu.pprof
+go tool pprof -web ./server/prof/cpu.pprof

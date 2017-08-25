@@ -13,6 +13,13 @@ const fmtRFC3339Micro = "2006-01-02T15:04:05.000000Z"
 
 var DB *bolt.DB
 
+type LogMessage struct {
+	Source    string
+	Suuid     string
+	Timestamp time.Time
+	Text      string
+}
+
 // Init инициализирует базу данных
 func Init() (err error) {
 	DB, err = bolt.Open("./data/data.db", 0644, nil)
@@ -159,30 +166,42 @@ func SaveSession(suuid string, offset time.Duration, received, sent int) error {
 	})
 }
 
-func AddSessionLog(suuid string, key time.Time, source string, message []byte) error {
-	//	return DB.Update(func(tx *bolt.Tx) error {
-	return DB.Batch(func(tx *bolt.Tx) error {
-		session, err := getSessionBucket(suuid, tx)
-		if err != nil {
-			return err
+func AddLogsQueue(queue []LogMessage) error {
+	return DB.Update(func(tx *bolt.Tx) error {
+		//return DB.Batch(func(tx *bolt.Tx) error {
+		var global *bolt.Bucket
+
+		for _, message := range queue {
+			var bucket *bolt.Bucket
+			if message.Source == "global" {
+				if global != nil {
+					// Оптимизация для глобального лога
+					bucket = global
+				} else {
+					bucket = tx.Bucket([]byte("log"))
+					if bucket == nil {
+						return bolt.ErrBucketNotFound
+					}
+					global = bucket
+				}
+			} else {
+				// TODO: Можно сделать оптимизацию и для сессионных логов
+				session, err := getSessionBucket(message.Suuid, tx)
+				if err != nil {
+					return err
+				}
+
+				bucket = session.Bucket([]byte(message.Source))
+				if bucket == nil {
+					return bolt.ErrBucketNotFound
+				}
+			}
+
+			err := bucket.Put(timeid.FromTime(message.Timestamp).Bytes(), []byte(message.Text))
+			if err != nil {
+				return err
+			}
 		}
-
-		bucket := session.Bucket([]byte(source))
-		if bucket == nil {
-			return bolt.ErrBucketNotFound
-		}
-
-		return bucket.Put(timeid.FromTime(key).Bytes(), message)
-	})
-}
-
-func AddGlobalLog(key time.Time, message []byte) error {
-	return DB.Batch(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte("log"))
-		if bucket == nil {
-			return bolt.ErrBucketNotFound
-		}
-
-		return bucket.Put(timeid.FromTime(key).Bytes(), message)
+		return nil
 	})
 }

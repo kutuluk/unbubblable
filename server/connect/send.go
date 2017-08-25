@@ -2,6 +2,7 @@ package connect
 
 import (
 	"context"
+	"sync/atomic"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -47,14 +48,15 @@ var pingRequestBuffer = pingRequest()
 var pingRequestMessageBuffer = pingRequestMessage(pingRequestBuffer)
 
 // sender запускается в виде горутины и отправляет в сокет пришедшие
-// в канал сообщения. Попутно с интервалом в pingPeriod отправляет пинги. Задача этой горутины - обеспечить
+// в канал сообщения. Попутно с интервалом в pingPeriod отправляет пинги. Горутина завершается при ошибке
+// записи в сокет или контекстом и закрывает коннект. Задача этой горутины - обеспечить
 // запись в сокет из единственного конкурентного потока
-func (c *Connect) sender(ctx context.Context, inbound <-chan []byte) {
+func (c *Connect) sender(ctx context.Context, outbound <-chan []byte) {
 	pinger := time.NewTicker(pingPeriod)
 	defer func() {
-		c.wg.Done()
-		pinger.Stop()
 		c.Logger.Debug("Сендер завершен")
+		pinger.Stop()
+		c.wg.Done()
 		c.close()
 	}()
 
@@ -68,7 +70,7 @@ func (c *Connect) sender(ctx context.Context, inbound <-chan []byte) {
 			//c.ws.WriteMessage(websocket.CloseMessage, []byte{})
 			return
 
-		case message := <-inbound:
+		case message := <-outbound:
 			// Отправляем сообщение
 			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := c.ws.WriteMessage(websocket.BinaryMessage, message)
@@ -96,23 +98,27 @@ func (c *Connect) update() {
 
 	// Отправляем пинг
 	if c.ping.start() {
-		//if err := c.ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
-		if err := c.ws.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(writeWait)); err != nil {
+		//err := c.ws.WriteMessage(websocket.PingMessage, []byte{})
+		err := c.ws.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(writeWait))
+		if err != nil {
 			c.Logger.Error("Не удалось отправить Ping")
-			// return
+		} else {
+			c.Logger.Debug("Отправлен Ping")
 		}
-		c.Logger.Debug("Отправлен Ping")
 	}
 
-	if c.state == StateSYNC && c.frame%(4*4) == 0 {
-		c.state = StateTRANSFER
+	// Через 4 секунды переводим состояние из SYNC в OPEN
+	if c.frame%(4*4) == 0 {
+		atomic.CompareAndSwapInt32(&c.state, StateSYNC, StateOPEN)
 	}
 
-	// Раз в секунду отправляем служебную информацию
+	// Раз в секунду
 	if c.frame%4 == 0 {
+		// Отправляем служебную информацию
 		c.SendInfo()
 		//		c.SendSystemMessage(0, fmt.Sprintf("Ping: %v, status: %v", c.ping.median, c.state))
 
+		// Отправляем запрос на синхронизацию времени
 		if c.sync.check() {
 			b := time.Now()
 			c.sync.begin()
@@ -120,7 +126,7 @@ func (c *Connect) update() {
 			// FIXME:
 			// c.sync.begin() - если оставить здесь, то этот код может выполниться в момент получения ответа
 			// и пинг будет равен 0 - разобраться почему
-			c.Logger.Info("Отправлен запрос на синхронизацию", b)
+			c.Logger.Info("Отправлен запрос на синхронизацию времени", b)
 		}
 
 	}

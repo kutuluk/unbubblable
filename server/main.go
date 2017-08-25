@@ -246,10 +246,7 @@ func logAPI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Записываем в лог
-	err = db.AddSessionLog(suuid, timeValue, "client", []byte(m))
-	if err != nil {
-		logger.Error(err)
-	}
+	logger.Write("client", suuid, timeValue, m)
 }
 
 // Обработчик запросов на соединения по протоколу Websocket
@@ -287,8 +284,7 @@ func play(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	p := profile.Start(profile.ProfilePath("./prof"))
-	defer p.Stop()
+	defer profile.Start(profile.ProfilePath("./prof")).Stop()
 
 	log.SetFlags(log.LUTC | log.Ldate | log.Lmicroseconds | log.Lshortfile)
 
