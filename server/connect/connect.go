@@ -124,7 +124,6 @@ func (c *Connect) close() {
 		}
 
 		c.Logger.Info("Подключение с адреса", c.ws.RemoteAddr(), "завершено")
-		//c.Logger.Close()
 	}
 }
 
@@ -196,6 +195,7 @@ func (c *Connect) handle(message *protocol.Message, now time.Time) bool {
 		timeClient := time.Unix(msgPingResponse.Time.Seconds, int64(msgPingResponse.Time.Nanos))
 
 		if c.sync.handle(now, timeClient) {
+			// Синхронизация завершена - обновляем базу
 			err := db.UpdateSessionOffset(c.SUUID, c.sync.offset)
 			if err != nil {
 				c.Logger.Error("Не удалось обновить смещение времени:", err)

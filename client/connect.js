@@ -127,6 +127,13 @@ class Connect {
         break;
       }
 
+      case this.protobuf.Messaging.MessageType.MsgConnectInfo: {
+        const msg = this.protobuf.Messaging.Messages.ConnectInfo.decode(message.body);
+        //          .toObject({ defaults: true });
+        this.game.handleConnectInfoMessage(msg);
+        break;
+      }
+
       case this.protobuf.Messaging.MessageType.MsgSay: {
         const msg = this.protobuf.Messaging.Messages.Say.decode(message.body);
         //          .toObject({ defaults: true });

@@ -119,7 +119,7 @@ func (s *synchronizer) calc(t, clientEnd time.Time) bool {
 				return true
 			}
 
-			log.Println(s.metrics)
+			//log.Println(s.metrics)
 			s.update()
 			return false
 		}

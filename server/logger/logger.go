@@ -32,7 +32,7 @@ func writer(outbound <-chan db.LogMessage) {
 	queue := make([]db.LogMessage, 0, queueLength)
 	timer := time.NewTicker(1 * time.Second)
 
-	update := func() {
+	write := func() {
 		b := time.Now()
 		l := len(queue)
 		err := db.AddLogsQueue(queue)
@@ -44,33 +44,38 @@ func writer(outbound <-chan db.LogMessage) {
 	}
 
 	defer func() {
+		// Останавливаем таймер
 		timer.Stop()
-		update()
+		// Пишем оставшиеся в очереди сообщения
+		write()
 	}()
 
 	for {
 		select {
 		case message, ok := <-outbound:
 			if !ok {
-				// Канал закрыт
+				// Канал закрыт - выходим
 				return
 			}
 
+			// Добавляем сообщение в очередь
 			queue = append(queue, message)
+
 			if len(queue) == queueLength {
 				// Если очередь заполнилась - пишем
-				update()
+				write()
 			}
 
 		case <-timer.C:
 			// Если настало время - пишем
-			update()
+			write()
 		}
 	}
 }
 
 var outbound chan<- db.LogMessage
 
+// Write пишет в лог сообщение с заданными параметрами без привязки к конкретному логгеру
 func Write(source, suuid string, timestamp time.Time, text string) {
 	msg := db.LogMessage{
 		Source:    source,
@@ -87,8 +92,10 @@ func Write(source, suuid string, timestamp time.Time, text string) {
 	}
 }
 
+// Level определяет уровень логгирования. Сообщения с меньшим уровнем не логируются.
 type Level int
 
+// Предустановленные уровни логгера
 const (
 	DebugLevel Level = iota
 	InfoLevel
@@ -103,23 +110,20 @@ func (l Level) String() string {
 	return printLevel[l]
 }
 
+// Logger определяет логгер, связанный с определенным источником source коннекта suuid
 type Logger struct {
-	level  Level
-	suuid  string
-	source string
+	level     Level
+	suuid     string
+	source    string
+	calldepth int
 }
 
-func New(suuid, source string) *Logger {
-	return &Logger{
-		suuid:  suuid,
-		source: source,
-	}
-}
-
+// GetLevel возвращает текущий уровень логгера
 func (l *Logger) GetLevel() Level {
 	return l.level
 }
 
+// SetLevel устанавливает уровень логгера
 func (l *Logger) SetLevel(level Level) {
 	l.level = level
 }
@@ -130,7 +134,7 @@ func (l *Logger) output(level Level, message string) {
 
 		trace := "???"
 
-		_, file, line, ok := runtime.Caller(2)
+		_, file, line, ok := runtime.Caller(l.calldepth)
 		if ok {
 			short := file
 			for i := len(file) - 1; i > 0; i-- {
@@ -153,73 +157,96 @@ func (l *Logger) output(level Level, message string) {
 	}
 }
 
+// Debug пишет в лог с уровнем DebugLevel
 func (l *Logger) Debug(a ...interface{}) {
 	l.output(DebugLevel, fmt.Sprintln(a...))
 }
 
+// Info пишет в лог с уровнем InfoLevel
 func (l *Logger) Info(a ...interface{}) {
 	l.output(InfoLevel, fmt.Sprintln(a...))
 }
 
+// Warn пишет в лог с уровнем WarnLevel
 func (l *Logger) Warn(a ...interface{}) {
 	l.output(WarnLevel, fmt.Sprintln(a...))
 }
 
+// Error пишет в лог с уровнем ErrorLevel
 func (l *Logger) Error(a ...interface{}) {
 	l.output(ErrorLevel, fmt.Sprintln(a...))
 }
 
+// Panic пишет в лог с уровнем FatalLevel и вызывает панику
 func (l *Logger) Panic(a ...interface{}) {
 	s := fmt.Sprintln(a...)
 	l.output(FatalLevel, s)
 	panic(s)
 }
 
+// Fatal пишет в лог с уровнем FatalLevel и завершает программу
 func (l *Logger) Fatal(a ...interface{}) {
 	l.output(FatalLevel, fmt.Sprintln(a...))
 	os.Exit(1)
 }
 
-var std = New("", "global")
+// New создает новый логгер, привязанный к ресурсу source коннекта suuid
+func New(suuid, source string) *Logger {
+	return &Logger{
+		suuid:     suuid,
+		source:    source,
+		calldepth: 2,
+	}
+}
 
+var std = &Logger{
+	suuid:     "",
+	source:    "global",
+	calldepth: 3,
+}
+
+// GetLevel возвращает текущий уровень глобального логгера
 func GetLevel() Level {
 	return std.GetLevel()
 }
 
+// SetLevel устанавливает уровень глобального логгера
 func SetLevel(level Level) {
 	std.SetLevel(level)
 }
 
+// Debug пишет в глобальный лог с уровнем DebugLevel
 func Debug(a ...interface{}) {
-	std.output(DebugLevel, fmt.Sprintln(a...))
+	std.Debug(a...)
 }
 
+// Info пишет в глобальный лог с уровнем InfoLevel
 func Info(a ...interface{}) {
-	std.output(InfoLevel, fmt.Sprintln(a...))
+	std.Info(a...)
 }
 
+// Warn пишет в глобальный лог с уровнем WarnLevel
 func Warn(a ...interface{}) {
-	std.output(WarnLevel, fmt.Sprintln(a...))
+	std.Warn(a...)
 }
 
+// Error пишет в глобальный лог с уровнем ErrorLevel
 func Error(a ...interface{}) {
-	std.output(ErrorLevel, fmt.Sprintln(a...))
+	std.Error(a...)
 }
 
+// Panic пишет в глобальный лог с уровнем FatalLevel и вызывает пинику
 func Panic(a ...interface{}) {
-	s := fmt.Sprintln(a...)
-	std.output(FatalLevel, s)
-	panic(s)
+	std.Panic(a...)
 }
 
+// Fatal пишет в глобальный лог с уровнем FatalLevel и завершает программу
 func Fatal(a ...interface{}) {
-	std.output(FatalLevel, fmt.Sprintln(a...))
-	os.Exit(1)
+	std.Fatal(a...)
 }
 
 func init() {
 	ch := make(chan db.LogMessage, queueLength)
 	outbound = (chan<- db.LogMessage)(ch)
-
-	go writer((<-chan db.LogMessage)(ch))
+	go writer(ch)
 }
