@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -13,7 +15,7 @@ import (
 	"github.com/boltdb/bolt"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/profile"
-	"github.com/ventu-io/go-shortid"
+	"github.com/satori/go.uuid"
 
 	"github.com/kutuluk/unbubblable/server/config"
 	"github.com/kutuluk/unbubblable/server/db"
@@ -36,47 +38,32 @@ var upgrader = websocket.Upgrader{}
 var h *hub.Hub
 var l *loop.Loop
 
-func cookier(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//suuid, err := shortid.Generate()
-		suuid := shortid.MustGenerate()
+type contextKeys int
 
-		// Записываем коннект в базу
-		err := db.AddSession(suuid)
+const sessionKey contextKeys = 0
+
+func cookier(h http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var id uuid.UUID
+
+		cookie, err := r.Cookie("session")
+
+		if err == nil {
+			id, err = uuid.FromString(cookie.Value)
+		}
+
+		// Если не удалось прочитать или распарсить сессию из куки создаем новую
 		if err != nil {
-			logger.Error(err)
-			return
+			id = uuid.NewV4()
+			http.SetCookie(w, &http.Cookie{
+				Name:  "session",
+				Value: id.String(),
+			})
 		}
 
-		cookie := &http.Cookie{
-			Name:  "session",
-			Value: suuid,
-		}
-		http.SetCookie(w, cookie)
-		h.ServeHTTP(w, r)
-	})
-}
-
-func cookierFunc(h http.HandlerFunc) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//suuid, err := shortid.Generate()
-		suuid := shortid.MustGenerate()
-
-		// Записываем коннект в базу
-		err := db.AddSession(suuid)
-		if err != nil {
-			logger.Error(err)
-			return
-		}
-
-		logger.New(suuid, "server").Info("Зарегистрирована новая сессия", suuid)
-
-		http.SetCookie(w, &http.Cookie{
-			Name:  "session",
-			Value: suuid,
-		})
-		h(w, r)
-	})
+		ctx := context.WithValue(r.Context(), sessionKey, id)
+		h.ServeHTTP(w, r.WithContext(ctx))
+	}
 }
 
 func redirect(w http.ResponseWriter, r *http.Request) {
@@ -88,30 +75,58 @@ func redirect(w http.ResponseWriter, r *http.Request) {
 
 // Информационная страница о статусе сервера
 func status(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Unbubblable "+VERSION+" ("+BUILD+") "+BUILD_DATE)
+	fmt.Fprintln(w, "Unbubblable "+VERSION+" ("+BUILD+") "+DATE)
 	fmt.Fprintln(w, "Коннектов: ", h.Count())
 }
 
 // Лог
 func logs(w http.ResponseWriter, r *http.Request) {
-	suuid, err := r.Cookie("session")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		logger.Error(err)
-		return
-	}
-
-	err = db.DB.View(func(tx *bolt.Tx) error {
+	err := db.DB.View(func(tx *bolt.Tx) error {
 
 		sessions := tx.Bucket([]byte("sessions"))
 		if sessions == nil {
 			return bolt.ErrBucketNotFound
 		}
 
-		session := sessions.Bucket([]byte(suuid.Value))
-		if session == nil {
-			return bolt.ErrBucketNotFound
+		// ---------
+		var lastConnect *bolt.Bucket
+		var lastTime time.Time
+		var lastSUUID string
+
+		last := func(k, v []byte) error {
+			session := sessions.Bucket(k)
+			if session == nil {
+				return bolt.ErrBucketNotFound
+			}
+
+			start := session.Get([]byte("start"))
+			if start == nil {
+				return errors.New("start not found")
+			}
+
+			timeID, err := timeid.FromBytes(start)
+			if err != nil {
+				return err
+			}
+
+			timeValue := timeID.Time()
+
+			if timeValue.After(lastTime) {
+				lastTime = timeValue
+				lastConnect = session
+				lastSUUID = string(k)
+			}
+
+			return nil
 		}
+
+		err := sessions.ForEach(last)
+		if err != nil {
+			return err
+		}
+		// ----
+
+		session := lastConnect
 
 		offsetValue := session.Get([]byte("offset"))
 		var offset string
@@ -141,9 +156,9 @@ func logs(w http.ResponseWriter, r *http.Request) {
 		}
 
 		type logMessage struct {
-			Time   string `json:"time"`
-			Source string `json:"source"`
-			Msg    string `json:"msg"`
+			Time   string     `json:"time"`
+			Source string     `json:"source"`
+			Body   db.LogBody `json:"body"`
 		}
 
 		messages := make([]logMessage, 0, clientLog.Stats().KeyN+serverLog.Stats().KeyN)
@@ -159,10 +174,17 @@ func logs(w http.ResponseWriter, r *http.Request) {
 				t := tid.Time()
 				// TODO: сделать коррекцию времени на клиенте
 				t = t.Add(offset)
+
+				var body db.LogBody
+				err = json.Unmarshal(v, &body)
+				if err != nil {
+					return err
+				}
+
 				message := logMessage{
 					Time:   t.Format(fmtRFC3339Micro),
 					Source: source,
-					Msg:    string(v),
+					Body:   body,
 				}
 				messages = append(messages, message)
 				return nil
@@ -175,7 +197,16 @@ func logs(w http.ResponseWriter, r *http.Request) {
 		serverLog.ForEach(appender(0))
 
 		c := globalLog.Cursor()
-		min, _ := serverLog.Cursor().First()
+
+		//min, _ := serverLog.Cursor().First()
+
+		/*
+			start := session.Get([]byte("start"))
+			startTime, err := time.Parse(fmtRFC3339Micro, string(start))
+			min := timeid.FromTime(startTime).Bytes()
+		*/
+
+		min := session.Get([]byte("start"))
 		max, _ := serverLog.Cursor().Last()
 
 		for k, v := c.Seek(min); k != nil && bytes.Compare(k, max) <= 0; k, v = c.Next() {
@@ -183,10 +214,17 @@ func logs(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				break
 			}
+
+			var body db.LogBody
+			err = json.Unmarshal(v, &body)
+			if err != nil {
+				return err
+			}
+
 			message := logMessage{
 				Time:   tid.Time().Format(fmtRFC3339Micro),
 				Source: "global",
-				Msg:    string(v),
+				Body:   body,
 			}
 			messages = append(messages, message)
 		}
@@ -200,7 +238,7 @@ func logs(w http.ResponseWriter, r *http.Request) {
 		}
 
 		fmt.Fprintln(w, `{`)
-		fmt.Fprintln(w, `"session":"`+suuid.Value+`",`)
+		fmt.Fprintln(w, `"connect":"`+lastSUUID+`",`)
 		fmt.Fprintln(w, `"offset":"`+offset+`",`)
 		fmt.Fprintln(w, `"logs":`)
 		fmt.Fprintln(w, string(buf))
@@ -225,62 +263,81 @@ func logAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	token := ""
+	authorization := strings.Split(r.Header.Get("Authorization"), " ")
+	if authorization[0] == "Bearer" {
+		token = authorization[1]
+	}
+
+	if token == "" {
+		err := errors.New("Токен отсутствует")
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		logger.Error(err)
+		return
+	}
+
 	fmt.Fprintln(w, "OK")
 
-	// Вычленяем suuid
-	m := string(body)
-	s := strings.Index(m, ">")
-	suuid := m[1:s]
-	m = m[s+2:]
+	if r.Header.Get("Content-Type") == "application/json" {
+		type Message struct {
+			Message    string       `json:"message"`
+			Level      logger.Level `json:"level"`
+			Logger     string       `json:"logger"`
+			Timestamp  string       `json:"timestamp"`
+			Stacktrace string       `json:"stacktrace"`
+		}
 
-	// Вычленяем временную метку
-	t := strings.Index(m, "]")
-	timeStr := m[1:t]
-	m = m[t+2:]
+		type Messages struct {
+			Messages []Message `json:"logs"`
+		}
 
-	// Парсим временную метку
-	timeValue, err := time.Parse(time.RFC3339Nano, timeStr)
-	if err != nil {
-		logger.Error(err)
-		return
+		messages := Messages{}
+		err = json.Unmarshal(body, &messages)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			logger.Error(err)
+			return
+		}
+
+		for _, message := range messages.Messages {
+			// Парсим временную метку
+			timeValue, err := time.Parse(time.RFC3339Nano, message.Timestamp)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				logger.Error(err)
+				return
+			}
+
+			// Записываем лог
+			logger.Write("client", token, timeValue, message.Level, message.Logger, message.Message)
+		}
 	}
-
-	// Записываем в лог
-	logger.Write("client", suuid, timeValue, m)
 }
 
-// Обработчик запросов на соединения по протоколу Websocket
-func ws(w http.ResponseWriter, r *http.Request) {
-	suuid, err := r.Cookie("session")
+// Обработчик запросов на соединения по протоколу WebSocket
+func upgrade(w http.ResponseWriter, r *http.Request) {
+	// Создаем websocket-соединение
+	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		/*		if err != http.ErrNoCookie {
-					fmt.Fprint(w, err)
-					return
-				} else {
-					err = nil
-				}
-		*/
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		logger.Error(err)
-		return
-	}
-
-	// Создаем соединение
-	connect, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
 		logger.Error("Не удалось создать websocket-соединение:", err)
 		return
 	}
+
 	// Добавляем соединение в хаб коннектов
-	h.Join(connect, suuid.Value)
+	err = h.Join(ws, r.Context().Value(sessionKey).(uuid.UUID))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logger.Error("Не удалось дабавить соединение в хаб:", err)
+		return
+	}
+
+	// FIXME: Надо ли?
+	fmt.Fprintln(w, "OK")
 }
 
 func logf(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "../public/log.html")
-}
-
-func play(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "../public/index.html")
 }
 
 func main() {
@@ -303,16 +360,14 @@ func main() {
 
 	// Определяем обработчики
 	mux.Handle("/", http.StripPrefix("/", http.FileServer(http.Dir("../public"))))
-	//mux.Handle("/", cookier(http.StripPrefix("/", http.FileServer(http.Dir("../public")))))
-	mux.Handle("/play", cookierFunc(play))
 	mux.HandleFunc("/status", status)
 	mux.HandleFunc("/logger", logAPI)
 	mux.HandleFunc("/log", logs)
 	mux.HandleFunc("/logf", logf)
-	mux.HandleFunc("/ws", ws)
+	mux.HandleFunc("/ws", upgrade)
 
 	// Запускаем http-сервер
-	err = http.ListenAndServe(":"+httpPort, mux)
+	err = http.ListenAndServe(":"+httpPort, cookier(mux))
 	if err != nil {
 		logger.Fatal("[http]:", err)
 	}

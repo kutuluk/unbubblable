@@ -49,7 +49,7 @@ func (id TimeID) Bytes() []byte {
 	return id[:]
 }
 
-// String возвращает значение TimeID в формате шестнадцетиричного xxxxxxxxxxxxxxxx-xx.
+// String возвращает значение TimeID в формате шестнадцетиричного xxxxxxxxxxxxxxxx-xxxx.
 func (id TimeID) String() string {
 	var offsets = [...]int{0, 2, 4, 6, 8, 10, 12, 14, 17, 19}
 	const hexString = "0123456789abcdef"

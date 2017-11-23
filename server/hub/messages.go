@@ -65,7 +65,7 @@ func (h *Hub) SendConnectInfo(c *connect.Connect, p player.Entity) {
 
 	message := &protocol.ConnectInfo{
 		Player: u,
-		Uuid:   c.SUUID,
+		Uuid:   c.ID,
 	}
 
 	buffer, err := proto.Marshal(message)

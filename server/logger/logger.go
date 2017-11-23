@@ -76,19 +76,23 @@ func writer(outbound <-chan db.LogMessage) {
 var outbound chan<- db.LogMessage
 
 // Write пишет в лог сообщение с заданными параметрами без привязки к конкретному логгеру
-func Write(source, suuid string, timestamp time.Time, text string) {
+func Write(source, suuid string, timestamp time.Time, level Level, logger, text string) {
 	msg := db.LogMessage{
 		Source:    source,
 		Suuid:     suuid,
 		Timestamp: timestamp,
-		Text:      text,
+		Body: db.LogBody{
+			Text:   text,
+			Level:  int(level),
+			Logger: logger,
+		},
 	}
 
 	select {
 	case outbound <- msg:
 	default:
 		log.Println("Ошибка записи лога: буфер переполнен")
-		log.Printf("Cообщение (suuid=\"%s\", source=\"%s\"): [%s] %s", msg.Suuid, msg.Source, msg.Timestamp, msg.Text)
+		log.Printf("Cообщение (suuid=\"%s\", source=\"%s\"): [%s] %s", msg.Suuid, msg.Source, msg.Timestamp, msg.Body.Text)
 	}
 }
 
@@ -97,14 +101,15 @@ type Level int
 
 // Предустановленные уровни логгера
 const (
-	DebugLevel Level = iota
+	TraceLevel Level = iota
+	DebugLevel
 	InfoLevel
 	WarnLevel
 	ErrorLevel
 	FatalLevel
 )
 
-var printLevel = [...]string{"DEBUG", "INFO", "WARN", "ERROR", "FATAL"}
+var printLevel = [...]string{"TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"}
 
 func (l Level) String() string {
 	return printLevel[l]
@@ -132,7 +137,7 @@ func (l *Logger) output(level Level, message string) {
 	if level >= l.level {
 		now := time.Now().UTC()
 
-		trace := "???"
+		logger := "???"
 
 		_, file, line, ok := runtime.Caller(l.calldepth)
 		if ok {
@@ -150,11 +155,16 @@ func (l *Logger) output(level Level, message string) {
 					break
 				}
 			}
-			trace = fmt.Sprint(short, ":", line)
+			logger = fmt.Sprint(short, ":", line)
 		}
 
-		Write(l.source, l.suuid, now, fmt.Sprint(level, " (", trace, "): ", message))
+		Write(l.source, l.suuid, now, level, logger, message)
 	}
+}
+
+// Trace пишет в лог с уровнем TraceLevel
+func (l *Logger) Trace(a ...interface{}) {
+	l.output(TraceLevel, fmt.Sprintln(a...))
 }
 
 // Debug пишет в лог с уровнем DebugLevel
@@ -213,6 +223,11 @@ func GetLevel() Level {
 // SetLevel устанавливает уровень глобального логгера
 func SetLevel(level Level) {
 	std.SetLevel(level)
+}
+
+// Trace пишет в глобальный лог с уровнем TraceLevel
+func Trace(a ...interface{}) {
+	std.Trace(a...)
 }
 
 // Debug пишет в глобальный лог с уровнем DebugLevel

@@ -5,9 +5,12 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"
+	"github.com/satori/go.uuid"
+	shortid "github.com/ventu-io/go-shortid"
 
 	"github.com/kutuluk/unbubblable/server/config"
 	"github.com/kutuluk/unbubblable/server/connect"
+	"github.com/kutuluk/unbubblable/server/db"
 	"github.com/kutuluk/unbubblable/server/player"
 	"github.com/kutuluk/unbubblable/server/protocol"
 	"github.com/kutuluk/unbubblable/server/terrain"
@@ -36,7 +39,19 @@ func NewHub() *Hub {
 }
 
 // Join создает нового игрока, ассоциирцет его с сокетом и добавляет его в список коннектов
-func (h *Hub) Join(ws *websocket.Conn, suuid string) {
+func (h *Hub) Join(ws *websocket.Conn, session uuid.UUID) error {
+	// Генерируем suuid для коннекта
+	suuid, err := shortid.Generate()
+	if err != nil {
+		return err
+	}
+
+	// Создаем коннект в базе
+	err = db.AddSession(suuid)
+	if err != nil {
+		return err
+	}
+
 	// Создаем игрока
 	id := nextID()
 	p := player.NewPlayer(id)
@@ -55,9 +70,13 @@ func (h *Hub) Join(ws *websocket.Conn, suuid string) {
 	// Добавляем его в список коннектов
 	h.connections[c] = true
 
+	c.Logger.Info("session:", session.String())
+
 	h.SendConnectInfo(c, p)
 	//	h.SendUnitInfo(c, p, true)
 	h.SendTerrain(c)
+
+	return nil
 }
 
 // Leave закрывает соединение и удаляет его из списка коннектов

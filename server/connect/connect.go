@@ -31,8 +31,11 @@ type Handler interface {
 // Connect определяет структуру коннекта
 type Connect struct {
 	Player *player.Player
-	SUUID  string
+	ID     string
 	Logger *logger.Logger
+	// Статистика
+	Received int
+	Sent     int
 
 	handler      Handler
 	ws           *websocket.Conn
@@ -44,10 +47,6 @@ type Connect struct {
 	frame int
 	ping  pingStatistics
 	sync  *synchronizer
-
-	// Статистика
-	Received int
-	Sent     int
 }
 
 // NewConnect привязывает WebSocket-коннект с персонажем и запускает две горутины
@@ -57,7 +56,7 @@ func NewConnect(ws *websocket.Conn, suuid string, h Handler, p *player.Player) *
 		ws:      ws,
 		handler: h,
 		Player:  p,
-		SUUID:   suuid,
+		ID:      suuid,
 		Logger:  logger.New(suuid, "server"),
 
 		sync: NewSynchronizer(),
@@ -82,7 +81,7 @@ func NewConnect(ws *websocket.Conn, suuid string, h Handler, p *player.Player) *
 
 	c.wg.Add(2)
 
-	c.Logger.Info("Соединение для сессии", suuid, "с адреса", c.ws.RemoteAddr(), "успешно установлено")
+	c.Logger.Info("Соединение с адреса", c.ws.RemoteAddr(), "успешно установлено. Присвоен suuid", suuid)
 
 	return c
 }
@@ -118,7 +117,7 @@ func (c *Connect) close() {
 
 		c.wg.Wait()
 
-		err := db.SaveSession(c.SUUID, c.sync.offset, c.Received, c.Sent)
+		err := db.SaveSession(c.ID, c.sync.offset, c.Received, c.Sent)
 		if err != nil {
 			c.Logger.Error("Не удалось записать информацию о коннекте:", err)
 		}
@@ -196,7 +195,7 @@ func (c *Connect) handle(message *protocol.Message, now time.Time) bool {
 
 		if c.sync.handle(now, timeClient) {
 			// Синхронизация завершена - обновляем базу
-			err := db.UpdateSessionOffset(c.SUUID, c.sync.offset)
+			err := db.UpdateSessionOffset(c.ID, c.sync.offset)
 			if err != nil {
 				c.Logger.Error("Не удалось обновить смещение времени:", err)
 			}

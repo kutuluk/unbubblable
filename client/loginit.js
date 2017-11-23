@@ -1,29 +1,27 @@
 import loglevel from 'loglevel';
-import prefix from 'loglevel-plugin-prefix';
+// import prefix from 'loglevel-plugin-prefix';
 import remote from 'loglevel-plugin-remote';
 
 import time from './time';
 
-// https://learn.javascript.ru/cookie
-// возвращает cookie с именем name, если есть, если нет, то undefined
-function getCookie(name) {
-  const matches = document.cookie.match(
-    new RegExp(`(?:^|; )${name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1')}=([^;]*)`),
-  );
-  return matches ? decodeURIComponent(matches[1]) : undefined;
-}
+loglevel.enableAll(false);
+// loglevel.setLevel('warn', false);
+// loglevel.setLevel('info', false);
 
-// loglevel.enableAll();
-loglevel.setLevel('debug');
+remote.apply(loglevel, {
+  token: undefined,
+  timestamp: () => time.iso(),
+  format(log) {
+    // eslint-disable-next-line no-param-reassign
+    log.level = log.level.value;
+    return log;
+  },
+});
 
-remote.apply(loglevel, { clear: 2 });
-
-const session = getCookie('session');
-
+/*
 prefix.apply(loglevel, {
-  template: `<${session}> [%t] %l (%n):`,
+  template: '[%t] %l (%n):',
   // timestampFormatter: date => date.toISOString(),
   timestampFormatter: () => time.iso(),
 });
-
-export default session;
+*/

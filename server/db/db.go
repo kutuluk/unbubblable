@@ -1,6 +1,7 @@
 package db
 
 import (
+	"encoding/json"
 	"strconv"
 	"time"
 
@@ -13,11 +14,18 @@ const fmtRFC3339Micro = "2006-01-02T15:04:05.000000Z"
 
 var DB *bolt.DB
 
+type LogBody struct {
+	Level      int    `json:"level"`
+	Logger     string `json:"logger"`
+	Text       string `json:"text"`
+	Stacktrace string `json:"stacktrace"`
+}
+
 type LogMessage struct {
 	Source    string
 	Suuid     string
 	Timestamp time.Time
-	Text      string
+	Body      LogBody
 }
 
 // Init инициализирует базу данных
@@ -95,7 +103,8 @@ func AddSession(suuid string) error {
 		*/
 
 		// Записываем информацию о времени создания сессии
-		err = session.Put([]byte("start"), []byte(time.Now().UTC().Format(fmtRFC3339Micro)))
+		//err = session.Put([]byte("start"), []byte(time.Now().UTC().Format(fmtRFC3339Micro)))
+		err = session.Put([]byte("start"), timeid.FromNow().Bytes())
 		if err != nil {
 			return err
 		}
@@ -197,7 +206,14 @@ func AddLogsQueue(queue []LogMessage) error {
 				}
 			}
 
-			err := bucket.Put(timeid.FromTime(message.Timestamp).Bytes(), []byte(message.Text))
+			// Генерируем лог
+			buf, err := json.Marshal(&message.Body)
+			if err != nil {
+				return err
+			}
+
+			// Записываем лог
+			err = bucket.Put(timeid.FromTime(message.Timestamp).Bytes(), buf)
 			if err != nil {
 				return err
 			}

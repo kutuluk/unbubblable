@@ -1,4 +1,5 @@
 import loglevel from 'loglevel';
+import remote from 'loglevel-plugin-remote';
 import chat from './chat';
 import Controller from './controller';
 import Entities from './entities';
@@ -180,7 +181,8 @@ class Game {
   }
 
   handleConnectInfoMessage(message) {
-    // this.entities.handleUnitInfo(message);
+    remote.setToken(message.uuid);
+    logger.info('Соединение %s для игрока %s инициализировано', message.uuid, message.player.name);
   }
 
   handleSystemMessage(msg) {
