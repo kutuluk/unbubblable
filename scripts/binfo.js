@@ -14,7 +14,6 @@ fs.readFile(pjson, 'utf8', (readErr, data) => {
     try {
       const pkg = JSON.parse(data);
       console.log(`Build ${pkg.build} успешно скомпилирован`);
-      // eslint-disable-next-line no-empty
     } catch (error) {
       console.log(error);
     }

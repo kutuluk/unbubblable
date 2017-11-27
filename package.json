@@ -1,8 +1,8 @@
 {
   "name": "unbubblable",
   "version": "0.7.1",
-  "build": 1171,
-  "date": "2017-11-23T13:36:28.854Z",
+  "build": 1176,
+  "date": "2017-11-27T12:29:31.020Z",
   "eslintConfig": {
     "parser": "babel-eslint",
     "parserOptions": {
@@ -66,6 +66,7 @@
   },
   "scripts": {
     "pbuild": "node ./scripts/prebuild.js",
+    "version": "node ./scripts/version.js",
     "gobuild": "node ./scripts/gobuild.js",
     "binfo": "node ./scripts/binfo.js",
     "style": "stylus ./client/style/ --out ./public/css/",
@@ -74,7 +75,8 @@
     "protocol": "pbjs -t static-module -w es6 ./protocol/Messaging/*.proto ./protocol/Messaging/Messages/*.proto ./protocol/Messaging/Response/*.proto ./protocol/Messaging/Request/*.proto ./protocol/Data/*.proto -o ./client/protocol.js",
     "protocol-json-module": "pbjs -t json-module -w es6 ./protocol/Messaging/*.proto ./protocol/Messaging/Messages/*.proto ./protocol/Messaging/Response/*.proto ./protocol/Messaging/Request/*.proto ./protocol/Data/*.proto -o ./client/protocol-json.js",
     "protocol-json": "pbjs -t json ./protocol/Messaging/*.proto ./protocol/Messaging/Messages/*.proto ./protocol/Messaging/Response/*.proto ./protocol/Messaging/Request/*.proto ./protocol/Data/*.proto -o ./client/protocol.json",
-    "build": "npm run pbuild && npm run protocol-json-module && npm run webpack && npm run style && npm run gobuild && npm run binfo"
+    "build": "npm run pbuild && npm run protocol-json-module && npm run webpack && npm run style && npm run gobuild && npm run binfo",
+    "rebuild": "npm run version && npm run build"
   },
   "dependencies": {
     "loglevel": "^1.6.0",
