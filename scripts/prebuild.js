@@ -8,6 +8,45 @@ const exec = require('child_process').exec;
 
 const root = path.resolve(__dirname, '..');
 
+// Version generate
+const pjson = `${root}/package.json`;
+const js = `${root}/client/version.js`;
+const go = `${root}/server/version.go`;
+
+fs.readFile(pjson, 'utf8', (readErr, data) => {
+  if (readErr) {
+    console.log(readErr);
+  } else {
+    try {
+      const pkg = JSON.parse(data);
+
+      let jsContent = 'export default {\n';
+      jsContent += `  version: '${pkg.version}',\n`;
+      jsContent += `  build: ${pkg.build},\n`;
+      jsContent += `  date: '${pkg.date}',\n`;
+      jsContent += '};\n';
+
+      fs.writeFile(js, jsContent, 'utf8', (err) => {
+        if (err) console.log(err);
+      });
+
+      let goContent = 'package main\n';
+      goContent += '// Версия сборки\n';
+      goContent += 'const (\n';
+      goContent += `  VERSION = "${pkg.version}"\n`;
+      goContent += `  BUILD = "${pkg.build}"\n`;
+      goContent += `  DATE = "${pkg.date}"\n`;
+      goContent += ')\n';
+
+      fs.writeFile(go, goContent, 'utf8', (err) => {
+        if (err) console.log(err);
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  }
+});
+
 // Remove
 fs.removeSync(`${root}/server/protocol`);
 fs.removeSync(`${root}/server/server.exe`);
