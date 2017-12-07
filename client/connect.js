@@ -22,7 +22,8 @@ class Connect {
 
     this.ping = 0;
 
-    const ws = new WebSocket(`ws://${window.location.host}/ws`);
+    const proto = window.location.protocol === 'http:' ? 'ws' : 'wss';
+    const ws = new WebSocket(`${proto}://${window.location.host}/ws`);
 
     ws.binaryType = 'arraybuffer';
 

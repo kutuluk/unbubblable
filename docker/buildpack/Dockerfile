@@ -1,4 +1,4 @@
-FROM buildpack-deps:jessie-scm
+FROM buildpack-deps:stretch-scm
 
 # Установка Golang
 
@@ -17,27 +17,16 @@ RUN curl -fsSL "$GOLANG_DOWNLOAD_URL" -o golang.tar.gz \
 # Установка Google Protobuf
 
 ENV PROTOBUF_VERSION 3.5.0
-ENV PROTOBUF_DOWNLOAD_URL https://github.com/google/protobuf/archive/v${PROTOBUF_VERSION}.tar.gz
+ENV PROTOBUF_DOWNLOAD_URL https://github.com/google/protobuf/releases/download/v${PROTOBUF_VERSION}/protoc-${PROTOBUF_VERSION}-linux-x86_64.zip
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    autoconf \
-    automake \
-    libtool \
-    curl \
-    make \
-    g++ \
     unzip \
     && rm -rf /var/lib/apt/lists/* \
-    && curl -L $PROTOBUF_DOWNLOAD_URL | tar xz \
-    && cd /protobuf-${PROTOBUF_VERSION} \
-    && ./autogen.sh \
-    && ./configure --prefix=/usr \
-    && make \
-    && make check \
-    && make install \
-    && ldconfig \
-    && cd .. \
-    && rm -rf ./protobuf-${PROTOBUF_VERSION} \
+    && curl -fsSL ${PROTOBUF_DOWNLOAD_URL} -o protoc.zip \
+    && unzip protoc.zip -d protoc \
+    && mv protoc/bin/* /usr/local/bin/ \
+    && mv protoc/include/* /usr/local/include/ \
+    && rm -rf protoc.zip protoc \
     && go get -ldflags "-w -s" github.com/golang/protobuf/protoc-gen-go \
     && install -c $GOPATH/bin/* /usr/bin/ \
     && rm -rf $GOPATH/bin/*
@@ -68,8 +57,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gpg --keyserver keyserver.pgp.com --recv-keys "$key" || \
     gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" ; \
     done \
-    && curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.xz" \
-    && curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc" \
+    && curl -fsSLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.xz" \
+    && curl -fsSLO "https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc" \
     && gpg --batch --decrypt --output SHASUMS256.txt SHASUMS256.txt.asc \
     && grep " node-v$NODE_VERSION-linux-x64.tar.xz\$" SHASUMS256.txt | sha256sum -c - \
     && tar -xJf "node-v$NODE_VERSION-linux-x64.tar.xz" -C /usr/local --strip-components=1 --no-same-owner \
