@@ -12,40 +12,37 @@ const root = path.resolve(__dirname, '..');
 const pjson = `${root}/package.json`;
 const js = `${root}/client/version.js`;
 const go = `${root}/server/version.go`;
+const df = `${root}/docker/app/Dockerfile`;
 
-fs.readFile(pjson, 'utf8', (readErr, data) => {
-  if (readErr) {
-    console.log(readErr);
-  } else {
-    try {
-      const pkg = JSON.parse(data);
+try {
+  const pkg = JSON.parse(fs.readFileSync(pjson, 'utf8'));
 
-      let jsContent = 'export default {\n';
-      jsContent += `  version: '${pkg.version}',\n`;
-      jsContent += `  build: ${pkg.build},\n`;
-      jsContent += `  date: '${pkg.date}',\n`;
-      jsContent += '};\n';
+  let jsContent = 'export default {\n';
+  jsContent += `  version: '${pkg.version}',\n`;
+  jsContent += `  build: ${pkg.build},\n`;
+  jsContent += `  date: '${pkg.date}',\n`;
+  jsContent += '};\n';
+  fs.writeFileSync(js, jsContent);
 
-      fs.writeFile(js, jsContent, 'utf8', (err) => {
-        if (err) console.log(err);
-      });
+  let goContent = 'package main\n';
+  goContent += '// Версия сборки\n';
+  goContent += 'const (\n';
+  goContent += `  VERSION = "${pkg.version}"\n`;
+  goContent += `  BUILD = "${pkg.build}"\n`;
+  goContent += `  DATE = "${pkg.date}"\n`;
+  goContent += ')\n';
+  fs.writeFileSync(go, goContent);
 
-      let goContent = 'package main\n';
-      goContent += '// Версия сборки\n';
-      goContent += 'const (\n';
-      goContent += `  VERSION = "${pkg.version}"\n`;
-      goContent += `  BUILD = "${pkg.build}"\n`;
-      goContent += `  DATE = "${pkg.date}"\n`;
-      goContent += ')\n';
-
-      fs.writeFile(go, goContent, 'utf8', (err) => {
-        if (err) console.log(err);
-      });
-    } catch (err) {
-      console.log(err);
-    }
-  }
-});
+  const dfContent = fs
+    .readFileSync(df, 'utf8')
+    .split('\n')
+    .map(line => line.replace(/(ENV BUILD )\d+/, `$1${pkg.build}`))
+    .join('\n');
+  fs.writeFileSync(df, dfContent);
+} catch (err) {
+  console.log(err);
+  process.exit(1);
+}
 
 // Remove
 fs.removeSync(`${root}/server/protocol`);
@@ -61,14 +58,17 @@ const cmd =
 exec(cmd, { cwd: root }, (errExec) => {
   if (errExec) {
     console.log(errExec);
+    process.exit(1);
   } else {
     glob(`${root}/server/protocol/*`, {}, (errDel, dels) => {
       if (errDel) {
         console.log(errDel);
+        process.exit(1);
       } else {
         glob(`${root}/server/protocol/**/*.*`, {}, (err, files) => {
           if (err) {
             console.log(err);
+            process.exit(1);
           } else {
             files.forEach((file) => {
               fs.copySync(file, `${root}/server/protocol/${path.basename(file)}`);

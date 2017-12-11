@@ -9,6 +9,7 @@ RUN git clone https://github.com/kutuluk/unbubblable \
     && npm run build
 
 FROM debian:stretch
+ENV BUILD 1183
 WORKDIR /app/server
 COPY --from=builder /go/src/github.com/kutuluk/unbubblable/server/server .
 #COPY --from=builder /go/src/github.com/kutuluk/unbubblable/server/data ./data

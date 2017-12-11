@@ -1,8 +1,8 @@
 {
   "name": "unbubblable",
-  "version": "0.7.1",
-  "build": 1177,
-  "date": "2017-12-07T12:24:08.626Z",
+  "version": "0.8.1183",
+  "build": 1183,
+  "date": "2017-12-11T12:22:48.365Z",
   "eslintConfig": {
     "parser": "babel-eslint",
     "parserOptions": {

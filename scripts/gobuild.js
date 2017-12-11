@@ -8,6 +8,7 @@ const root = path.resolve(__dirname, '..');
 exec('go', ['build'], { cwd: path.resolve(root, './server') }, (err, data) => {
   if (err) {
     console.log(err);
+    process.exit(1);
   } else {
     console.log(data);
   }
